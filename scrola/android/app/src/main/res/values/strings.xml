@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Scrola</string>
+    <string name="accessibility_service_description">Scrola uses Accessibility Services to track the number of short-form videos (Reels, Shorts, and Spotlight) you watch, show real-time screen-time overlays, and help enforce healthy scrolling limits.</string>
+</resources>

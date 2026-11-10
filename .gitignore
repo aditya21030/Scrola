@@ -1,0 +1,38 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+
+# IntelliJ / Android Studio / VS Code
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# Flutter / Dart / Pub build artifacts
+**/build/
+**/.dart_tool/
+**/.pub-cache/
+**/.pub/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/coverage/
+**/doc/api/
+**/*.symbols
+**/*.map.json
+
+# Android build outputs & local properties
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/local.properties
+**/GeneratedPluginRegistrant.java
