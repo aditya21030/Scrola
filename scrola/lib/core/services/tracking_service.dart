@@ -16,10 +16,12 @@ class TrackingService extends ChangeNotifier {
 
   bool _isAccessibilityGranted = false;
   bool _isOverlayGranted = false;
+  bool _isNotificationGranted = true;
   bool _isInitialized = false;
 
   bool get isAccessibilityGranted => _isAccessibilityGranted;
   bool get isOverlayGranted => _isOverlayGranted;
+  bool get isNotificationGranted => _isNotificationGranted;
   bool get isInitialized => _isInitialized;
 
   // Profile
@@ -62,6 +64,8 @@ class TrackingService extends ChangeNotifier {
   BrainySkin get equippedSkin => _storage?.equippedSkin ?? BrainySkin.classic;
 
   // Settings
+  bool get isTrackingEnabled => _storage?.isTrackingEnabled ?? false;
+  bool get platformLimitsEnabled => _storage?.platformLimitsEnabled ?? false;
   bool get isOverlayEnabled => _storage?.isOverlayEnabled ?? true;
   bool get overlayStickToNotch => _storage?.overlayStickToNotch ?? true;
   bool get overlayExpanded => _storage?.overlayExpanded ?? false;
@@ -150,6 +154,7 @@ class TrackingService extends ChangeNotifier {
   Future<void> checkPermissions() async {
     _isAccessibilityGranted = await ScrolaNativeBridge.isAccessibilityServiceEnabled();
     _isOverlayGranted = await ScrolaNativeBridge.isOverlayPermissionGranted();
+    _isNotificationGranted = await ScrolaNativeBridge.isNotificationPermissionGranted();
     notifyListeners();
   }
 
@@ -161,6 +166,13 @@ class TrackingService extends ChangeNotifier {
     await ScrolaNativeBridge.requestOverlayPermission();
   }
 
+  Future<bool> requestNotificationPermission() async {
+    final granted = await ScrolaNativeBridge.requestNotificationPermission();
+    _isNotificationGranted = granted;
+    notifyListeners();
+    return granted;
+  }
+
   Future<void> completeOnboarding({
     required String goal,
     required int dailyLimit,
@@ -169,6 +181,9 @@ class TrackingService extends ChangeNotifier {
     await _storage?.setSelectedGoal(goal);
     await _storage?.setSelectedPlatforms(platforms);
     await _storage?.setLimits(total: dailyLimit);
+    await _storage?.setPlatformLimitsEnabled(false);
+    // Do not auto-enable Scrola when onboarding finishes; user explicitly turns ON.
+    await _storage?.setTrackingEnabled(false);
     await _storage?.setOnboardingComplete(true);
     await syncLimitsWithNative();
     notifyListeners();
@@ -180,6 +195,7 @@ class TrackingService extends ChangeNotifier {
     int? youtube,
     int? facebook,
     int? snapchat,
+    bool? platformLimitsEnabled,
   }) async {
     await _storage?.setLimits(
       total: total,
@@ -188,14 +204,49 @@ class TrackingService extends ChangeNotifier {
       facebook: facebook,
       snapchat: snapchat,
     );
+    if (platformLimitsEnabled != null) {
+      await _storage?.setPlatformLimitsEnabled(platformLimitsEnabled);
+    }
     await syncLimitsWithNative();
     notifyListeners();
+  }
+
+  Future<void> setPlatformLimitsEnabled(bool enabled) async {
+    await _storage?.setPlatformLimitsEnabled(enabled);
+    await syncLimitsWithNative();
+    notifyListeners();
+  }
+
+  Future<void> toggleTracking(
+    bool enabled, {
+    bool startOverlayNow = true,
+  }) async {
+    await _storage?.setTrackingEnabled(enabled);
+    await syncLimitsWithNative();
+    if (enabled) {
+      if (startOverlayNow && isOverlayEnabled && _isOverlayGranted) {
+        await ScrolaNativeBridge.startOverlayService(animateEntrance: true);
+      }
+    } else {
+      await ScrolaNativeBridge.stopOverlayService();
+    }
+    notifyListeners();
+  }
+
+  Future<void> startOverlayIfActive({bool animateEntrance = true}) async {
+    if (isTrackingEnabled && isOverlayEnabled && _isOverlayGranted) {
+      await ScrolaNativeBridge.startOverlayService(
+        animateEntrance: animateEntrance,
+      );
+    }
   }
 
   Future<void> toggleOverlay(bool enabled) async {
     await _storage?.setOverlayEnabled(enabled);
     if (enabled) {
-      await ScrolaNativeBridge.startOverlayService();
+      if (isTrackingEnabled || FocusModeService().isActive) {
+        await ScrolaNativeBridge.startOverlayService(animateEntrance: true);
+      }
     } else {
       await ScrolaNativeBridge.stopOverlayService();
     }
@@ -211,6 +262,8 @@ class TrackingService extends ChangeNotifier {
     if (stickToNotch != null) await _storage?.setOverlayStickToNotch(stickToNotch);
     if (expanded != null) await _storage?.setOverlayExpanded(expanded);
     if (size != null) await _storage?.setOverlaySize(size);
+    await syncLimitsWithNative();
+    await ScrolaNativeBridge.refreshOverlayConfig();
     notifyListeners();
   }
 
@@ -238,6 +291,7 @@ class TrackingService extends ChangeNotifier {
 
   Future<void> equipSkin(BrainySkin skin) async {
     await _storage?.setEquippedSkin(skin);
+    await syncLimitsWithNative();
     notifyListeners();
   }
 
@@ -269,6 +323,13 @@ class TrackingService extends ChangeNotifier {
       snapchatLimit: _storage!.snapchatLimit,
       isFocusActive: FocusModeService().isActive || _storage!.isDetoxActive,
       isOverlayEnabled: _storage!.isOverlayEnabled,
+      isTrackingEnabled: _storage!.isTrackingEnabled,
+      platformLimitsEnabled: _storage!.platformLimitsEnabled,
+      selectedPlatforms: _storage!.selectedPlatforms,
+      stickToNotch: _storage!.overlayStickToNotch,
+      overlayExpanded: _storage!.overlayExpanded,
+      overlaySize: _storage!.overlaySize,
+      skinIndex: _storage!.equippedSkin.index,
     );
   }
 

@@ -57,124 +57,162 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
           ),
 
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Hero Arena with Orbiting Platforms & Brainy
-                  Expanded(
-                    flex: 5,
-                    child: Center(
-                      child: SizedBox(
-                        width: 320,
-                        height: 290,
-                        child: Stack(
-                          alignment: Alignment.center,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: (constraints.maxHeight - 42).clamp(0.0, 2000.0),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 8),
+                        // Hero Arena with Orbiting Platforms & Brainy
+                        Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: SizedBox(
+                              width: 280,
+                              height: 268,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 224,
+                                    height: 224,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.primaryAccent
+                                            .withValues(alpha: 0.14),
+                                        width: 1,
+                                      ),
+                                      gradient: RadialGradient(
+                                        colors: [
+                                          AppColors.primaryAccent
+                                              .withValues(alpha: 0.14),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const BrainyMascot(
+                                    mood: BrainyMood.happy,
+                                    size: 156,
+                                  ),
+                                  _buildFloatingPlatform(
+                                    top: 18,
+                                    left: 16,
+                                    offsetFactor: 1.0,
+                                    platform: SocialPlatform.instagram,
+                                  ),
+                                  _buildFloatingPlatform(
+                                    top: 14,
+                                    right: 16,
+                                    offsetFactor: -0.8,
+                                    platform: SocialPlatform.youtube,
+                                  ),
+                                  _buildFloatingPlatform(
+                                    bottom: 18,
+                                    left: 14,
+                                    offsetFactor: -1.0,
+                                    platform: SocialPlatform.facebook,
+                                  ),
+                                  _buildFloatingPlatform(
+                                    bottom: 20,
+                                    right: 14,
+                                    offsetFactor: 0.9,
+                                    platform: SocialPlatform.snapchat,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Centered Editorial Copy matching 02-welcome.html
+                        Column(
                           children: [
-                            // Dashed Orbit Circle
-                            Container(
-                              width: 240,
-                              height: 240,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.border.withValues(alpha: 0.4),
-                                  width: 1,
+                            Text.rich(
+                              TextSpan(
+                                text: 'Take Control of\nYour ',
+                                style: AppTypography.title(
+                                  color: AppColors.primaryText,
+                                  size: 38,
+                                  weight: FontWeight.w800,
+                                ).copyWith(height: 1.08, letterSpacing: -1.0),
+                                children: [
+                                  TextSpan(
+                                    text: 'Scroll.',
+                                    style: AppTypography.title(
+                                      color: AppColors.primaryAccent,
+                                      size: 38,
+                                      weight: FontWeight.w800,
+                                    ).copyWith(
+                                        height: 1.08, letterSpacing: -1.0),
+                                  ),
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 14),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 310),
+                              child: Text(
+                                'Scrola counts the reels you watch and stops endless loops before they steal your day.',
+                                textAlign: TextAlign.center,
+                                style: AppTypography.body(
+                                  color: AppColors.secondaryText,
+                                  size: 15,
                                 ),
                               ),
                             ),
-
-                            // Brainy Center
-                            const BrainyMascot(
-                              mood: BrainyMood.happy,
-                              size: 165,
+                          ],
+                        ),
+                        const SizedBox(height: 28),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ScrolaPrimaryButton(
+                              label: 'Get started',
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const OnboardingWizardScreen(),
+                                  ),
+                                );
+                              },
                             ),
-
-                            // Orbiting Platform Tiles
-                            _buildFloatingPlatform(
-                              top: 26,
-                              left: 24,
-                              offsetFactor: 1.0,
-                              platform: SocialPlatform.instagram,
-                            ),
-                            _buildFloatingPlatform(
-                              top: 18,
-                              right: 28,
-                              offsetFactor: -0.8,
-                              platform: SocialPlatform.youtube,
-                            ),
-                            _buildFloatingPlatform(
-                              bottom: 24,
-                              left: 22,
-                              offsetFactor: -1.0,
-                              platform: SocialPlatform.facebook,
-                            ),
-                            _buildFloatingPlatform(
-                              bottom: 28,
-                              right: 20,
-                              offsetFactor: 0.9,
-                              platform: SocialPlatform.snapchat,
+                            const SizedBox(height: 10),
+                            ScrolaLinkButton(
+                              label: 'I already have an account',
+                              onPressed: () async {
+                                await TrackingService().completeOnboarding(
+                                  goal: 'Stay under a daily limit',
+                                  dailyLimit: 40,
+                                  platforms: ['instagram', 'youtube'],
+                                );
+                                await HapticService.medium();
+                                if (!context.mounted) return;
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (_) => const MainShell(),
+                                  ),
+                                  (_) => false,
+                                );
+                              },
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
-
-                  // Editorial Copy
-                  Text(
-                    'Take Control\nof Your\nScroll.',
-                    style: AppTypography.title(
-                      color: AppColors.primaryText,
-                      size: 44,
-                      weight: FontWeight.w800,
-                    ).copyWith(height: 1.04, letterSpacing: -1.2),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Scrola counts the reels you watch and keeps you under the limit you set.',
-                    style: AppTypography.body(
-                      color: AppColors.secondaryText,
-                      size: 16,
-                    ),
-                  ),
-
-                  const SizedBox(height: 36),
-
-                  // Primary CTA
-                  ScrolaPrimaryButton(
-                    label: 'Get started',
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const OnboardingWizardScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Secondary Link
-                  ScrolaLinkButton(
-                    label: 'I already have an account',
-                    onPressed: () async {
-                      await TrackingService().completeOnboarding(
-                        goal: 'Stay under a daily limit',
-                        dailyLimit: 40,
-                        platforms: ['instagram', 'youtube'],
-                      );
-                      await HapticService.medium();
-                      if (!context.mounted) return;
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const MainShell()),
-                        (_) => false,
-                      );
-                    },
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],

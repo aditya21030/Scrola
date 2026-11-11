@@ -65,11 +65,17 @@ class _ScrolaPrimaryButtonState extends State<ScrolaPrimaryButton> {
                 widget.leadingIcon!,
                 const SizedBox(width: 10),
               ],
-              Text(
-                widget.label,
-                style: AppTypography.subheading(
-                  color: enabled ? AppColors.textOnAccent : AppColors.mutedText,
-                ).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    style: AppTypography.subheading(
+                      color: enabled ? AppColors.textOnAccent : AppColors.mutedText,
+                    ).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
               ),
             ],
           ),
@@ -138,11 +144,17 @@ class _ScrolaSecondaryButtonState extends State<ScrolaSecondaryButton> {
                 widget.leadingIcon!,
                 const SizedBox(width: 10),
               ],
-              Text(
-                widget.label,
-                style: AppTypography.subheading(
-                  color: enabled ? AppColors.primaryText : AppColors.mutedText,
-                ).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    style: AppTypography.subheading(
+                      color: enabled ? AppColors.primaryText : AppColors.mutedText,
+                    ).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
               ),
             ],
           ),

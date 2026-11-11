@@ -3,7 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scrola/core/services/gamification_engine.dart';
 import 'package:scrola/core/services/haptic_service.dart';
+import 'package:scrola/core/services/storage_service.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
+import 'package:scrola/features/onboarding/presentation/screens/onboarding_wizard_screen.dart';
+import 'package:scrola/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:scrola/main.dart';
 
 void main() {
@@ -83,5 +86,66 @@ void main() {
     HapticService.isEnabled = true;
     HapticService.intensity = HapticIntensity.strong;
     await HapticService.subtle();
+  });
+
+  test('StorageService defaults keep Scrola off and notch pinned', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = await StorageService.getInstance();
+    expect(storage.isTrackingEnabled, isFalse);
+    expect(storage.platformLimitsEnabled, isFalse);
+    expect(storage.overlayStickToNotch, isTrue);
+  });
+
+  testWidgets('WelcomeScreen and OnboardingWizardScreen fit 320dp cleanly',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: WelcomeScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Get started'), findsOneWidget);
+
+    await tester.pumpWidget(const MaterialApp(home: OnboardingWizardScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('See every reel, live'), findsOneWidget);
+
+    Future<void> advanceStep() async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+    }
+
+    await tester.tap(find.text('Skip'));
+    await advanceStep();
+    expect(find.textContaining('Where do you'), findsOneWidget);
+
+    await tester.tap(find.text('Continue'));
+    await advanceStep();
+    expect(find.textContaining('Let Scrola count'), findsOneWidget);
+
+    await tester.tap(find.text('Continue to Settings'));
+    await advanceStep();
+    expect(find.textContaining('Turn on'), findsOneWidget);
+
+    await tester.tap(find.text("I've turned it on"));
+    await advanceStep();
+    expect(find.textContaining('Brainy docked'), findsOneWidget);
+
+    await tester.tap(find.text('Continue'));
+    await advanceStep();
+    expect(find.text('Allow display over\nother apps'), findsOneWidget);
+
+    await tester.tap(find.text("I've turned it on"));
+    await advanceStep();
+    expect(find.textContaining('Know before'), findsOneWidget);
+
+    await tester.tap(find.text('Maybe later'));
+    await advanceStep();
+    expect(find.text('Permissions ready'), findsOneWidget);
+
+    await tester.tap(find.text('Choose my goal'));
+    await advanceStep();
+    expect(find.text('Finish setup'), findsOneWidget);
   });
 }

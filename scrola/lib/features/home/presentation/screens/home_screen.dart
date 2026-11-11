@@ -23,14 +23,23 @@ import '../widgets/brain_level_card.dart';
 import '../widgets/focus_banner_card.dart';
 import '../widgets/hero_gauge_section.dart';
 import '../widgets/home_header.dart';
+import '../widgets/notch_flight_overlay.dart';
 import '../widgets/platform_breakdown_section.dart';
 import '../widgets/session_stats_bar.dart';
 import '../widgets/streak_week_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onSwitchTab;
 
   const HomeScreen({super.key, this.onSwitchTab});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey _mascotKey = GlobalKey();
+  bool _isLaunchingToNotch = false;
 
   String _greetingForHour(int hour) {
     if (hour < 12) return 'Good morning';
@@ -40,6 +49,55 @@ class HomeScreen extends StatelessWidget {
 
   void _push(BuildContext context, Widget screen) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+
+  Future<void> _handleToggleScrola(TrackingService tracking) async {
+    if (!tracking.isAccessibilityGranted) {
+      HapticService.light();
+      _push(context, const TrackingStatusScreen());
+      return;
+    }
+
+    if (tracking.isTrackingEnabled) {
+      HapticService.light();
+      await tracking.toggleTracking(false);
+      return;
+    }
+
+    if (_isLaunchingToNotch) return;
+    setState(() => _isLaunchingToNotch = true);
+
+    await playNotchFlightAnimation(
+      context: context,
+      mascotKey: _mascotKey,
+      mood: tracking.currentMood,
+      skin: tracking.equippedSkin,
+      stickToNotch: tracking.overlayStickToNotch,
+      onArrive: () {
+        tracking.toggleTracking(true, startOverlayNow: true);
+      },
+    );
+
+    if (!mounted) return;
+    setState(() => _isLaunchingToNotch = false);
+
+    if (!tracking.isOverlayGranted && tracking.isOverlayEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.surfaceSolid,
+          content: Text(
+            'Scrola is ON! Enable overlay permission to dock Brainy in the notch.',
+            style: AppTypography.caption(color: AppColors.primaryText),
+          ),
+          action: SnackBarAction(
+            label: 'Allow',
+            textColor: AppColors.primaryAccent,
+            onPressed: () =>
+                _push(context, const FloatingOverlaySetupScreen()),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -59,7 +117,8 @@ class HomeScreen extends StatelessWidget {
                 ? GamificationEngine.evolutionStages[nextStageIdx].minLevel
                 : levelInfo.level;
 
-        final isTrackingOk = tracking.isAccessibilityGranted;
+        final permissionsReady = tracking.isAccessibilityGranted;
+        final isScrolaOn = permissionsReady && tracking.isTrackingEnabled;
         final greeting = _greetingForHour(DateTime.now().hour);
 
         return Scaffold(
@@ -124,7 +183,8 @@ class HomeScreen extends StatelessWidget {
                         HomeHeader(
                           greeting: greeting,
                           userName: tracking.displayName,
-                          isTracking: isTrackingOk,
+                          isTracking: isScrolaOn,
+                          permissionsReady: permissionsReady,
                           onTrackingTap: () =>
                               _push(context, const TrackingStatusScreen()),
                           onNotificationTap: () =>
@@ -139,7 +199,12 @@ class HomeScreen extends StatelessWidget {
                           levelTitle: stage.title,
                           mood: tracking.currentMood,
                           skin: tracking.equippedSkin,
-                          isTracking: isTrackingOk,
+                          isTracking: isScrolaOn,
+                          permissionsReady: permissionsReady,
+                          stickToNotch: tracking.overlayStickToNotch,
+                          isLaunchingToNotch: _isLaunchingToNotch,
+                          mascotKey: _mascotKey,
+                          onToggleScrola: () => _handleToggleScrola(tracking),
                           onMascotTap: () => _push(
                             context,
                             BrainDetailsScreen(
@@ -151,8 +216,8 @@ class HomeScreen extends StatelessWidget {
                           onXpTap: () =>
                               _push(context, const XpProgressScreen()),
                           onLevelTap: () {
-                            if (onSwitchTab != null) {
-                              onSwitchTab!(3);
+                            if (widget.onSwitchTab != null) {
+                              widget.onSwitchTab!(3);
                             } else {
                               _push(context, const BrainOverviewScreen());
                             }
@@ -197,8 +262,8 @@ class HomeScreen extends StatelessWidget {
                                 onRewardsTap: () =>
                                     _push(context, const RewardsScreen()),
                                 onCardTap: () {
-                                  if (onSwitchTab != null) {
-                                    onSwitchTab!(3);
+                                  if (widget.onSwitchTab != null) {
+                                    widget.onSwitchTab!(3);
                                   } else {
                                     _push(context, const BrainOverviewScreen());
                                   }
@@ -219,8 +284,8 @@ class HomeScreen extends StatelessWidget {
                                   if (focus.isActive) {
                                     _push(context,
                                         const ActiveFocusSessionScreen());
-                                  } else if (onSwitchTab != null) {
-                                    onSwitchTab!(2);
+                                  } else if (widget.onSwitchTab != null) {
+                                    widget.onSwitchTab!(2);
                                   } else {
                                     _push(
                                         context, const FocusDashboardScreen());
@@ -249,7 +314,7 @@ class HomeScreen extends StatelessWidget {
                                           fit: BoxFit.scaleDown,
                                           child: _StatusDotItem(
                                             label: 'Tracking',
-                                            active: isTrackingOk,
+                                            active: isScrolaOn,
                                             onTap: () => _push(context,
                                                 const TrackingStatusScreen()),
                                           ),

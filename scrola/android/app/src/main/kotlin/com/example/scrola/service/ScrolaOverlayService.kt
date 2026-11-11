@@ -1,5 +1,8 @@
 package com.example.scrola.service
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,42 +14,93 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowInsets
 import android.view.WindowManager
+import android.view.animation.OvershootInterpolator
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.example.scrola.MainActivity
+import kotlin.math.abs
+import kotlin.math.max
 
 class ScrolaOverlayService : Service() {
 
     private var windowManager: WindowManager? = null
-    private var overlayView: LinearLayout? = null
+    private var rootContainer: FrameLayout? = null
+    private var pillContainer: LinearLayout? = null
     private var params: WindowManager.LayoutParams? = null
 
-    private var watchedTextView: TextView? = null
-    private var remainingTextView: TextView? = null
+    private var brainyView: BrainyOverlayView? = null
+    private var primaryTextView: TextView? = null
+    private var dividerView: View? = null
+    private var secondaryTextView: TextView? = null
+
     private var isExpanded: Boolean = false
     private var stickToTopCentre: Boolean = true
+    private var overlaySize: String = "Medium"
+    private var lastPlatform: String = ""
+    private var positionAnimator: ValueAnimator? = null
 
     companion object {
         const val ACTION_START = "ACTION_START_OVERLAY"
         const val ACTION_STOP = "ACTION_STOP_OVERLAY"
         const val ACTION_UPDATE = "ACTION_UPDATE_OVERLAY"
+        const val ACTION_REFRESH_CONFIG = "ACTION_REFRESH_OVERLAY_CONFIG"
+
         const val EXTRA_TODAY = "EXTRA_TODAY"
         const val EXTRA_LIMIT = "EXTRA_LIMIT"
         const val EXTRA_SESSION = "EXTRA_SESSION"
         const val EXTRA_PLATFORM = "EXTRA_PLATFORM"
         const val EXTRA_IS_FOCUS = "EXTRA_IS_FOCUS"
+        const val EXTRA_ANIMATE_ENTRANCE = "EXTRA_ANIMATE_ENTRANCE"
 
         private const val CHANNEL_ID = "scrola_overlay_channel"
         private const val NOTIFICATION_ID = 1001
+
+        @Volatile
+        var isServiceRunning: Boolean = false
+            private set
+
+        fun start(context: Context, animateEntrance: Boolean = true) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                return
+            }
+            val intent = Intent(context, ScrolaOverlayService::class.java).apply {
+                action = ACTION_START
+                putExtra(EXTRA_ANIMATE_ENTRANCE, animateEntrance)
+            }
+            startCompat(context, intent)
+        }
+
+        fun stop(context: Context) {
+            val intent = Intent(context, ScrolaOverlayService::class.java).apply {
+                action = ACTION_STOP
+            }
+            try {
+                context.stopService(intent)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        fun refreshConfig(context: Context) {
+            if (!isServiceRunning) return
+            val intent = Intent(context, ScrolaOverlayService::class.java).apply {
+                action = ACTION_REFRESH_CONFIG
+            }
+            startCompat(context, intent)
+        }
 
         fun updateStats(
             context: Context,
@@ -56,6 +110,13 @@ class ScrolaOverlayService : Service() {
             platform: String = "",
             isFocus: Boolean = false
         ) {
+            val dm = ScrolaDataManager.getInstance(context)
+            if (!dm.isOverlayEnabled()) return
+            if (!dm.isTrackingEnabled() && !dm.isFocusModeActive()) return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                return
+            }
+
             val intent = Intent(context, ScrolaOverlayService::class.java).apply {
                 action = ACTION_UPDATE
                 putExtra(EXTRA_TODAY, today)
@@ -64,6 +125,10 @@ class ScrolaOverlayService : Service() {
                 putExtra(EXTRA_PLATFORM, platform)
                 putExtra(EXTRA_IS_FOCUS, isFocus)
             }
+            startCompat(context, intent)
+        }
+
+        private fun startCompat(context: Context, intent: Intent) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent)
@@ -80,9 +145,18 @@ class ScrolaOverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isServiceRunning = true
         createNotificationChannel()
         startServiceForeground()
+        loadConfigFromDataManager()
         initOverlay()
+    }
+
+    private fun loadConfigFromDataManager() {
+        val dm = ScrolaDataManager.getInstance(this)
+        stickToTopCentre = dm.isStickToNotch()
+        isExpanded = dm.isOverlayExpanded()
+        overlaySize = dm.getOverlaySize()
     }
 
     private fun startServiceForeground() {
@@ -103,16 +177,45 @@ class ScrolaOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val dm = ScrolaDataManager.getInstance(this)
         when (intent?.action) {
             ACTION_STOP -> {
                 stopSelf()
+                return START_NOT_STICKY
+            }
+            ACTION_START -> {
+                loadConfigFromDataManager()
+                applyLayoutSizingAndPosition(animateSnap = false)
+                updateUI(
+                    dm.getTotalReelsToday(),
+                    dm.getTotalLimit(),
+                    dm.getSessionCount(),
+                    lastPlatform,
+                    dm.isFocusModeActive()
+                )
+                if (intent.getBooleanExtra(EXTRA_ANIMATE_ENTRANCE, true)) {
+                    playNotchDockEntranceAnimation()
+                }
+            }
+            ACTION_REFRESH_CONFIG -> {
+                val previousStick = stickToTopCentre
+                loadConfigFromDataManager()
+                applyLayoutSizingAndPosition(animateSnap = (!previousStick && stickToTopCentre))
+                updateUI(
+                    dm.getTotalReelsToday(),
+                    dm.getTotalLimit(),
+                    dm.getSessionCount(),
+                    lastPlatform,
+                    dm.isFocusModeActive()
+                )
             }
             ACTION_UPDATE -> {
-                val today = intent.getIntExtra(EXTRA_TODAY, 0)
-                val limit = intent.getIntExtra(EXTRA_LIMIT, 40)
-                val session = intent.getIntExtra(EXTRA_SESSION, 0)
-                val platform = intent.getStringExtra(EXTRA_PLATFORM) ?: ""
-                val isFocus = intent.getBooleanExtra(EXTRA_IS_FOCUS, false)
+                val today = intent.getIntExtra(EXTRA_TODAY, dm.getTotalReelsToday())
+                val limit = intent.getIntExtra(EXTRA_LIMIT, dm.getTotalLimit())
+                val session = intent.getIntExtra(EXTRA_SESSION, dm.getSessionCount())
+                val platform = intent.getStringExtra(EXTRA_PLATFORM) ?: lastPlatform
+                if (platform.isNotEmpty()) lastPlatform = platform
+                val isFocus = intent.getBooleanExtra(EXTRA_IS_FOCUS, dm.isFocusModeActive())
                 updateUI(today, limit, session, platform, isFocus)
             }
         }
@@ -126,7 +229,7 @@ class ScrolaOverlayService : Service() {
                 "Scrola Floating Counter",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shows real-time reels notch pill counter"
+                description = "Shows Brainy in the notch pill counter"
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)
@@ -137,13 +240,15 @@ class ScrolaOverlayService : Service() {
     private fun buildNotification(): Notification {
         val launchIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, launchIntent,
+            this,
+            0,
+            launchIntent,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Scrola Counter Active")
-            .setContentText("Monitoring short-form video consumption")
+            .setContentTitle("Scrola Active")
+            .setContentText("Brainy is guarding your feed")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -151,13 +256,77 @@ class ScrolaOverlayService : Service() {
             .build()
     }
 
-    private fun getTopSafeOffset(): Int {
-        var topOffset = dpToPx(8)
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        if (resourceId > 0) {
-            topOffset = resources.getDimensionPixelSize(resourceId) + dpToPx(4)
+    /**
+     * Computes Y offset using FLAG_LAYOUT_IN_SCREEN so the pill hugs directly
+     * beneath the center camera notch/cutout without covering the camera lens.
+     */
+    private fun getNotchDockY(): Int {
+        val screenW = resources.displayMetrics.widthPixels
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val cutout = windowManager?.currentWindowMetrics?.windowInsets?.displayCutout
+                ?: rootContainer?.rootWindowInsets?.displayCutout
+            if (cutout != null) {
+                val centerMin = screenW * 0.2f
+                val centerMax = screenW * 0.8f
+                val centerRect = cutout.boundingRects.firstOrNull { rect ->
+                    rect.top <= dpToPx(24) && rect.centerX() in centerMin.toInt()..centerMax.toInt()
+                }
+                if (centerRect != null && centerRect.bottom > 0) {
+                    return centerRect.bottom + dpToPx(2)
+                }
+                if (cutout.safeInsetTop > 0) {
+                    return cutout.safeInsetTop + dpToPx(2)
+                }
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val cutout = rootContainer?.rootWindowInsets?.displayCutout
+            if (cutout != null && cutout.safeInsetTop > 0) {
+                return cutout.safeInsetTop + dpToPx(2)
+            }
         }
-        return topOffset
+
+        // Fallback if cutout hasn't attached yet: compact top notch band
+        val statusRes = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusH = if (statusRes > 0) resources.getDimensionPixelSize(statusRes) else dpToPx(28)
+        return max(dpToPx(6), statusH - dpToPx(4))
+    }
+
+    private data class PillMetrics(
+        val mascotWidthDp: Int,
+        val mascotHeightDp: Int,
+        val primarySp: Float,
+        val secondarySp: Float,
+        val padH: Int,
+        val padV: Int
+    )
+
+    private fun metricsForSize(size: String): PillMetrics {
+        return when (size.lowercase()) {
+            "small" -> PillMetrics(
+                mascotWidthDp = 24,
+                mascotHeightDp = 22,
+                primarySp = 12f,
+                secondarySp = 11f,
+                padH = 10,
+                padV = 4
+            )
+            "large" -> PillMetrics(
+                mascotWidthDp = 34,
+                mascotHeightDp = 31,
+                primarySp = 14.5f,
+                secondarySp = 13f,
+                padH = 14,
+                padV = 7
+            )
+            else -> PillMetrics(
+                mascotWidthDp = 28,
+                mascotHeightDp = 26,
+                primarySp = 13f,
+                secondarySp = 12f,
+                padH = 12,
+                padV = 5
+            )
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -171,91 +340,226 @@ class ScrolaOverlayService : Service() {
             WindowManager.LayoutParams.TYPE_PHONE
         }
 
-        // Notch Pill placement at top centre
+        val dm = ScrolaDataManager.getInstance(this)
+        val initialX = if (stickToTopCentre) 0 else dm.getFreeOverlayX()
+        val savedFreeY = dm.getFreeOverlayY()
+        val initialY = if (stickToTopCentre || savedFreeY < 0) getNotchDockY() else savedFreeY
+
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
-            dpToPx(42),
+            WindowManager.LayoutParams.WRAP_CONTENT,
             layoutType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            x = 0
-            y = getTopSafeOffset()
+            x = initialX
+            y = initialY
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
         }
 
-        // Black capsule pill (#101010 with #2A2A2A border)
-        overlayView = LinearLayout(this).apply {
+        // Transparent wrapper allows smooth spring overshoot inside WindowManager bounds
+        rootContainer = FrameLayout(this).apply {
+            clipChildren = false
+            clipToPadding = false
+            setPadding(dpToPx(6), dpToPx(2), dpToPx(6), dpToPx(12))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                setOnApplyWindowInsetsListener { _, insets ->
+                    if (stickToTopCentre) {
+                        val targetY = getNotchDockY()
+                        if (params?.y != targetY) {
+                            params?.x = 0
+                            params?.y = targetY
+                            safeUpdateViewLayout()
+                        }
+                    }
+                    insets
+                }
+            }
+        }
+
+        val m = metricsForSize(overlaySize)
+
+        pillContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dpToPx(14), dpToPx(6), dpToPx(14), dpToPx(6))
-            background = createPillBackground(Color.parseColor("#101010"), Color.parseColor("#2A2A2A"))
+            setPadding(dpToPx(m.padH), dpToPx(m.padV), dpToPx(m.padH + 2), dpToPx(m.padV))
+            background = createPillBackground(Color.parseColor("#111111"), Color.parseColor("#2A2A2A"))
+            elevation = dpToPx(10).toFloat()
         }
 
-        // Left: Reels Watched
-        watchedTextView = TextView(this).apply {
-            text = "0"
+        // 1. Live reactive Brainy Mascot View (replaces old plain orange dot!)
+        brainyView = BrainyOverlayView(this).apply {
+            setSkinIndex(dm.getSkinIndex())
+            setMood("happy")
+        }
+        val mascotLp = LinearLayout.LayoutParams(
+            dpToPx(m.mascotWidthDp),
+            dpToPx(m.mascotHeightDp)
+        ).apply {
+            rightMargin = dpToPx(8)
+        }
+        pillContainer?.addView(brainyView, mascotLp)
+
+        // 2. Primary watched count
+        primaryTextView = TextView(this).apply {
+            text = "${dm.getTotalReelsToday()}"
             setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            paint.isFakeBoldText = true
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, m.primarySp)
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            includeFontPadding = false
         }
+        pillContainer?.addView(primaryTextView)
 
-        // Center: Brainy Mascot Pill Marker
-        val brainyMarker = View(this).apply {
-            val size = dpToPx(16)
-            layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                marginStart = dpToPx(10)
-                marginEnd = dpToPx(10)
-            }
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#FF6B24"))
-                setStroke(dpToPx(2), Color.parseColor("#FFB27F"))
-            }
+        // 3. Divider bar
+        dividerView = View(this).apply {
+            setBackgroundColor(Color.parseColor("#383838"))
         }
+        val divLp = LinearLayout.LayoutParams(dpToPx(1), dpToPx(13)).apply {
+            leftMargin = dpToPx(7)
+            rightMargin = dpToPx(7)
+        }
+        pillContainer?.addView(dividerView, divLp)
 
-        // Right: Reels Remaining (Orange #FF6B24)
-        remainingTextView = TextView(this).apply {
-            text = "40"
+        // 4. Secondary left / status label
+        secondaryTextView = TextView(this).apply {
+            val left = max(0, dm.getTotalLimit() - dm.getTotalReelsToday())
+            text = if (isExpanded) "$left left" else "$left"
             setTextColor(Color.parseColor("#FF6B24"))
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            paint.isFakeBoldText = true
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, m.secondarySp)
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            includeFontPadding = false
         }
+        pillContainer?.addView(secondaryTextView)
 
-        overlayView?.addView(watchedTextView)
-        overlayView?.addView(brainyMarker)
-        overlayView?.addView(remainingTextView)
+        val pillLp = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        )
+        rootContainer?.addView(pillContainer, pillLp)
 
-        setupTouchListener()
+        setupTouchHandling()
 
         try {
-            windowManager?.addView(overlayView, params)
+            windowManager?.addView(rootContainer, params)
+            updateUI(
+                dm.getTotalReelsToday(),
+                dm.getTotalLimit(),
+                dm.getSessionCount(),
+                lastPlatform,
+                dm.isFocusModeActive()
+            )
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
 
-        val dataManager = ScrolaDataManager.getInstance(this)
-        updateUI(
-            dataManager.getTotalReelsToday(),
-            dataManager.getTotalLimit(),
-            dataManager.getSessionCount(),
-            "",
-            dataManager.isFocusModeActive()
+    private fun applyLayoutSizingAndPosition(animateSnap: Boolean) {
+        val m = metricsForSize(overlaySize)
+        pillContainer?.setPadding(
+            dpToPx(m.padH),
+            dpToPx(m.padV),
+            dpToPx(m.padH + 2),
+            dpToPx(m.padV)
         )
+        brainyView?.layoutParams = (brainyView?.layoutParams as? LinearLayout.LayoutParams)?.apply {
+            width = dpToPx(m.mascotWidthDp)
+            height = dpToPx(m.mascotHeightDp)
+        }
+        primaryTextView?.setTextSize(TypedValue.COMPLEX_UNIT_SP, m.primarySp)
+        secondaryTextView?.setTextSize(TypedValue.COMPLEX_UNIT_SP, m.secondarySp)
+
+        val dm = ScrolaDataManager.getInstance(this)
+        brainyView?.setSkinIndex(dm.getSkinIndex())
+
+        if (stickToTopCentre) {
+            val targetY = getNotchDockY()
+            if (animateSnap && params != null) {
+                animateWindowPosition(params!!.x, params!!.y, 0, targetY)
+            } else {
+                params?.x = 0
+                params?.y = targetY
+                safeUpdateViewLayout()
+            }
+        } else {
+            val savedY = dm.getFreeOverlayY()
+            params?.x = dm.getFreeOverlayX()
+            params?.y = if (savedY >= 0) savedY else getNotchDockY() + dpToPx(24)
+            safeUpdateViewLayout()
+        }
+    }
+
+    private fun animateWindowPosition(fromX: Int, fromY: Int, toX: Int, toY: Int) {
+        positionAnimator?.cancel()
+        positionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 360L
+            interpolator = OvershootInterpolator(1.05f)
+            addUpdateListener { anim ->
+                val t = anim.animatedFraction
+                params?.x = (fromX + (toX - fromX) * t).toInt()
+                params?.y = (fromY + (toY - fromY) * t).toInt()
+                safeUpdateViewLayout()
+            }
+            start()
+        }
+    }
+
+    private fun playNotchDockEntranceAnimation() {
+        val pill = pillContainer ?: return
+        pill.post {
+            pill.animate().cancel()
+            pill.translationY = dpToPx(58).toFloat()
+            pill.scaleX = 0.52f
+            pill.scaleY = 0.52f
+            pill.alpha = 0f
+
+            val slideY = ObjectAnimator.ofFloat(pill, View.TRANSLATION_Y, dpToPx(58).toFloat(), 0f)
+            val scaleX = ObjectAnimator.ofFloat(pill, View.SCALE_X, 0.52f, 1f)
+            val scaleY = ObjectAnimator.ofFloat(pill, View.SCALE_Y, 0.52f, 1f)
+            val alpha = ObjectAnimator.ofFloat(pill, View.ALPHA, 0f, 1f)
+
+            AnimatorSet().apply {
+                playTogether(slideY, scaleX, scaleY, alpha)
+                duration = 480L
+                interpolator = OvershootInterpolator(1.25f)
+                start()
+            }
+        }
+    }
+
+    private fun playMicroTapBounce() {
+        val mascot = brainyView ?: return
+        mascot.animate().cancel()
+        mascot.scaleX = 0.84f
+        mascot.scaleY = 0.84f
+        mascot.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(260L)
+            .setInterpolator(OvershootInterpolator(2.0f))
+            .start()
     }
 
     private fun createPillBackground(bgColor: Int, strokeColor: Int): GradientDrawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = dpToPx(24).toFloat()
+            cornerRadius = dpToPx(999).toFloat()
             setColor(bgColor)
             setStroke(dpToPx(1), strokeColor)
         }
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun setupTouchListener() {
+    private fun setupTouchHandling() {
         var initialX = 0
         var initialY = 0
         var initialTouchX = 0f
@@ -263,48 +567,60 @@ class ScrolaOverlayService : Service() {
         var hasMoved = false
         var lastTapTime = 0L
 
-        overlayView?.setOnTouchListener { _, event ->
+        pillContainer?.setOnTouchListener { _, event ->
+            val currentParams = params ?: return@setOnTouchListener false
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    initialX = params?.x ?: 0
-                    initialY = params?.y ?: 0
+                    initialX = currentParams.x
+                    initialY = currentParams.y
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
                     hasMoved = false
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    if (stickToTopCentre) {
+                        // Locked cleanly at top notch when "Top Notch" mode is active
+                        return@setOnTouchListener true
+                    }
                     val dx = (event.rawX - initialTouchX).toInt()
                     val dy = (event.rawY - initialTouchY).toInt()
-                    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                    if (abs(dx) > 10 || abs(dy) > 10) {
                         hasMoved = true
                         val metrics = resources.displayMetrics
-                        val halfW = metrics.widthPixels / 2 - dpToPx(60)
-                        val maxY = Math.max(0, metrics.heightPixels - dpToPx(90))
-                        params?.x = (initialX + dx).coerceIn(-halfW, halfW)
-                        params?.y = (initialY + dy).coerceIn(dpToPx(20), maxY)
-                        try {
-                            windowManager?.updateViewLayout(overlayView, params)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                        val halfWidth = metrics.widthPixels / 2
+                        val minY = getNotchDockY()
+                        val maxY = metrics.heightPixels - dpToPx(110)
+
+                        currentParams.x = (initialX + dx).coerceIn(
+                            -(halfWidth - dpToPx(48)),
+                            halfWidth - dpToPx(48)
+                        )
+                        currentParams.y = (initialY + dy).coerceIn(minY, maxY)
+                        safeUpdateViewLayout()
                     }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (!hasMoved) {
+                    if (hasMoved && !stickToTopCentre) {
+                        ScrolaDataManager.getInstance(this@ScrolaOverlayService)
+                            .setFreeOverlayPosition(currentParams.x, currentParams.y)
+                    } else if (!hasMoved) {
+                        playMicroTapBounce()
                         val now = System.currentTimeMillis()
-                        if (now - lastTapTime < 350) {
-                            // Double tap launches Scrola directly
-                            val launchIntent = Intent(this@ScrolaOverlayService, MainActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        if (now - lastTapTime < 340L) {
+                            val launchIntent = Intent(
+                                this@ScrolaOverlayService,
+                                MainActivity::class.java
+                            ).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                             }
                             startActivity(launchIntent)
+                            lastTapTime = 0L
                         } else {
-                            // Single tap toggles Compact <-> Expanded
                             toggleExpandCollapse()
+                            lastTapTime = now
                         }
-                        lastTapTime = now
                     }
                     true
                 }
@@ -315,46 +631,82 @@ class ScrolaOverlayService : Service() {
 
     private fun toggleExpandCollapse() {
         isExpanded = !isExpanded
-        params?.height = if (isExpanded) dpToPx(48) else dpToPx(42)
-        val dataManager = ScrolaDataManager.getInstance(this)
+        val dm = ScrolaDataManager.getInstance(this)
+        dm.setOverlayExpanded(isExpanded)
         updateUI(
-            dataManager.getTotalReelsToday(),
-            dataManager.getTotalLimit(),
-            dataManager.getSessionCount(),
-            "",
-            dataManager.isFocusModeActive()
+            dm.getTotalReelsToday(),
+            dm.getTotalLimit(),
+            dm.getSessionCount(),
+            lastPlatform,
+            dm.isFocusModeActive()
         )
     }
 
     fun updateUI(today: Int, limit: Int, session: Int, platform: String, isFocus: Boolean) {
-        val remaining = Math.max(0, limit - today)
-        val isLimitReached = today >= limit || isFocus
+        val dm = ScrolaDataManager.getInstance(this)
+        brainyView?.setSkinIndex(dm.getSkinIndex())
+
+        val remaining = max(0, limit - today)
+        val isLimitReached = limit > 0 && today >= limit
+        val ratio = if (limit > 0) today.toFloat() / limit.toFloat() else 0f
+
+        val mood = when {
+            isFocus -> "focused"
+            isLimitReached -> "sad"
+            ratio >= 0.78f -> "tired"
+            ratio >= 0.48f -> "neutral"
+            else -> "happy"
+        }
+        brainyView?.setMood(mood)
+
+        val shortPlatform = when (platform.lowercase()) {
+            "instagram" -> " · IG"
+            "youtube" -> " · YT"
+            "facebook" -> " · FB"
+            "snapchat" -> " · SC"
+            else -> ""
+        }
 
         if (isExpanded) {
-            watchedTextView?.text = "$today watched"
-            remainingTextView?.text = if (isFocus) "LOCKED" else "$remaining left"
+            primaryTextView?.text = "$today watched"
+            secondaryTextView?.text = if (isFocus) {
+                "LOCKED"
+            } else {
+                "$remaining left$shortPlatform"
+            }
         } else {
-            watchedTextView?.text = "$today"
-            remainingTextView?.text = if (isFocus) "LOCK" else "$remaining"
+            primaryTextView?.text = "$today"
+            secondaryTextView?.text = when {
+                isFocus -> "LOCK"
+                isLimitReached -> "0 left"
+                else -> "$remaining left"
+            }
         }
 
         val strokeColor = when {
             isFocus || isLimitReached -> Color.parseColor("#FF5252")
-            today >= (limit * 0.8) -> Color.parseColor("#FFC15A")
-            else -> Color.parseColor("#2A2A2A")
+            ratio >= 0.8f -> Color.parseColor("#FFC15A")
+            else -> Color.parseColor("#2E2E2E")
         }
 
         val rightColor = when {
             isFocus || isLimitReached -> Color.parseColor("#FF5252")
-            today >= (limit * 0.8) -> Color.parseColor("#FFC15A")
+            ratio >= 0.8f -> Color.parseColor("#FFC15A")
             else -> Color.parseColor("#FF6B24")
         }
 
-        remainingTextView?.setTextColor(rightColor)
-        overlayView?.background = createPillBackground(Color.parseColor("#101010"), strokeColor)
+        secondaryTextView?.setTextColor(rightColor)
+        pillContainer?.background = createPillBackground(Color.parseColor("#111111"), strokeColor)
 
+        safeUpdateViewLayout()
+    }
+
+    private fun safeUpdateViewLayout() {
+        val container = rootContainer ?: return
+        val currentParams = params ?: return
+        if (!container.isAttachedToWindow) return
         try {
-            windowManager?.updateViewLayout(overlayView, params)
+            windowManager?.updateViewLayout(container, currentParams)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -365,16 +717,19 @@ class ScrolaOverlayService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        if (overlayView != null) {
+        isServiceRunning = false
+        positionAnimator?.cancel()
+        positionAnimator = null
+        if (rootContainer != null) {
             try {
-                if (overlayView?.isAttachedToWindow == true) {
-                    windowManager?.removeView(overlayView)
+                if (rootContainer?.isAttachedToWindow == true) {
+                    windowManager?.removeView(rootContainer)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            overlayView = null
+            rootContainer = null
         }
+        super.onDestroy()
     }
 }

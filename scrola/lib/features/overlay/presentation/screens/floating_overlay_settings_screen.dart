@@ -211,9 +211,16 @@ class _FloatingOverlaySettingsScreenState
                   ScrolaSegmentedControl<bool>(
                     items: const [true, false],
                     selectedItem: _tracking.overlayStickToNotch,
-                    labelBuilder: (stick) => stick ? 'Top centre' : 'Free',
+                    labelBuilder: (stick) => stick ? 'Top notch' : 'Free',
                     onChanged: (stick) =>
                         _tracking.updateOverlayConfig(stickToNotch: stick),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _tracking.overlayStickToNotch
+                        ? 'Pinned securely at the top camera notch.'
+                        : 'Free mode — drag Brainy anywhere on screen.',
+                    style: AppTypography.caption(color: AppColors.mutedText),
                   ),
                   const SizedBox(height: 20),
                   Text(

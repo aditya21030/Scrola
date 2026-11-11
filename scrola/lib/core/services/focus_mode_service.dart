@@ -50,7 +50,18 @@ class FocusModeService extends ChangeNotifier {
       snapchatLimit: storage.snapchatLimit,
       isFocusActive: true,
       isOverlayEnabled: storage.isOverlayEnabled,
+      isTrackingEnabled: storage.isTrackingEnabled,
+      platformLimitsEnabled: storage.platformLimitsEnabled,
+      selectedPlatforms: storage.selectedPlatforms,
+      stickToNotch: storage.overlayStickToNotch,
+      overlayExpanded: storage.overlayExpanded,
+      overlaySize: storage.overlaySize,
+      skinIndex: storage.equippedSkin.index,
     );
+    if (storage.isOverlayEnabled &&
+        await ScrolaNativeBridge.isOverlayPermissionGranted()) {
+      await ScrolaNativeBridge.startOverlayService(animateEntrance: true);
+    }
 
     _startTicker();
     notifyListeners();
@@ -107,7 +118,17 @@ class FocusModeService extends ChangeNotifier {
       snapchatLimit: storage.snapchatLimit,
       isFocusActive: false,
       isOverlayEnabled: storage.isOverlayEnabled,
+      isTrackingEnabled: storage.isTrackingEnabled,
+      platformLimitsEnabled: storage.platformLimitsEnabled,
+      selectedPlatforms: storage.selectedPlatforms,
+      stickToNotch: storage.overlayStickToNotch,
+      overlayExpanded: storage.overlayExpanded,
+      overlaySize: storage.overlaySize,
+      skinIndex: storage.equippedSkin.index,
     );
+    if (!storage.isTrackingEnabled) {
+      await ScrolaNativeBridge.stopOverlayService();
+    }
 
     await HapticService.medium();
     notifyListeners();
@@ -130,7 +151,17 @@ class FocusModeService extends ChangeNotifier {
       snapchatLimit: storage.snapchatLimit,
       isFocusActive: false,
       isOverlayEnabled: storage.isOverlayEnabled,
+      isTrackingEnabled: storage.isTrackingEnabled,
+      platformLimitsEnabled: storage.platformLimitsEnabled,
+      selectedPlatforms: storage.selectedPlatforms,
+      stickToNotch: storage.overlayStickToNotch,
+      overlayExpanded: storage.overlayExpanded,
+      overlaySize: storage.overlaySize,
+      skinIndex: storage.equippedSkin.index,
     );
+    if (!storage.isTrackingEnabled) {
+      await ScrolaNativeBridge.stopOverlayService();
+    }
 
     await HapticService.celebratory();
     notifyListeners();

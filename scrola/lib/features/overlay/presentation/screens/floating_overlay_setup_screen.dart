@@ -101,12 +101,12 @@ class FloatingOverlaySetupScreen extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Stick to top centre',
+                                        'Stick to top notch',
                                         style: AppTypography.subheading()
                                             .copyWith(fontSize: 15),
                                       ),
                                       Text(
-                                        'Brainy stays in the notch area',
+                                        'Pinned cleanly in the notch area',
                                         style: AppTypography.caption(
                                           color: AppColors.secondaryText,
                                         ),
@@ -189,7 +189,7 @@ class FloatingOverlaySetupScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Sits at the top centre. On phones with a camera cutout, Scrola places it just beside the cutout.',
+                            'Pinned at the top camera notch by default. Choose Free mode anytime if you want to drag Brainy anywhere.',
                             style: AppTypography.caption(
                               color: AppColors.mutedText,
                             ),

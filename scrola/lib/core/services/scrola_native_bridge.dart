@@ -75,9 +75,11 @@ class ScrolaNativeBridge {
   }
 
   /// Start the floating tracker overlay
-  static Future<void> startOverlayService() async {
+  static Future<void> startOverlayService({bool animateEntrance = true}) async {
     try {
-      await _methodChannel.invokeMethod('startOverlayService');
+      await _methodChannel.invokeMethod('startOverlayService', {
+        'animateEntrance': animateEntrance,
+      });
     } on PlatformException catch (e) {
       debugPrint('Error starting overlay: $e');
     }
@@ -92,6 +94,39 @@ class ScrolaNativeBridge {
     }
   }
 
+  /// Refresh live overlay layout/position/style config without restarting
+  static Future<void> refreshOverlayConfig() async {
+    try {
+      await _methodChannel.invokeMethod('refreshOverlayConfig');
+    } on PlatformException catch (e) {
+      debugPrint('Error refreshing overlay config: $e');
+    }
+  }
+
+  /// Check if Android 13+ notification permission is granted
+  static Future<bool> isNotificationPermissionGranted() async {
+    try {
+      final bool? granted =
+          await _methodChannel.invokeMethod<bool>('isNotificationPermissionGranted');
+      return granted ?? true;
+    } on PlatformException catch (e) {
+      debugPrint('Error checking notification permission: $e');
+      return true;
+    }
+  }
+
+  /// Prompt Android 13+ runtime notification permission dialog
+  static Future<bool> requestNotificationPermission() async {
+    try {
+      final bool? granted =
+          await _methodChannel.invokeMethod<bool>('requestNotificationPermission');
+      return granted ?? true;
+    } on PlatformException catch (e) {
+      debugPrint('Error requesting notification permission: $e');
+      return false;
+    }
+  }
+
   /// Synchronize configured limits and focus status to Native Android services
   static Future<void> syncLimits({
     required int totalLimit,
@@ -101,6 +136,13 @@ class ScrolaNativeBridge {
     required int snapchatLimit,
     required bool isFocusActive,
     required bool isOverlayEnabled,
+    bool? isTrackingEnabled,
+    bool? platformLimitsEnabled,
+    List<String>? selectedPlatforms,
+    bool? stickToNotch,
+    bool? overlayExpanded,
+    String? overlaySize,
+    int? skinIndex,
   }) async {
     try {
       await _methodChannel.invokeMethod('syncLimits', {
@@ -111,6 +153,13 @@ class ScrolaNativeBridge {
         'snapchatLimit': snapchatLimit,
         'isFocusActive': isFocusActive,
         'isOverlayEnabled': isOverlayEnabled,
+        'isTrackingEnabled': ?isTrackingEnabled,
+        'platformLimitsEnabled': ?platformLimitsEnabled,
+        'selectedPlatforms': ?selectedPlatforms,
+        'stickToNotch': ?stickToNotch,
+        'overlayExpanded': ?overlayExpanded,
+        'overlaySize': ?overlaySize,
+        'skinIndex': ?skinIndex,
       });
     } on PlatformException catch (e) {
       debugPrint('Error syncing limits: $e');

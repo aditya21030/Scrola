@@ -1,13 +1,17 @@
 package com.example.scrola
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.annotation.NonNull
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.scrola.service.ScrolaAccessibilityService
 import com.example.scrola.service.ScrolaDataManager
 import com.example.scrola.service.ScrolaOverlayService
@@ -20,9 +24,11 @@ class MainActivity : FlutterActivity() {
 
     private val METHOD_CHANNEL = "com.scrola.app/native"
     private val EVENT_CHANNEL = "com.scrola.app/reel_events"
+    private val REQUEST_CODE_NOTIFICATIONS = 1002
 
     private var eventSink: EventChannel.EventSink? = null
     private var reelEventReceiver: BroadcastReceiver? = null
+    private var pendingNotificationResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -47,12 +53,23 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
                 "startOverlayService" -> {
-                    startOverlayService()
+                    val animate = call.argument<Boolean>("animateEntrance") ?: true
+                    startOverlayService(animate)
                     result.success(true)
                 }
                 "stopOverlayService" -> {
                     stopOverlayService()
                     result.success(true)
+                }
+                "refreshOverlayConfig" -> {
+                    ScrolaOverlayService.refreshConfig(this)
+                    result.success(true)
+                }
+                "isNotificationPermissionGranted" -> {
+                    result.success(isNotificationPermissionGranted())
+                }
+                "requestNotificationPermission" -> {
+                    requestNotificationPermission(result)
                 }
                 "updateOverlayStats" -> {
                     val today = call.argument<Int>("today") ?: dataManager.getTotalReelsToday()
@@ -86,6 +103,35 @@ class MainActivity : FlutterActivity() {
                     val overlayEnabled = call.argument<Boolean>("isOverlayEnabled")
                     if (overlayEnabled != null) dataManager.setOverlayEnabled(overlayEnabled)
 
+                    val trackingEnabled = call.argument<Boolean>("isTrackingEnabled")
+                    if (trackingEnabled != null) dataManager.setTrackingEnabled(trackingEnabled)
+
+                    val platformLimitsEnabled = call.argument<Boolean>("platformLimitsEnabled")
+                    if (platformLimitsEnabled != null) {
+                        dataManager.setPlatformLimitsEnabled(platformLimitsEnabled)
+                    }
+
+                    val selectedPlatforms = call.argument<List<String>>("selectedPlatforms")
+                    if (selectedPlatforms != null) {
+                        dataManager.setSelectedPlatforms(selectedPlatforms.joinToString(","))
+                    }
+
+                    val stickToNotch = call.argument<Boolean>("stickToNotch")
+                    if (stickToNotch != null) dataManager.setStickToNotch(stickToNotch)
+
+                    val overlayExpanded = call.argument<Boolean>("overlayExpanded")
+                    if (overlayExpanded != null) dataManager.setOverlayExpanded(overlayExpanded)
+
+                    val overlaySize = call.argument<String>("overlaySize")
+                    if (overlaySize != null) dataManager.setOverlaySize(overlaySize)
+
+                    val skinIndex = call.argument<Int>("skinIndex")
+                    if (skinIndex != null) dataManager.setSkinIndex(skinIndex)
+
+                    if (ScrolaOverlayService.isServiceRunning) {
+                        ScrolaOverlayService.refreshConfig(this)
+                    }
+
                     result.success(true)
                 }
                 "getNativeStats" -> {
@@ -97,7 +143,9 @@ class MainActivity : FlutterActivity() {
                         "snapchat" to dataManager.getPlatformReels("snapchat"),
                         "sessionCount" to dataManager.getSessionCount(),
                         "totalLimit" to dataManager.getTotalLimit(),
-                        "isFocusActive" to dataManager.isFocusModeActive()
+                        "isFocusActive" to dataManager.isFocusModeActive(),
+                        "isTrackingEnabled" to dataManager.isTrackingEnabled(),
+                        "overlayExpanded" to dataManager.isOverlayExpanded()
                     )
                     result.success(stats)
                 }
@@ -162,23 +210,52 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun startOverlayService() {
-        if (!isOverlayPermissionGranted()) return
-        val intent = Intent(this, ScrolaOverlayService::class.java).apply {
-            action = ScrolaOverlayService.ACTION_START
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
+    private fun isNotificationPermissionGranted(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
         } else {
-            startService(intent)
+            true
         }
     }
 
-    private fun stopOverlayService() {
-        val intent = Intent(this, ScrolaOverlayService::class.java).apply {
-            action = ScrolaOverlayService.ACTION_STOP
+    private fun requestNotificationPermission(result: MethodChannel.Result) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || isNotificationPermissionGranted()) {
+            result.success(true)
+            return
         }
-        stopService(intent)
+        pendingNotificationResult?.success(false)
+        pendingNotificationResult = result
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            REQUEST_CODE_NOTIFICATIONS
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_NOTIFICATIONS) {
+            val granted = grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            pendingNotificationResult?.success(granted)
+            pendingNotificationResult = null
+        }
+    }
+
+    private fun startOverlayService(animateEntrance: Boolean = true) {
+        if (!isOverlayPermissionGranted()) return
+        ScrolaOverlayService.start(this, animateEntrance)
+    }
+
+    private fun stopOverlayService() {
+        ScrolaOverlayService.stop(this)
     }
 
     private fun registerReelReceiver() {

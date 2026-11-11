@@ -17,6 +17,11 @@ class HeroGaugeSection extends StatefulWidget {
   final BrainyMood mood;
   final BrainySkin skin;
   final bool isTracking;
+  final bool permissionsReady;
+  final bool stickToNotch;
+  final bool isLaunchingToNotch;
+  final Key? mascotKey;
+  final VoidCallback? onToggleScrola;
   final VoidCallback? onMascotTap;
   final VoidCallback? onStreakTap;
   final VoidCallback? onXpTap;
@@ -33,7 +38,12 @@ class HeroGaugeSection extends StatefulWidget {
     required this.levelTitle,
     required this.mood,
     required this.skin,
-    this.isTracking = true,
+    this.isTracking = false,
+    this.permissionsReady = true,
+    this.stickToNotch = true,
+    this.isLaunchingToNotch = false,
+    this.mascotKey,
+    this.onToggleScrola,
     this.onMascotTap,
     this.onStreakTap,
     this.onXpTap,
@@ -72,7 +82,8 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
   }
 
   String _speechText(int remaining) {
-    if (!widget.isTracking) return 'Enable tracking to count.';
+    if (!widget.permissionsReady) return 'Grant permission to count reels.';
+    if (!widget.isTracking) return 'Scrola is resting. Turn on to launch!';
     if (remaining <= 0) return 'Limit hit. Brainy needs rest.';
     if (remaining <= (widget.totalLimit * 0.25).round()) {
       return '$remaining left. Slow down!';
@@ -87,21 +98,25 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
     final progress = (widget.reelsToday / safeLimit).clamp(0.0, 1.0);
     final reduceMotion = AppMotion.isReducedMotion(context);
 
-    final paceColor = !widget.isTracking
+    final paceColor = !widget.permissionsReady
         ? AppColors.warning
-        : remaining == 0
-            ? AppColors.error
-            : remaining <= (safeLimit * 0.25)
-                ? AppColors.warning
-                : AppColors.success;
+        : !widget.isTracking
+            ? AppColors.secondaryText
+            : remaining == 0
+                ? AppColors.error
+                : remaining <= (safeLimit * 0.25)
+                    ? AppColors.warning
+                    : AppColors.success;
 
-    final paceLabel = !widget.isTracking
+    final paceLabel = !widget.permissionsReady
         ? 'Setup needed'
-        : remaining == 0
-            ? 'Limit reached'
-            : remaining <= (safeLimit * 0.25)
-                ? 'Nearly there'
-                : 'On pace';
+        : !widget.isTracking
+            ? 'Paused'
+            : remaining == 0
+                ? 'Limit reached'
+                : remaining <= (safeLimit * 0.25)
+                    ? 'Nearly there'
+                    : 'On pace';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -165,11 +180,18 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                       HapticService.light();
                       widget.onMascotTap?.call();
                     },
-                    child: BrainyMascot(
-                      mood: widget.mood,
-                      skin: widget.skin,
-                      size: ringSize * 0.62,
-                      animate: !reduceMotion,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 220),
+                      opacity: widget.isLaunchingToNotch ? 0.14 : 1.0,
+                      child: KeyedSubtree(
+                        key: widget.mascotKey,
+                        child: BrainyMascot(
+                          mood: widget.mood,
+                          skin: widget.skin,
+                          size: ringSize * 0.62,
+                          animate: !reduceMotion,
+                        ),
+                      ),
                     ),
                   ),
                   // Left floating orb: streak
@@ -367,7 +389,183 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
             ],
           ),
         ),
+        if (widget.onToggleScrola != null) ...[
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: _ScrolaPowerToggleCard(
+              permissionsReady: widget.permissionsReady,
+              isTracking: widget.isTracking,
+              stickToNotch: widget.stickToNotch,
+              isLaunching: widget.isLaunchingToNotch,
+              onTap: widget.onToggleScrola!,
+            ),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _ScrolaPowerToggleCard extends StatelessWidget {
+  final bool permissionsReady;
+  final bool isTracking;
+  final bool stickToNotch;
+  final bool isLaunching;
+  final VoidCallback onTap;
+
+  const _ScrolaPowerToggleCard({
+    required this.permissionsReady,
+    required this.isTracking,
+    required this.stickToNotch,
+    required this.isLaunching,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool canTurnOn = permissionsReady;
+    final String label = !canTurnOn
+        ? 'Grant Accessibility to Start'
+        : isLaunching
+            ? 'Docking Brainy to Notch...'
+            : isTracking
+                ? 'Scrola Active · Tap to Turn Off'
+                : 'Turn Scrola On';
+
+    final String subtitle = !canTurnOn
+        ? 'Required so Brainy can count & guard feeds'
+        : isTracking
+            ? (stickToNotch
+                ? 'Pinned cleanly at top notch'
+                : 'Floating freely on screen')
+            : 'Sends Brainy into the top notch & starts counting';
+
+    final Color bg = !canTurnOn
+        ? const Color(0xFF1F1712)
+        : isTracking
+            ? const Color(0xFF18231A)
+            : AppColors.primaryAccent;
+
+    final Color borderColor = !canTurnOn
+        ? AppColors.warning.withValues(alpha: 0.45)
+        : isTracking
+            ? AppColors.success.withValues(alpha: 0.45)
+            : AppColors.primaryAccent;
+
+    final Color titleColor = (!canTurnOn || isTracking)
+        ? AppColors.primaryText
+        : AppColors.textOnAccent;
+
+    final Color subColor = (!canTurnOn || isTracking)
+        ? AppColors.secondaryText
+        : AppColors.textOnAccent.withValues(alpha: 0.78);
+
+    final Color iconBg = (!canTurnOn || isTracking)
+        ? (canTurnOn ? AppColors.success : AppColors.warning)
+            .withValues(alpha: 0.18)
+        : Colors.black.withValues(alpha: 0.14);
+
+    final Color iconFg = !canTurnOn
+        ? AppColors.warning
+        : isTracking
+            ? AppColors.success
+            : AppColors.textOnAccent;
+
+    return GestureDetector(
+      onTap: isLaunching ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: borderColor, width: 1.2),
+          boxShadow: (!isTracking && canTurnOn)
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryAccent.withValues(alpha: 0.28),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: iconBg,
+              ),
+              child: Icon(
+                !canTurnOn
+                    ? Icons.accessibility_new_rounded
+                    : isTracking
+                        ? Icons.power_settings_new_rounded
+                        : Icons.rocket_launch_rounded,
+                color: iconFg,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.subheading(color: titleColor).copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption(color: subColor).copyWith(
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: (!canTurnOn || isTracking)
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                !canTurnOn
+                    ? 'Fix'
+                    : isTracking
+                        ? 'OFF'
+                        : 'ON',
+                style: AppTypography.caption(
+                  color: (!canTurnOn || isTracking)
+                      ? AppColors.primaryText
+                      : AppColors.textOnAccent,
+                ).copyWith(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

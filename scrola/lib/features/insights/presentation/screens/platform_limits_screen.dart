@@ -21,6 +21,7 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
   late int _yt;
   late int _fb;
   late int _sc;
+  late bool _enforcePerApp;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
     _yt = _tracking.youtubeLimit;
     _fb = _tracking.facebookLimit;
     _sc = _tracking.snapchatLimit;
+    _enforcePerApp = _tracking.platformLimitsEnabled;
   }
 
   int get _sum => _ig + _yt + _fb + _sc;
@@ -103,42 +105,92 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView(
+              const SizedBox(height: 12),
+              ScrolaCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
                   children: [
-                    _PlatformLimitTile(
-                      platform: SocialPlatform.instagram,
-                      name: 'Instagram Reels',
-                      value: _ig,
-                      onDelta: (d) =>
-                          setState(() => _ig = (_ig + d).clamp(0, 150)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Enforce per-app limits',
+                            style: AppTypography.subheading().copyWith(
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _enforcePerApp
+                                ? 'Each app stops at its individual cap.'
+                                : 'Off — all apps share your $total-reel daily goal.',
+                            style: AppTypography.caption(),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    _PlatformLimitTile(
-                      platform: SocialPlatform.youtube,
-                      name: 'YouTube Shorts',
-                      value: _yt,
-                      onDelta: (d) =>
-                          setState(() => _yt = (_yt + d).clamp(0, 150)),
-                    ),
-                    const SizedBox(height: 12),
-                    _PlatformLimitTile(
-                      platform: SocialPlatform.facebook,
-                      name: 'Facebook Reels',
-                      value: _fb,
-                      onDelta: (d) =>
-                          setState(() => _fb = (_fb + d).clamp(0, 150)),
-                    ),
-                    const SizedBox(height: 12),
-                    _PlatformLimitTile(
-                      platform: SocialPlatform.snapchat,
-                      name: 'Snapchat Spotlight',
-                      value: _sc,
-                      onDelta: (d) =>
-                          setState(() => _sc = (_sc + d).clamp(0, 150)),
+                    Switch.adaptive(
+                      value: _enforcePerApp,
+                      activeThumbColor: AppColors.primaryAccent,
+                      activeTrackColor:
+                          AppColors.primaryAccent.withValues(alpha: 0.4),
+                      onChanged: (val) {
+                        HapticService.light();
+                        setState(() => _enforcePerApp = val);
+                      },
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _enforcePerApp ? 1.0 : 0.55,
+                  child: ListView(
+                    children: [
+                      _PlatformLimitTile(
+                        platform: SocialPlatform.instagram,
+                        name: 'Instagram Reels',
+                        value: _ig,
+                        onDelta: (d) => setState(() {
+                          _enforcePerApp = true;
+                          _ig = (_ig + d).clamp(0, 150);
+                        }),
+                      ),
+                      const SizedBox(height: 12),
+                      _PlatformLimitTile(
+                        platform: SocialPlatform.youtube,
+                        name: 'YouTube Shorts',
+                        value: _yt,
+                        onDelta: (d) => setState(() {
+                          _enforcePerApp = true;
+                          _yt = (_yt + d).clamp(0, 150);
+                        }),
+                      ),
+                      const SizedBox(height: 12),
+                      _PlatformLimitTile(
+                        platform: SocialPlatform.facebook,
+                        name: 'Facebook Reels',
+                        value: _fb,
+                        onDelta: (d) => setState(() {
+                          _enforcePerApp = true;
+                          _fb = (_fb + d).clamp(0, 150);
+                        }),
+                      ),
+                      const SizedBox(height: 12),
+                      _PlatformLimitTile(
+                        platform: SocialPlatform.snapchat,
+                        name: 'Snapchat Spotlight',
+                        value: _sc,
+                        onDelta: (d) => setState(() {
+                          _enforcePerApp = true;
+                          _sc = (_sc + d).clamp(0, 150);
+                        }),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -151,6 +203,7 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
                     youtube: _yt,
                     facebook: _fb,
                     snapchat: _sc,
+                    platformLimitsEnabled: _enforcePerApp,
                   );
                   Navigator.of(context).pop();
                 },

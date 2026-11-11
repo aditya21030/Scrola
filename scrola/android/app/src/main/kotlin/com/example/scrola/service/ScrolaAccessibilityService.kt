@@ -43,6 +43,10 @@ class ScrolaAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         val packageName = event.packageName?.toString() ?: return
+        if (!dataManager.isTrackingEnabled() && !dataManager.isFocusModeActive()) {
+            isInShortsFeed = false
+            return
+        }
         val platform = resolvePlatform(packageName)
 
         if (platform == null) {
@@ -82,8 +86,13 @@ class ScrolaAccessibilityService : AccessibilityService() {
     }
 
     private fun checkIfInShortsFeed(platform: String, event: AccessibilityEvent) {
+        if (!dataManager.isPlatformSelected(platform) && !dataManager.isFocusModeActive()) {
+            isInShortsFeed = false
+            return
+        }
         val rootNode = rootInActiveWindow ?: return
 
+        val wasInFeed = isInShortsFeed
         isInShortsFeed = when (platform) {
             "instagram" -> isInstagramReels(rootNode, event)
             "youtube" -> isYouTubeShorts(rootNode, event)
@@ -92,7 +101,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
             else -> false
         }
 
-        if (isInShortsFeed) {
+        if (isInShortsFeed && !wasInFeed) {
             onShortsFeedEntered(platform)
         }
     }
@@ -178,6 +187,9 @@ class ScrolaAccessibilityService : AccessibilityService() {
     }
 
     private fun handleScrollEvent(platform: String, event: AccessibilityEvent) {
+        if (!dataManager.isPlatformSelected(platform) && !dataManager.isFocusModeActive()) {
+            return
+        }
         val now = System.currentTimeMillis()
 
         // Debounce: A distinct reel swipe takes at least 1200ms
@@ -196,6 +208,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
             }
         } else isInShortsFeed
 
+        isInShortsFeed = inFeed
         if (!inFeed) return
 
         lastScrollTimestamp = now
@@ -228,8 +241,6 @@ class ScrolaAccessibilityService : AccessibilityService() {
             putExtra(EXTRA_TOTAL, totalToday)
         }
         sendBroadcast(intent)
-
-        checkAndEnforceLimits(platform)
     }
 
     private fun checkAndEnforceLimits(platform: String): Boolean {

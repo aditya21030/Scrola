@@ -35,7 +35,7 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen> {
         builder: (context, _) {
           final accessOn = _tracking.isAccessibilityGranted;
           final overlayOn = _tracking.isOverlayGranted;
-          final active = accessOn && !_batteryOptimized;
+          final active = accessOn && _tracking.isTrackingEnabled && !_batteryOptimized;
 
           return SafeArea(
             child: Padding(
@@ -66,7 +66,7 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen> {
                           child: Icon(
                             active
                                 ? Icons.check_circle_rounded
-                                : Icons.warning_amber_rounded,
+                                : Icons.power_settings_new_rounded,
                             color: active ? AppColors.success : AppColors.warning,
                             size: 32,
                           ),
@@ -74,19 +74,24 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen> {
                         const SizedBox(height: 14),
                         Text(
                           active
-                              ? 'Tracking is active'
-                              : 'Action needed to track smoothly',
+                              ? 'Scrola is on'
+                              : accessOn
+                                  ? 'Scrola is turned off'
+                                  : 'Action needed to track smoothly',
                           style: AppTypography.heading(),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          accessOn
-                              ? 'Last reel counted • 2 min ago'
-                              : 'Accessibility permission is required',
+                          active
+                              ? 'Counting reels & showing Brainy in overlay'
+                              : accessOn
+                                  ? 'Turn on from Home or below whenever ready'
+                                  : 'Accessibility permission is required',
                           style: AppTypography.caption(
                             color: AppColors.secondaryText,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -95,6 +100,26 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen> {
                   Expanded(
                     child: ListView(
                       children: [
+                        _StatusCheckRow(
+                          title: 'Scrola master switch',
+                          subtitle: _tracking.isTrackingEnabled
+                              ? 'Monitoring active feeds'
+                              : 'Paused until you turn Scrola on',
+                          isOk: _tracking.isTrackingEnabled && accessOn,
+                          actionLabel: _tracking.isTrackingEnabled
+                              ? 'Turn Off'
+                              : 'Turn On',
+                          onTap: () {
+                            if (!accessOn) {
+                              _tracking.requestAccessibilityPermission();
+                            } else {
+                              _tracking.toggleTracking(
+                                !_tracking.isTrackingEnabled,
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 10),
                         _StatusCheckRow(
                           title: 'Accessibility',
                           subtitle: 'Counts reel swipes',

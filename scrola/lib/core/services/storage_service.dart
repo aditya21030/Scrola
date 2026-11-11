@@ -46,6 +46,7 @@ class StorageService {
   static const String _keySnapchatLimit = 'scrola_snapchat_limit';
 
   static const String _keyTrackingEnabled = 'scrola_tracking_enabled';
+  static const String _keyPlatformLimitsEnabled = 'scrola_platform_limits_enabled';
   static const String _keyOverlayEnabled = 'scrola_overlay_enabled';
   static const String _keyOverlayStickToNotch = 'scrola_overlay_notch';
   static const String _keyOverlayExpanded = 'scrola_overlay_expanded';
@@ -217,9 +218,16 @@ class StorageService {
   }
 
   // Toggles & Overlay Settings
-  bool get isTrackingEnabled => _prefs?.getBool(_keyTrackingEnabled) ?? true;
+  // Master switch defaults OFF: opening the app never auto-activates Scrola.
+  bool get isTrackingEnabled => _prefs?.getBool(_keyTrackingEnabled) ?? false;
   Future<void> setTrackingEnabled(bool enabled) async {
     await _prefs?.setBool(_keyTrackingEnabled, enabled);
+  }
+
+  bool get platformLimitsEnabled =>
+      _prefs?.getBool(_keyPlatformLimitsEnabled) ?? false;
+  Future<void> setPlatformLimitsEnabled(bool enabled) async {
+    await _prefs?.setBool(_keyPlatformLimitsEnabled, enabled);
   }
 
   bool get isOverlayEnabled => _prefs?.getBool(_keyOverlayEnabled) ?? true;

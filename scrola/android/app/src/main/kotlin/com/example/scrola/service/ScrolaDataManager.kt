@@ -19,6 +19,15 @@ class ScrolaDataManager private constructor(context: Context) {
         private const val KEY_TOTAL_LIMIT = "total_daily_limit"
         private const val KEY_FOCUS_ACTIVE = "focus_mode_active"
         private const val KEY_OVERLAY_ENABLED = "overlay_enabled"
+        private const val KEY_TRACKING_ENABLED = "tracking_enabled"
+        private const val KEY_PLATFORM_LIMITS_ENABLED = "platform_limits_enabled"
+        private const val KEY_SELECTED_PLATFORMS = "selected_platforms"
+        private const val KEY_STICK_TO_NOTCH = "overlay_stick_to_notch"
+        private const val KEY_OVERLAY_EXPANDED = "overlay_expanded"
+        private const val KEY_OVERLAY_SIZE = "overlay_size"
+        private const val KEY_SKIN_INDEX = "skin_index"
+        private const val KEY_FREE_X = "overlay_free_x"
+        private const val KEY_FREE_Y = "overlay_free_y"
 
         @Volatile
         private var instance: ScrolaDataManager? = null
@@ -121,18 +130,93 @@ class ScrolaDataManager private constructor(context: Context) {
         prefs.edit().putBoolean(KEY_OVERLAY_ENABLED, enabled).apply()
     }
 
+    fun isTrackingEnabled(): Boolean {
+        return prefs.getBoolean(KEY_TRACKING_ENABLED, false)
+    }
+
+    fun setTrackingEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_TRACKING_ENABLED, enabled).apply()
+    }
+
+    fun isPlatformLimitsEnabled(): Boolean {
+        return prefs.getBoolean(KEY_PLATFORM_LIMITS_ENABLED, false)
+    }
+
+    fun setPlatformLimitsEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_PLATFORM_LIMITS_ENABLED, enabled).apply()
+    }
+
+    fun getSelectedPlatforms(): Set<String> {
+        val raw = prefs.getString(KEY_SELECTED_PLATFORMS, "instagram,youtube") ?: "instagram,youtube"
+        return raw.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
+    }
+
+    fun setSelectedPlatforms(platformsCsv: String) {
+        prefs.edit().putString(KEY_SELECTED_PLATFORMS, platformsCsv).apply()
+    }
+
+    fun isPlatformSelected(platform: String): Boolean {
+        val selected = getSelectedPlatforms()
+        return selected.isEmpty() || selected.contains(platform.lowercase())
+    }
+
+    fun isStickToNotch(): Boolean {
+        return prefs.getBoolean(KEY_STICK_TO_NOTCH, true)
+    }
+
+    fun setStickToNotch(stick: Boolean) {
+        prefs.edit().putBoolean(KEY_STICK_TO_NOTCH, stick).apply()
+    }
+
+    fun isOverlayExpanded(): Boolean {
+        return prefs.getBoolean(KEY_OVERLAY_EXPANDED, false)
+    }
+
+    fun setOverlayExpanded(expanded: Boolean) {
+        prefs.edit().putBoolean(KEY_OVERLAY_EXPANDED, expanded).apply()
+    }
+
+    fun getOverlaySize(): String {
+        return prefs.getString(KEY_OVERLAY_SIZE, "Medium") ?: "Medium"
+    }
+
+    fun setOverlaySize(size: String) {
+        prefs.edit().putString(KEY_OVERLAY_SIZE, size).apply()
+    }
+
+    fun getSkinIndex(): Int {
+        return prefs.getInt(KEY_SKIN_INDEX, 0)
+    }
+
+    fun setSkinIndex(index: Int) {
+        prefs.edit().putInt(KEY_SKIN_INDEX, index).apply()
+    }
+
+    fun getFreeOverlayX(): Int = prefs.getInt(KEY_FREE_X, 0)
+
+    fun getFreeOverlayY(): Int = prefs.getInt(KEY_FREE_Y, -1)
+
+    fun setFreeOverlayPosition(x: Int, y: Int) {
+        prefs.edit()
+            .putInt(KEY_FREE_X, x)
+            .putInt(KEY_FREE_Y, y)
+            .apply()
+    }
+
     fun isPlatformLimitReached(platform: String): Boolean {
+        val totalCount = getTotalReelsToday()
+        val totalLimit = getTotalLimit()
+        if (totalCount >= totalLimit) return true
+        if (!isPlatformLimitsEnabled()) return false
+
         val count = getPlatformReels(platform)
         val limit = getPlatformLimit(platform, when (platform) {
             "instagram" -> 20
             "youtube" -> 15
             "facebook" -> 10
             "snapchat" -> 5
-            else -> 40
+            else -> totalLimit
         })
-        val totalCount = getTotalReelsToday()
-        val totalLimit = getTotalLimit()
-
-        return (count >= limit) || (totalCount >= totalLimit)
+        return count >= limit
     }
 }

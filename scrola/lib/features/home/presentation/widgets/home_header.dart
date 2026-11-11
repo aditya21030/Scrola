@@ -7,6 +7,7 @@ class HomeHeader extends StatelessWidget {
   final String greeting;
   final String userName;
   final bool isTracking;
+  final bool permissionsReady;
   final VoidCallback? onNotificationTap;
   final VoidCallback? onTrackingTap;
 
@@ -14,14 +15,26 @@ class HomeHeader extends StatelessWidget {
     super.key,
     this.greeting = 'Good evening',
     this.userName = 'Alex',
-    this.isTracking = true,
+    this.isTracking = false,
+    this.permissionsReady = true,
     this.onNotificationTap,
     this.onTrackingTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = isTracking ? AppColors.success : AppColors.warning;
+    final Color statusColor;
+    final String statusLabel;
+    if (!permissionsReady) {
+      statusColor = AppColors.warning;
+      statusLabel = 'Setup needed';
+    } else if (!isTracking) {
+      statusColor = AppColors.secondaryText;
+      statusLabel = 'Scrola off';
+    } else {
+      statusColor = AppColors.success;
+      statusLabel = 'Scrola on';
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
@@ -90,7 +103,7 @@ class HomeHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    isTracking ? 'Tracking on' : 'Setup needed',
+                    statusLabel,
                     style: AppTypography.caption(color: statusColor).copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
