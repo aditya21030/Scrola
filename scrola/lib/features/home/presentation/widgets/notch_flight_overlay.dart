@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/services/gamification_engine.dart';
@@ -8,17 +9,30 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 
 /// Launches a curved bezier flight animation sending the Hero Brainy mascot
 /// from its current render position into the top-center phone notch capsule.
+///
+/// Guarantees [onArrive] runs and is awaited once—even on frame hitches,
+/// reduced-motion settings, or missing layout geometry.
 Future<void> playNotchFlightAnimation({
   required BuildContext context,
   required GlobalKey mascotKey,
   required BrainyMood mood,
   required BrainySkin skin,
   required bool stickToNotch,
-  required VoidCallback onArrive,
+  required FutureOr<void> Function() onArrive,
 }) async {
+  var arrivalTriggered = false;
+  Future<void>? arrivalFuture;
+
+  void triggerArrivalOnce() {
+    if (arrivalTriggered) return;
+    arrivalTriggered = true;
+    arrivalFuture = Future<void>.sync(onArrive);
+  }
+
   if (AppMotion.isReducedMotion(context)) {
     HapticService.medium();
-    onArrive();
+    triggerArrivalOnce();
+    await arrivalFuture;
     return;
   }
 
@@ -27,7 +41,8 @@ Future<void> playNotchFlightAnimation({
       mascotKey.currentContext?.findRenderObject() as RenderBox?;
   if (overlay == null || renderBox == null || !renderBox.hasSize) {
     HapticService.medium();
-    onArrive();
+    triggerArrivalOnce();
+    await arrivalFuture;
     return;
   }
 
@@ -41,7 +56,9 @@ Future<void> playNotchFlightAnimation({
     math.max(20.0, media.padding.top + (stickToNotch ? 6.0 : 28.0)),
   );
 
-  final completer = OverlayEntry(
+  final stageCompleter = Completer<void>();
+  late final OverlayEntry entry;
+  entry = OverlayEntry(
     builder: (ctx) => _NotchFlightStage(
       sourceCenter: sourceCenter,
       sourceSize: sourceSize,
@@ -49,15 +66,28 @@ Future<void> playNotchFlightAnimation({
       mood: mood,
       skin: skin,
       stickToNotch: stickToNotch,
-      onArrive: onArrive,
+      onArrive: triggerArrivalOnce,
+      onComplete: () {
+        if (!stageCompleter.isCompleted) {
+          stageCompleter.complete();
+        }
+      },
     ),
   );
 
-  overlay.insert(completer);
-  await Future<void>.delayed(const Duration(milliseconds: 820));
-  if (completer.mounted) {
-    completer.remove();
+  overlay.insert(entry);
+  try {
+    await stageCompleter.future.timeout(
+      const Duration(milliseconds: 1150),
+      onTimeout: () {},
+    );
+  } finally {
+    triggerArrivalOnce();
+    if (entry.mounted) {
+      entry.remove();
+    }
   }
+  await (arrivalFuture ?? Future<void>.value());
 }
 
 class _NotchFlightStage extends StatefulWidget {
@@ -68,6 +98,7 @@ class _NotchFlightStage extends StatefulWidget {
   final BrainySkin skin;
   final bool stickToNotch;
   final VoidCallback onArrive;
+  final VoidCallback onComplete;
 
   const _NotchFlightStage({
     required this.sourceCenter,
@@ -77,6 +108,7 @@ class _NotchFlightStage extends StatefulWidget {
     required this.skin,
     required this.stickToNotch,
     required this.onArrive,
+    required this.onComplete,
   });
 
   @override
@@ -87,6 +119,20 @@ class _NotchFlightStageState extends State<_NotchFlightStage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool _arrivalFired = false;
+  bool _completed = false;
+
+  void _fireArrivalIfNeeded() {
+    if (_arrivalFired) return;
+    _arrivalFired = true;
+    HapticService.medium();
+    widget.onArrive();
+  }
+
+  void _notifyCompleteOnce() {
+    if (_completed) return;
+    _completed = true;
+    widget.onComplete();
+  }
 
   @override
   void initState() {
@@ -95,11 +141,17 @@ class _NotchFlightStageState extends State<_NotchFlightStage>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 780),
-    )..addListener(() {
+    )
+      ..addListener(() {
         if (!_arrivalFired && _controller.value >= 0.78) {
-          _arrivalFired = true;
-          HapticService.medium();
-          widget.onArrive();
+          _fireArrivalIfNeeded();
+        }
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed ||
+            status == AnimationStatus.dismissed) {
+          _fireArrivalIfNeeded();
+          _notifyCompleteOnce();
         }
       });
     _controller.forward();
@@ -107,6 +159,8 @@ class _NotchFlightStageState extends State<_NotchFlightStage>
 
   @override
   void dispose() {
+    _fireArrivalIfNeeded();
+    _notifyCompleteOnce();
     _controller.dispose();
     super.dispose();
   }

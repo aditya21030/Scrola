@@ -33,7 +33,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _tracking.checkPermissions();
+      _tracking.refreshPermissionsAndSyncOverlay();
       _tracking.syncFromNative();
     }
   }

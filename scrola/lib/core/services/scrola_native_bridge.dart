@@ -74,14 +74,20 @@ class ScrolaNativeBridge {
     }
   }
 
-  /// Start the floating tracker overlay
-  static Future<void> startOverlayService({bool animateEntrance = true}) async {
+  /// Start the floating tracker overlay. Returns true if the native service
+  /// started or updated cleanly.
+  static Future<bool> startOverlayService({bool animateEntrance = true}) async {
     try {
-      await _methodChannel.invokeMethod('startOverlayService', {
-        'animateEntrance': animateEntrance,
-      });
+      final bool? started = await _methodChannel.invokeMethod<bool>(
+        'startOverlayService',
+        {'animateEntrance': animateEntrance},
+      );
+      return started ?? false;
     } on PlatformException catch (e) {
       debugPrint('Error starting overlay: $e');
+      return false;
+    } on MissingPluginException {
+      return false;
     }
   }
 

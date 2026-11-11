@@ -16,6 +16,7 @@ class HeroGaugeSection extends StatefulWidget {
   final bool permissionsReady;
   final bool stickToNotch;
   final bool isOverlayEnabled;
+  final bool isOverlayGranted;
   final bool isLaunchingToNotch;
   final Key? mascotKey;
   final VoidCallback? onToggleScrola;
@@ -33,6 +34,7 @@ class HeroGaugeSection extends StatefulWidget {
     this.permissionsReady = true,
     this.stickToNotch = true,
     this.isOverlayEnabled = true,
+    this.isOverlayGranted = true,
     this.isLaunchingToNotch = false,
     this.mascotKey,
     this.onToggleScrola,
@@ -270,6 +272,7 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                   isTracking: widget.isTracking,
                   stickToNotch: widget.stickToNotch,
                   isOverlayEnabled: widget.isOverlayEnabled,
+                  isOverlayGranted: widget.isOverlayGranted,
                   isLaunching: widget.isLaunchingToNotch,
                   onTap: widget.onToggleScrola!,
                 ),
@@ -277,6 +280,7 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                   const SizedBox(height: 8),
                   _FloatingMascotQuickChip(
                     isOverlayEnabled: widget.isOverlayEnabled,
+                    isOverlayGranted: widget.isOverlayGranted,
                     isTracking: widget.isTracking,
                     onTap: widget.onToggleOverlay!,
                   ),
@@ -292,24 +296,42 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
 
 class _FloatingMascotQuickChip extends StatelessWidget {
   final bool isOverlayEnabled;
+  final bool isOverlayGranted;
   final bool isTracking;
   final VoidCallback onTap;
 
   const _FloatingMascotQuickChip({
     required this.isOverlayEnabled,
+    required this.isOverlayGranted,
     required this.isTracking,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final String label = isOverlayEnabled
-        ? (isTracking
-            ? 'Remove floating mascot'
-            : 'Floating mascot enabled · Tap to remove')
-        : 'Floating mascot removed · Tap to restore';
+    final bool needsPermission = !isOverlayGranted;
+    final String label = needsPermission
+        ? 'Allow display over apps for mascot'
+        : isOverlayEnabled
+            ? (isTracking
+                ? 'Remove floating mascot'
+                : 'Floating mascot enabled · Tap to remove')
+            : 'Floating mascot removed · Tap to restore';
+
+    final Color borderColor = needsPermission
+        ? AppColors.warning.withValues(alpha: 0.45)
+        : isOverlayEnabled
+            ? AppColors.borderSubtle
+            : AppColors.primaryAccent.withValues(alpha: 0.35);
+
+    final Color fgColor = needsPermission
+        ? AppColors.warning
+        : isOverlayEnabled
+            ? AppColors.secondaryText
+            : AppColors.primaryAccent;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         HapticService.subtle();
         onTap();
@@ -319,23 +341,19 @@ class _FloatingMascotQuickChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceSolid,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isOverlayEnabled
-                ? AppColors.borderSubtle
-                : AppColors.primaryAccent.withValues(alpha: 0.35),
-          ),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isOverlayEnabled
-                  ? Icons.visibility_off_rounded
-                  : Icons.visibility_rounded,
+              needsPermission
+                  ? Icons.layers_rounded
+                  : isOverlayEnabled
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
               size: 15,
-              color: isOverlayEnabled
-                  ? AppColors.secondaryText
-                  : AppColors.primaryAccent,
+              color: fgColor,
             ),
             const SizedBox(width: 8),
             Flexible(
@@ -344,9 +362,7 @@ class _FloatingMascotQuickChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.caption(
-                  color: isOverlayEnabled
-                      ? AppColors.secondaryText
-                      : AppColors.primaryAccent,
+                  color: fgColor,
                 ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
@@ -362,6 +378,7 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
   final bool isTracking;
   final bool stickToNotch;
   final bool isOverlayEnabled;
+  final bool isOverlayGranted;
   final bool isLaunching;
   final VoidCallback onTap;
 
@@ -370,6 +387,7 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
     required this.isTracking,
     required this.stickToNotch,
     required this.isOverlayEnabled,
+    required this.isOverlayGranted,
     required this.isLaunching,
     required this.onTap,
   });
@@ -390,11 +408,15 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
         : isTracking
             ? (!isOverlayEnabled
                 ? 'Counting quietly (floating mascot removed)'
-                : stickToNotch
-                    ? 'Pinned cleanly at top notch'
-                    : 'Floating freely on screen')
+                : !isOverlayGranted
+                    ? 'Grant Display over apps below for floating mascot'
+                    : stickToNotch
+                        ? 'Pinned cleanly at top notch'
+                        : 'Floating freely on screen')
             : (isOverlayEnabled
-                ? 'Sends Brainy into the top notch & starts counting'
+                ? (isOverlayGranted
+                    ? 'Sends Brainy into the top notch & starts counting'
+                    : 'Starts counting · enable Display over apps for mascot')
                 : 'Starts counting silently without floating mascot');
 
     final Color bg = !canTurnOn
@@ -429,6 +451,7 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
             : AppColors.textOnAccent;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: isLaunching ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 240),

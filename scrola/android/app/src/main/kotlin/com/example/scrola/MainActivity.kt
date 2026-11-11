@@ -54,8 +54,7 @@ class MainActivity : FlutterActivity() {
                 }
                 "startOverlayService" -> {
                     val animate = call.argument<Boolean>("animateEntrance") ?: true
-                    startOverlayService(animate)
-                    result.success(true)
+                    result.success(startOverlayService(animate))
                 }
                 "stopOverlayService" -> {
                     stopOverlayService()
@@ -251,9 +250,9 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun startOverlayService(animateEntrance: Boolean = true) {
-        if (!isOverlayPermissionGranted()) return
-        ScrolaOverlayService.start(this, animateEntrance)
+    private fun startOverlayService(animateEntrance: Boolean = true): Boolean {
+        if (!isOverlayPermissionGranted()) return false
+        return ScrolaOverlayService.start(this, animateEntrance)
     }
 
     private fun stopOverlayService() {

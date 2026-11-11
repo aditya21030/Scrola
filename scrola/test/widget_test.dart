@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scrola/core/services/gamification_engine.dart';
 import 'package:scrola/core/services/haptic_service.dart';
 import 'package:scrola/core/services/storage_service.dart';
+import 'package:scrola/core/services/tracking_service.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
 import 'package:scrola/features/home/presentation/widgets/scrola_bottom_nav.dart';
 import 'package:scrola/features/onboarding/presentation/screens/onboarding_wizard_screen.dart';
@@ -176,5 +178,95 @@ void main() {
     await tester.tap(find.text('Choose my goal'));
     await advanceStep();
     expect(find.text('Finish setup'), findsOneWidget);
+  });
+
+  testWidgets(
+      'HomeScreen Turn Scrola On runs notch flight and starts overlay reliably',
+      (WidgetTester tester) async {
+    const channel = MethodChannel('com.scrola.app/native');
+    final recordedCalls = <MethodCall>[];
+    var overlayGranted = true;
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      recordedCalls.add(call);
+      switch (call.method) {
+        case 'isAccessibilityServiceEnabled':
+          return true;
+        case 'isOverlayPermissionGranted':
+          return overlayGranted;
+        case 'isNotificationPermissionGranted':
+          return true;
+        case 'startOverlayService':
+          return overlayGranted;
+        case 'stopOverlayService':
+        case 'syncLimits':
+        case 'refreshOverlayConfig':
+          return true;
+        case 'getNativeStats':
+          return <String, dynamic>{'totalToday': 0, 'sessionCount': 0};
+        default:
+          return null;
+      }
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final tracking = TrackingService();
+    await tracking.initialize();
+    await tracking.toggleOverlay(true);
+    await tracking.toggleTracking(false);
+    await tracking.checkPermissions();
+    recordedCalls.clear();
+
+    await tester.pumpWidget(const MaterialApp(home: MainShell()));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Turn Scrola On'), findsOneWidget);
+
+    await tester.tap(find.text('Turn Scrola On'));
+    await tester.pump();
+    expect(find.text('Docking Brainy to Notch...'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(tracking.isTrackingEnabled, isTrue);
+    expect(find.text('Scrola Active · Tap to Turn Off'), findsOneWidget);
+    expect(
+      recordedCalls.any((c) => c.method == 'startOverlayService'),
+      isTrue,
+    );
+
+    // Turning off then testing Turn On when overlay permission is missing
+    await tester.tap(find.text('Scrola Active · Tap to Turn Off'));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(tracking.isTrackingEnabled, isFalse);
+
+    overlayGranted = false;
+    await tracking.checkPermissions();
+    await tester.pump();
+
+    await tester.tap(find.text('Turn Scrola On'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tracking.isTrackingEnabled, isTrue);
+    expect(
+      find.text('Allow display over apps for mascot'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Allow display over apps for mascot'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.text('Open Overlay Settings'), findsOneWidget);
   });
 }

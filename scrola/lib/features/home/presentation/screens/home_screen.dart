@@ -55,14 +55,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good evening';
   }
 
-  void _push(BuildContext context, Widget screen) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  Future<void> _push(BuildContext context, Widget screen) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+    if (mounted) {
+      await TrackingService().refreshPermissionsAndSyncOverlay();
+    }
   }
 
   Future<void> _handleToggleScrola(TrackingService tracking) async {
     if (!tracking.isAccessibilityGranted) {
+      await tracking.checkPermissions();
+    }
+    if (!mounted) return;
+
+    if (!tracking.isAccessibilityGranted) {
       HapticService.light();
-      _push(context, const TrackingStatusScreen());
+      await _push(context, const TrackingStatusScreen());
       return;
     }
 
@@ -72,58 +80,68 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (!tracking.isOverlayEnabled) {
+    if (!tracking.isOverlayGranted) {
+      await tracking.checkPermissions();
+    }
+    if (!mounted) return;
+
+    if (!tracking.isOverlayEnabled || !tracking.isOverlayGranted) {
       HapticService.medium();
       await tracking.toggleTracking(true, startOverlayNow: false);
+      if (mounted && tracking.isOverlayEnabled && !tracking.isOverlayGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.surfaceSolid,
+            content: Text(
+              'Scrola is ON! Allow "Display over other apps" to dock Brainy in the notch.',
+              style: AppTypography.caption(color: AppColors.primaryText),
+            ),
+            action: SnackBarAction(
+              label: 'Allow',
+              textColor: AppColors.primaryAccent,
+              onPressed: () =>
+                  _push(context, const FloatingOverlaySetupScreen()),
+            ),
+          ),
+        );
+      }
       return;
     }
 
     if (_isLaunchingToNotch) return;
     setState(() => _isLaunchingToNotch = true);
 
-    await playNotchFlightAnimation(
-      context: context,
-      mascotKey: _mascotKey,
-      mood: tracking.currentMood,
-      skin: tracking.equippedSkin,
-      stickToNotch: tracking.overlayStickToNotch,
-      onArrive: () {
-        tracking.toggleTracking(true, startOverlayNow: true);
-      },
-    );
-
-    if (!mounted) return;
-    setState(() => _isLaunchingToNotch = false);
-
-    if (!tracking.isOverlayGranted && tracking.isOverlayEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.surfaceSolid,
-          content: Text(
-            'Scrola is ON! Enable overlay permission to dock Brainy in the notch.',
-            style: AppTypography.caption(color: AppColors.primaryText),
-          ),
-          action: SnackBarAction(
-            label: 'Allow',
-            textColor: AppColors.primaryAccent,
-            onPressed: () =>
-                _push(context, const FloatingOverlaySetupScreen()),
-          ),
-        ),
+    try {
+      await playNotchFlightAnimation(
+        context: context,
+        mascotKey: _mascotKey,
+        mood: tracking.currentMood,
+        skin: tracking.equippedSkin,
+        stickToNotch: tracking.overlayStickToNotch,
+        onArrive: () => tracking.toggleTracking(true, startOverlayNow: true),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isLaunchingToNotch = false);
+      }
     }
   }
 
   Future<void> _handleToggleOverlay(TrackingService tracking) async {
-    if (tracking.isOverlayEnabled) {
-      HapticService.light();
-      await tracking.toggleOverlay(false);
-      return;
+    if (!tracking.isOverlayGranted) {
+      await tracking.checkPermissions();
     }
+    if (!mounted) return;
 
     if (!tracking.isOverlayGranted) {
       HapticService.light();
-      _push(context, const FloatingOverlaySetupScreen());
+      await _push(context, const FloatingOverlaySetupScreen());
+      return;
+    }
+
+    if (tracking.isOverlayEnabled) {
+      HapticService.light();
+      await tracking.toggleOverlay(false);
       return;
     }
 
@@ -135,17 +153,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_isLaunchingToNotch) return;
     setState(() => _isLaunchingToNotch = true);
-    await playNotchFlightAnimation(
-      context: context,
-      mascotKey: _mascotKey,
-      mood: tracking.currentMood,
-      skin: tracking.equippedSkin,
-      stickToNotch: tracking.overlayStickToNotch,
-      onArrive: () {
-        tracking.toggleOverlay(true);
-      },
-    );
-    if (mounted) setState(() => _isLaunchingToNotch = false);
+    try {
+      await playNotchFlightAnimation(
+        context: context,
+        mascotKey: _mascotKey,
+        mood: tracking.currentMood,
+        skin: tracking.equippedSkin,
+        stickToNotch: tracking.overlayStickToNotch,
+        onArrive: () => tracking.toggleOverlay(true),
+      );
+    } finally {
+      if (mounted) setState(() => _isLaunchingToNotch = false);
+    }
   }
 
   @override
@@ -239,6 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           permissionsReady: permissionsReady,
                           stickToNotch: tracking.overlayStickToNotch,
                           isOverlayEnabled: tracking.isOverlayEnabled,
+                          isOverlayGranted: tracking.isOverlayGranted,
                           isLaunchingToNotch: _isLaunchingToNotch,
                           mascotKey: _mascotKey,
                           onToggleScrola: () => _handleToggleScrola(tracking),

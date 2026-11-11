@@ -312,6 +312,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
         }
 
         val intent = Intent(BROADCAST_REEL_EVENT).apply {
+            setPackage(packageName)
             putExtra(EXTRA_EVENT_TYPE, "reel_watched")
             putExtra(EXTRA_PLATFORM, platform)
             putExtra(EXTRA_COUNT, platformToday)
@@ -359,6 +360,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
         performGlobalAction(GLOBAL_ACTION_BACK)
 
         val intent = Intent(BROADCAST_REEL_EVENT).apply {
+            setPackage(packageName)
             putExtra(EXTRA_EVENT_TYPE, if (isFocus) "focus_block_enforced" else "limit_block_enforced")
             putExtra(EXTRA_PLATFORM, platform)
         }

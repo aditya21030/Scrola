@@ -10,12 +10,41 @@ import '../../../../shared/widgets/scrola_toggle.dart';
 import '../widgets/notch_pill_preview.dart';
 import 'floating_overlay_preview_screen.dart';
 
-class FloatingOverlaySetupScreen extends StatelessWidget {
+class FloatingOverlaySetupScreen extends StatefulWidget {
   const FloatingOverlaySetupScreen({super.key});
 
   @override
+  State<FloatingOverlaySetupScreen> createState() =>
+      _FloatingOverlaySetupScreenState();
+}
+
+class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
+    with WidgetsBindingObserver {
+  final TrackingService _tracking = TrackingService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _tracking.refreshPermissionsAndSyncOverlay();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _tracking.refreshPermissionsAndSyncOverlay(animateEntrance: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final tracking = TrackingService();
+    final tracking = _tracking;
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
@@ -24,6 +53,7 @@ class FloatingOverlaySetupScreen extends StatelessWidget {
         builder: (context, _) {
           final isExpanded = tracking.overlayExpanded;
           final stickToNotch = tracking.overlayStickToNotch;
+          final overlayGranted = tracking.isOverlayGranted;
 
           return SafeArea(
             child: Padding(
@@ -38,6 +68,87 @@ class FloatingOverlaySetupScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (!overlayGranted) ...[
+                            ScrolaCard(
+                              backgroundColor: AppColors.warningBackground,
+                              borderColor:
+                                  AppColors.warning.withValues(alpha: 0.4),
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.layers_rounded,
+                                        color: AppColors.warning,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          'Allow display over other apps',
+                                          style: AppTypography.subheading()
+                                              .copyWith(fontSize: 15),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Required for the floating Brainy mascot. If greyed out in Settings, open App Info → ⋮ → Allow restricted settings.',
+                                    style: AppTypography.caption(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ScrolaPrimaryButton(
+                                    label: 'Open Overlay Settings',
+                                    useMediumHaptic: true,
+                                    onPressed: () {
+                                      tracking.requestOverlayPermission();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.successBackground,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color:
+                                      AppColors.success.withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.success,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Display over other apps allowed',
+                                      style: AppTypography.caption(
+                                        color: AppColors.success,
+                                        weight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
                           Row(
                             children: [
                               Expanded(

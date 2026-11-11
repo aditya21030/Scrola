@@ -125,13 +125,18 @@ class TrackingService extends ChangeNotifier {
     );
   }
 
+  Future<StorageService> _ensureStorage() async {
+    return _storage ??= await StorageService.getInstance();
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _storage = await StorageService.getInstance();
+    await _ensureStorage();
     await checkPermissions();
     await syncLimitsWithNative();
     await syncFromNative();
+    await startOverlayIfActive(animateEntrance: false);
 
     _eventSubscription?.cancel();
     _eventSubscription = ScrolaNativeBridge.reelEventsStream.listen(
@@ -173,6 +178,37 @@ class TrackingService extends ChangeNotifier {
     _isOverlayGranted = await ScrolaNativeBridge.isOverlayPermissionGranted();
     _isNotificationGranted = await ScrolaNativeBridge.isNotificationPermissionGranted();
     notifyListeners();
+  }
+
+  /// Refreshes native permissions and, when needed on Android 11-16 where AppOps
+  /// settles slightly after resuming from Settings, re-checks once after 250ms.
+  Future<void> refreshPermissionsAndSyncOverlay({
+    bool animateEntrance = false,
+  }) async {
+    final prevAccess = _isAccessibilityGranted;
+    final prevOverlay = _isOverlayGranted;
+    await checkPermissions();
+    if (_isOverlayGranted) {
+      await startOverlayIfActive(
+        animateEntrance: animateEntrance || !prevOverlay,
+      );
+    }
+    if (_isAccessibilityGranted != prevAccess && !_isAccessibilityGranted) {
+      return;
+    }
+    if (!_isAccessibilityGranted || !_isOverlayGranted) {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      final laterOverlay = await ScrolaNativeBridge.isOverlayPermissionGranted();
+      final laterAccess = await ScrolaNativeBridge.isAccessibilityServiceEnabled();
+      if (laterOverlay != _isOverlayGranted || laterAccess != _isAccessibilityGranted) {
+        _isOverlayGranted = laterOverlay;
+        _isAccessibilityGranted = laterAccess;
+        notifyListeners();
+        if (laterOverlay) {
+          await startOverlayIfActive(animateEntrance: true);
+        }
+      }
+    }
   }
 
   Future<void> requestAccessibilityPermission() async {
@@ -231,7 +267,8 @@ class TrackingService extends ChangeNotifier {
   }
 
   Future<void> setPlatformLimitsEnabled(bool enabled) async {
-    await _storage?.setPlatformLimitsEnabled(enabled);
+    final storage = await _ensureStorage();
+    await storage.setPlatformLimitsEnabled(enabled);
     await syncLimitsWithNative();
     notifyListeners();
   }
@@ -240,11 +277,18 @@ class TrackingService extends ChangeNotifier {
     bool enabled, {
     bool startOverlayNow = true,
   }) async {
-    await _storage?.setTrackingEnabled(enabled);
+    final storage = await _ensureStorage();
+    await storage.setTrackingEnabled(enabled);
     await syncLimitsWithNative();
     if (enabled) {
-      if (startOverlayNow && isOverlayEnabled && _isOverlayGranted) {
-        await ScrolaNativeBridge.startOverlayService(animateEntrance: true);
+      if (startOverlayNow && storage.isOverlayEnabled) {
+        if (!_isOverlayGranted) {
+          _isOverlayGranted =
+              await ScrolaNativeBridge.isOverlayPermissionGranted();
+        }
+        if (_isOverlayGranted) {
+          await ScrolaNativeBridge.startOverlayService(animateEntrance: true);
+        }
       }
     } else {
       await ScrolaNativeBridge.stopOverlayService();
@@ -252,25 +296,42 @@ class TrackingService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> startOverlayIfActive({bool animateEntrance = true}) async {
-    if (isTrackingEnabled && isOverlayEnabled && _isOverlayGranted) {
-      await ScrolaNativeBridge.startOverlayService(
-        animateEntrance: animateEntrance,
-      );
+  Future<bool> startOverlayIfActive({bool animateEntrance = true}) async {
+    final storage = await _ensureStorage();
+    if (!storage.isTrackingEnabled || !storage.isOverlayEnabled) {
+      return false;
     }
+    if (!_isOverlayGranted) {
+      _isOverlayGranted = await ScrolaNativeBridge.isOverlayPermissionGranted();
+      notifyListeners();
+    }
+    if (!_isOverlayGranted) return false;
+    return ScrolaNativeBridge.startOverlayService(
+      animateEntrance: animateEntrance,
+    );
   }
 
-  Future<void> toggleOverlay(bool enabled) async {
-    await _storage?.setOverlayEnabled(enabled);
+  Future<bool> toggleOverlay(bool enabled) async {
+    final storage = await _ensureStorage();
+    await storage.setOverlayEnabled(enabled);
+    var overlayStarted = true;
     if (enabled) {
-      if (isTrackingEnabled || FocusModeService().isActive) {
-        await ScrolaNativeBridge.startOverlayService(animateEntrance: true);
+      if (!_isOverlayGranted) {
+        _isOverlayGranted =
+            await ScrolaNativeBridge.isOverlayPermissionGranted();
+      }
+      if (!_isOverlayGranted) {
+        overlayStarted = false;
+      } else if (storage.isTrackingEnabled || FocusModeService().isActive) {
+        overlayStarted =
+            await ScrolaNativeBridge.startOverlayService(animateEntrance: true);
       }
     } else {
       await ScrolaNativeBridge.stopOverlayService();
     }
     await syncLimitsWithNative();
     notifyListeners();
+    return overlayStarted;
   }
 
   Future<void> updateOverlayConfig({

@@ -25,6 +25,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
@@ -58,10 +59,13 @@ class ScrolaOverlayService : Service() {
     private var overlaySize: String = "Medium"
     private var lastPlatform: String = ""
     private var positionAnimator: ValueAnimator? = null
+    private var entranceAnimatorSet: AnimatorSet? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val longPressHandler = Handler(Looper.getMainLooper())
     private var longPressRunnable: Runnable? = null
 
     companion object {
+        private const val TAG = "ScrolaOverlayService"
         const val ACTION_START = "ACTION_START_OVERLAY"
         const val ACTION_STOP = "ACTION_STOP_OVERLAY"
         const val ACTION_UPDATE = "ACTION_UPDATE_OVERLAY"
@@ -82,15 +86,26 @@ class ScrolaOverlayService : Service() {
         var isServiceRunning: Boolean = false
             private set
 
-        fun start(context: Context, animateEntrance: Boolean = true) {
+        @Volatile
+        private var activeInstance: ScrolaOverlayService? = null
+
+        fun start(context: Context, animateEntrance: Boolean = true): Boolean {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-                return
+                Log.w(TAG, "Cannot start overlay: SYSTEM_ALERT_WINDOW not granted")
+                return false
+            }
+            val instance = activeInstance
+            if (isServiceRunning && instance != null) {
+                instance.mainHandler.post {
+                    instance.handleStartOrRefresh(animateEntrance = animateEntrance)
+                }
+                return true
             }
             val intent = Intent(context, ScrolaOverlayService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_ANIMATE_ENTRANCE, animateEntrance)
             }
-            startCompat(context, intent)
+            return startCompat(context, intent)
         }
 
         fun stop(context: Context) {
@@ -100,12 +115,19 @@ class ScrolaOverlayService : Service() {
             try {
                 context.stopService(intent)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.w(TAG, "Error stopping ScrolaOverlayService", e)
             }
         }
 
         fun refreshConfig(context: Context) {
             if (!isServiceRunning) return
+            val instance = activeInstance
+            if (instance != null) {
+                instance.mainHandler.post {
+                    instance.handleRefreshConfig()
+                }
+                return
+            }
             val intent = Intent(context, ScrolaOverlayService::class.java).apply {
                 action = ACTION_REFRESH_CONFIG
             }
@@ -127,6 +149,15 @@ class ScrolaOverlayService : Service() {
                 return
             }
 
+            // Deliver updates directly when already running to avoid Android 12+ background FGS restrictions.
+            val instance = activeInstance
+            if (isServiceRunning && instance != null) {
+                instance.mainHandler.post {
+                    instance.handleLiveStatsUpdate(today, limit, session, platform, isFocus)
+                }
+                return
+            }
+
             val intent = Intent(context, ScrolaOverlayService::class.java).apply {
                 action = ACTION_UPDATE
                 putExtra(EXTRA_TODAY, today)
@@ -138,15 +169,17 @@ class ScrolaOverlayService : Service() {
             startCompat(context, intent)
         }
 
-        private fun startCompat(context: Context, intent: Intent) {
-            try {
+        private fun startCompat(context: Context, intent: Intent): Boolean {
+            return try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent)
                 } else {
                     context.startService(intent)
                 }
+                true
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Failed to start ScrolaOverlayService", e)
+                false
             }
         }
     }
@@ -156,6 +189,7 @@ class ScrolaOverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         isServiceRunning = true
+        activeInstance = this
         createNotificationChannel()
         startServiceForeground()
         loadConfigFromDataManager()
@@ -171,18 +205,18 @@ class ScrolaOverlayService : Service() {
 
     private fun startServiceForeground() {
         val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= 34) {
-            try {
+        try {
+            if (Build.VERSION.SDK_INT >= 34) {
                 startForeground(
                     NOTIFICATION_ID,
                     notification,
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
                 )
-            } catch (e: Exception) {
+            } else {
                 startForeground(NOTIFICATION_ID, notification)
             }
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Log.e(TAG, "startForeground failed", e)
         }
     }
 
@@ -198,42 +232,84 @@ class ScrolaOverlayService : Service() {
                 return START_NOT_STICKY
             }
             ACTION_START -> {
-                loadConfigFromDataManager()
-                applyLayoutSizingAndPosition(animateSnap = false)
-                updateUI(
-                    dm.getTotalReelsToday(),
-                    dm.getTotalLimit(),
-                    dm.getSessionCount(),
-                    lastPlatform,
-                    dm.isFocusModeActive()
+                handleStartOrRefresh(
+                    animateEntrance = intent.getBooleanExtra(EXTRA_ANIMATE_ENTRANCE, true)
                 )
-                if (intent.getBooleanExtra(EXTRA_ANIMATE_ENTRANCE, true)) {
-                    playNotchDockEntranceAnimation()
-                }
             }
             ACTION_REFRESH_CONFIG -> {
-                val previousStick = stickToTopCentre
-                loadConfigFromDataManager()
-                applyLayoutSizingAndPosition(animateSnap = (!previousStick && stickToTopCentre))
-                updateUI(
-                    dm.getTotalReelsToday(),
-                    dm.getTotalLimit(),
-                    dm.getSessionCount(),
-                    lastPlatform,
-                    dm.isFocusModeActive()
-                )
+                handleRefreshConfig()
             }
             ACTION_UPDATE -> {
                 val today = intent.getIntExtra(EXTRA_TODAY, dm.getTotalReelsToday())
                 val limit = intent.getIntExtra(EXTRA_LIMIT, dm.getTotalLimit())
                 val session = intent.getIntExtra(EXTRA_SESSION, dm.getSessionCount())
                 val platform = intent.getStringExtra(EXTRA_PLATFORM) ?: lastPlatform
-                if (platform.isNotEmpty()) lastPlatform = platform
                 val isFocus = intent.getBooleanExtra(EXTRA_IS_FOCUS, dm.isFocusModeActive())
-                updateUI(today, limit, session, platform, isFocus)
+                handleLiveStatsUpdate(today, limit, session, platform, isFocus)
             }
         }
         return START_STICKY
+    }
+
+    private fun handleStartOrRefresh(animateEntrance: Boolean) {
+        val dm = ScrolaDataManager.getInstance(this)
+        loadConfigFromDataManager()
+        ensureOverlayAttached()
+        applyLayoutSizingAndPosition(animateSnap = false)
+        updateUI(
+            dm.getTotalReelsToday(),
+            dm.getTotalLimit(),
+            dm.getSessionCount(),
+            lastPlatform,
+            dm.isFocusModeActive()
+        )
+        if (animateEntrance) {
+            playNotchDockEntranceAnimation()
+        }
+    }
+
+    private fun handleRefreshConfig() {
+        val dm = ScrolaDataManager.getInstance(this)
+        val previousStick = stickToTopCentre
+        loadConfigFromDataManager()
+        ensureOverlayAttached()
+        applyLayoutSizingAndPosition(animateSnap = (!previousStick && stickToTopCentre))
+        updateUI(
+            dm.getTotalReelsToday(),
+            dm.getTotalLimit(),
+            dm.getSessionCount(),
+            lastPlatform,
+            dm.isFocusModeActive()
+        )
+    }
+
+    private fun handleLiveStatsUpdate(
+        today: Int,
+        limit: Int,
+        session: Int,
+        platform: String,
+        isFocus: Boolean
+    ) {
+        if (platform.isNotEmpty()) lastPlatform = platform
+        ensureOverlayAttached()
+        updateUI(today, limit, session, lastPlatform, isFocus)
+    }
+
+    private fun ensureOverlayAttached() {
+        val existing = rootContainer
+        if (existing != null && existing.isAttachedToWindow) return
+        if (existing != null) {
+            rootContainer = null
+            pillContainer = null
+            brainyView = null
+            primaryTextView = null
+            dividerView = null
+            secondaryTextView = null
+            closeButtonView = null
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
+            initOverlay()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -572,7 +648,19 @@ class ScrolaOverlayService : Service() {
     private fun playNotchDockEntranceAnimation() {
         val pill = pillContainer ?: return
         pill.post {
+            entranceAnimatorSet?.cancel()
             pill.animate().cancel()
+
+            val animatorsEnabled =
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.O || ValueAnimator.areAnimatorsEnabled()
+            if (!animatorsEnabled || !pill.isAttachedToWindow) {
+                pill.translationY = 0f
+                pill.scaleX = 1f
+                pill.scaleY = 1f
+                pill.alpha = 1f
+                return@post
+            }
+
             pill.translationY = dpToPx(58).toFloat()
             pill.scaleX = 0.52f
             pill.scaleY = 0.52f
@@ -583,10 +671,21 @@ class ScrolaOverlayService : Service() {
             val scaleY = ObjectAnimator.ofFloat(pill, View.SCALE_Y, 0.52f, 1f)
             val alpha = ObjectAnimator.ofFloat(pill, View.ALPHA, 0f, 1f)
 
-            AnimatorSet().apply {
+            entranceAnimatorSet = AnimatorSet().apply {
                 playTogether(slideY, scaleX, scaleY, alpha)
                 duration = 480L
                 interpolator = OvershootInterpolator(1.25f)
+                addListener(object : AnimatorListenerAdapter() {
+                    private fun settleFinalState() {
+                        pill.translationY = 0f
+                        pill.scaleX = 1f
+                        pill.scaleY = 1f
+                        pill.alpha = 1f
+                    }
+
+                    override fun onAnimationEnd(animation: Animator) = settleFinalState()
+                    override fun onAnimationCancel(animation: Animator) = settleFinalState()
+                })
                 start()
             }
         }
@@ -844,6 +943,11 @@ class ScrolaOverlayService : Service() {
 
     override fun onDestroy() {
         isServiceRunning = false
+        if (activeInstance === this) {
+            activeInstance = null
+        }
+        entranceAnimatorSet?.cancel()
+        entranceAnimatorSet = null
         longPressHandler.removeCallbacksAndMessages(null)
         positionAnimator?.cancel()
         positionAnimator = null

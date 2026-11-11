@@ -7,6 +7,7 @@ import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import '../../../overlay/presentation/screens/floating_overlay_settings_screen.dart';
+import '../../../overlay/presentation/screens/floating_overlay_setup_screen.dart';
 import '../../../profile/presentation/screens/notifications_settings_screen.dart';
 
 class TrackingStatusScreen extends StatefulWidget {
@@ -16,14 +17,29 @@ class TrackingStatusScreen extends StatefulWidget {
   State<TrackingStatusScreen> createState() => _TrackingStatusScreenState();
 }
 
-class _TrackingStatusScreenState extends State<TrackingStatusScreen> {
+class _TrackingStatusScreenState extends State<TrackingStatusScreen>
+    with WidgetsBindingObserver {
   final TrackingService _tracking = TrackingService();
   bool _batteryOptimized = false;
 
   @override
   void initState() {
     super.initState();
-    _tracking.checkPermissions();
+    WidgetsBinding.instance.addObserver(this);
+    _tracking.refreshPermissionsAndSyncOverlay();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _tracking.refreshPermissionsAndSyncOverlay(animateEntrance: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -109,13 +125,42 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen> {
                           actionLabel: _tracking.isTrackingEnabled
                               ? 'Turn Off'
                               : 'Turn On',
-                          onTap: () {
+                          onTap: () async {
                             if (!accessOn) {
                               _tracking.requestAccessibilityPermission();
                             } else {
-                              _tracking.toggleTracking(
-                                !_tracking.isTrackingEnabled,
-                              );
+                              final messenger = ScaffoldMessenger.of(context);
+                              final navigator = Navigator.of(context);
+                              final next = !_tracking.isTrackingEnabled;
+                              await _tracking.toggleTracking(next);
+                              if (next &&
+                                  mounted &&
+                                  _tracking.isOverlayEnabled &&
+                                  !_tracking.isOverlayGranted) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: AppColors.surfaceSolid,
+                                    content: Text(
+                                      'Scrola is ON! Allow Display over other apps to show Brainy.',
+                                      style: AppTypography.caption(
+                                        color: AppColors.primaryText,
+                                      ),
+                                    ),
+                                    action: SnackBarAction(
+                                      label: 'Allow',
+                                      textColor: AppColors.primaryAccent,
+                                      onPressed: () {
+                                        navigator.push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const FloatingOverlaySetupScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                              }
                             }
                           },
                         ),
