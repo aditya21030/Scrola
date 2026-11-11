@@ -118,7 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
         mood: tracking.currentMood,
         skin: tracking.equippedSkin,
         stickToNotch: tracking.overlayStickToNotch,
-        onArrive: () => tracking.toggleTracking(true, startOverlayNow: true),
+        onArrive: () => tracking.toggleTracking(
+          true,
+          startOverlayNow: true,
+          animateOverlayEntrance: false,
+        ),
       );
     } finally {
       if (mounted) {
@@ -160,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
         mood: tracking.currentMood,
         skin: tracking.equippedSkin,
         stickToNotch: tracking.overlayStickToNotch,
-        onArrive: () => tracking.toggleOverlay(true),
+        onArrive: () => tracking.toggleOverlay(true, animateEntrance: false),
       );
     } finally {
       if (mounted) setState(() => _isLaunchingToNotch = false);

@@ -241,9 +241,24 @@ void main() {
 
     expect(tracking.isTrackingEnabled, isTrue);
     expect(find.text('Scrola Active · Tap to Turn Off'), findsOneWidget);
+    final startCalls = recordedCalls
+        .where((c) => c.method == 'startOverlayService')
+        .toList();
+    expect(startCalls, hasLength(1));
     expect(
-      recordedCalls.any((c) => c.method == 'startOverlayService'),
-      isTrue,
+      (startCalls.single.arguments as Map)['animateEntrance'],
+      isFalse,
+    );
+
+    // Concurrent lifecycle permission refreshes coalesce into a single native start
+    recordedCalls.clear();
+    await Future.wait([
+      tracking.refreshPermissionsAndSyncOverlay(animateEntrance: true),
+      tracking.refreshPermissionsAndSyncOverlay(animateEntrance: true),
+    ]);
+    expect(
+      recordedCalls.where((c) => c.method == 'startOverlayService'),
+      hasLength(1),
     );
 
     // Turning off then testing Turn On when overlay permission is missing

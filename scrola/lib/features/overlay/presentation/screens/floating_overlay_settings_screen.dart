@@ -39,6 +39,34 @@ class _FloatingOverlaySettingsScreenState
     }
   }
 
+  Future<void> _setOverlayEnabled(bool enabled) async {
+    final started = await _tracking.toggleOverlay(enabled);
+    if (!mounted || !enabled || started || _tracking.isOverlayGranted) {
+      return;
+    }
+    final navigator = Navigator.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.surfaceSolid,
+        content: Text(
+          'Allow "Display over other apps" to show the floating mascot.',
+          style: AppTypography.caption(color: AppColors.primaryText),
+        ),
+        action: SnackBarAction(
+          label: 'Allow',
+          textColor: AppColors.primaryAccent,
+          onPressed: () {
+            navigator.push(
+              MaterialPageRoute(
+                builder: (_) => const FloatingOverlaySetupScreen(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,7 +84,7 @@ class _FloatingOverlaySettingsScreenState
                     title: 'Counter settings',
                     trailing: ScrolaToggle(
                       value: _tracking.isOverlayEnabled,
-                      onChanged: (v) => _tracking.toggleOverlay(v),
+                      onChanged: _setOverlayEnabled,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -163,7 +191,7 @@ class _FloatingOverlaySettingsScreenState
                             const SizedBox(width: 12),
                             ScrolaToggle(
                               value: _tracking.isOverlayEnabled,
-                              onChanged: (v) => _tracking.toggleOverlay(v),
+                              onChanged: _setOverlayEnabled,
                             ),
                           ],
                         ),
@@ -171,7 +199,7 @@ class _FloatingOverlaySettingsScreenState
                         GestureDetector(
                           onTap: () {
                             HapticService.light();
-                            _tracking.toggleOverlay(!_tracking.isOverlayEnabled);
+                            _setOverlayEnabled(!_tracking.isOverlayEnabled);
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(

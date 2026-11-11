@@ -8,6 +8,7 @@ import '../../../../shared/widgets/scrola_card.dart';
 import '../../../../shared/widgets/scrola_segmented_control.dart';
 import '../../../../shared/widgets/scrola_toggle.dart';
 import '../widgets/notch_pill_preview.dart';
+import 'floating_overlay_setup_screen.dart';
 
 class FloatingOverlayPreviewScreen extends StatefulWidget {
   const FloatingOverlayPreviewScreen({super.key});
@@ -107,13 +108,13 @@ class _FloatingOverlayPreviewScreenState
                       ),
                     ),
                   ),
-                  // Top-centered or free draggable Notch Pill
+                  // Top-centered or free draggable Notch Pill (offset below real system notch & mock status bar)
                   Align(
                     alignment: Alignment.topCenter,
                     child: Transform.translate(
                       offset: stickToNotch
-                          ? const Offset(0, 4)
-                          : _dragOffset + const Offset(0, 60),
+                          ? const Offset(0, 34)
+                          : _dragOffset + const Offset(0, 74),
                       child: GestureDetector(
                         onPanUpdate: stickToNotch
                             ? null
@@ -138,7 +139,7 @@ class _FloatingOverlayPreviewScreenState
                   Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 66),
+                      padding: const EdgeInsets.only(top: 96),
                       child: Text(
                         stickToNotch
                             ? 'Sticks to top centre · tap pill to toggle'
@@ -206,9 +207,20 @@ class _FloatingOverlayPreviewScreenState
                             ScrolaPrimaryButton(
                               label: 'Show floating mascot',
                               useMediumHaptic: true,
-                              onPressed: () {
-                                _tracking.toggleOverlay(true);
-                                Navigator.of(context).pop();
+                              onPressed: () async {
+                                final navigator = Navigator.of(context);
+                                final ok = await _tracking.toggleOverlay(true);
+                                if (!mounted) return;
+                                if (!ok && !_tracking.isOverlayGranted) {
+                                  await navigator.push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const FloatingOverlaySetupScreen(),
+                                    ),
+                                  );
+                                } else {
+                                  navigator.pop();
+                                }
                               },
                             ),
                             if (_tracking.isOverlayEnabled) ...[

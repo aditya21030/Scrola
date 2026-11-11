@@ -143,6 +143,7 @@ class MainActivity : FlutterActivity() {
                         "totalLimit" to dataManager.getTotalLimit(),
                         "isFocusActive" to dataManager.isFocusModeActive(),
                         "isTrackingEnabled" to dataManager.isTrackingEnabled(),
+                        "isOverlayEnabled" to dataManager.isOverlayEnabled(),
                         "overlayExpanded" to dataManager.isOverlayExpanded()
                     )
                     for (platform in ScrolaDataManager.SUPPORTED_PLATFORMS) {

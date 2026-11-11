@@ -53,7 +53,7 @@ Future<void> playNotchFlightAnimation({
   final media = MediaQuery.of(context);
   final targetCenter = Offset(
     media.size.width / 2,
-    math.max(20.0, media.padding.top + (stickToNotch ? 6.0 : 28.0)),
+    math.max(20.0, media.padding.top + (stickToNotch ? 20.0 : 44.0)),
   );
 
   final stageCompleter = Completer<void>();
@@ -217,7 +217,7 @@ class _NotchFlightStageState extends State<_NotchFlightStage>
 
             final rippleT = ((v - 0.74) / 0.26).clamp(0.0, 1.0);
             final handoffOpacity =
-                v > 0.84 ? (1.0 - ((v - 0.84) / 0.16)).clamp(0.0, 1.0) : 1.0;
+                v > 0.78 ? (1.0 - ((v - 0.78) / 0.22)).clamp(0.0, 1.0) : 1.0;
 
             return Opacity(
               opacity: handoffOpacity,
@@ -285,8 +285,8 @@ class _NotchFlightStageState extends State<_NotchFlightStage>
                         );
                       }),
 
-                  // Notch capture capsule opening at top center
-                  if (capsuleT > 0)
+                  // Notch capture capsule opening at top center until native overlay takes over
+                  if (capsuleT > 0 && v < 0.78)
                     Positioned(
                       left: widget.targetCenter.dx - (68 * capsuleEase),
                       top: widget.targetCenter.dy - 19,
@@ -333,8 +333,8 @@ class _NotchFlightStageState extends State<_NotchFlightStage>
                       ),
                     ),
 
-                  // Soaring Brainy Mascot
-                  if (v < 0.84)
+                  // Soaring Brainy Mascot (hands off seamlessly right as native pill docks)
+                  if (v < 0.78)
                     Positioned(
                       left: center.dx - mascotSize / 2,
                       top: center.dy - mascotSize / 2,

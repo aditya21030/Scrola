@@ -165,8 +165,10 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                       widget.onMascotTap?.call();
                     },
                     child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 220),
-                      opacity: widget.isLaunchingToNotch ? 0.14 : 1.0,
+                      duration: widget.isLaunchingToNotch
+                          ? Duration.zero
+                          : const Duration(milliseconds: 240),
+                      opacity: widget.isLaunchingToNotch ? 0.0 : 1.0,
                       child: KeyedSubtree(
                         key: widget.mascotKey,
                         child: BrainyMascot(
