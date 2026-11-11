@@ -59,14 +59,23 @@ class ScrolaCard extends StatelessWidget {
   }
 }
 
+/// Checkmark placement inside [ScrolaSelectableCard].
+enum ScrolaCheckPosition {
+  trailing,
+  topRight,
+  none,
+}
+
 /// Selectable card matching design.md Section 6:
-/// Selected state: 1.5-2px orange border, faint orange glow, check badge on right.
+/// Selected state: 1.5-2px orange border, faint orange glow, check badge.
 class ScrolaSelectableCard extends StatelessWidget {
   final Widget child;
   final bool isSelected;
   final VoidCallback onTap;
   final EdgeInsetsGeometry padding;
   final double radius;
+  final ScrolaCheckPosition checkPosition;
+  final double checkBadgeSize;
 
   const ScrolaSelectableCard({
     super.key,
@@ -75,10 +84,66 @@ class ScrolaSelectableCard extends StatelessWidget {
     required this.onTap,
     this.padding = const EdgeInsets.all(16),
     this.radius = 20,
+    this.checkPosition = ScrolaCheckPosition.trailing,
+    this.checkBadgeSize = 18,
   });
+
+  Widget _buildCheckBadge({required double size}) {
+    return AnimatedContainer(
+      duration: AppMotion.standard,
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isSelected ? AppColors.primaryAccent : Colors.transparent,
+        border: Border.all(
+          color: isSelected ? AppColors.primaryAccent : AppColors.border,
+          width: 1.8,
+        ),
+      ),
+      child: isSelected
+          ? Icon(
+              Icons.check_rounded,
+              size: size * 0.66,
+              color: AppColors.textOnAccent,
+            )
+          : null,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final Widget body = switch (checkPosition) {
+      ScrolaCheckPosition.trailing => Padding(
+          padding: padding,
+          child: Row(
+            children: [
+              Expanded(child: child),
+              const SizedBox(width: 12),
+              _buildCheckBadge(size: 24),
+            ],
+          ),
+        ),
+      ScrolaCheckPosition.topRight => Stack(
+          children: [
+            Padding(
+              padding: padding,
+              child: SizedBox(width: double.infinity, child: child),
+            ),
+            if (isSelected)
+              Positioned(
+                top: 7,
+                right: 7,
+                child: _buildCheckBadge(size: checkBadgeSize),
+              ),
+          ],
+        ),
+      ScrolaCheckPosition.none => Padding(
+          padding: padding,
+          child: SizedBox(width: double.infinity, child: child),
+        ),
+    };
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -88,10 +153,12 @@ class ScrolaSelectableCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: AppMotion.standard,
         curve: AppMotion.easeOut,
-        padding: padding,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryAccent.withValues(alpha: 0.08)
+              ? Color.alphaBlend(
+                  AppColors.primaryAccent.withValues(alpha: 0.10),
+                  AppColors.surfaceSolid,
+                )
               : AppColors.surfaceSolid,
           borderRadius: BorderRadius.circular(radius),
           border: Border.all(
@@ -108,32 +175,7 @@ class ScrolaSelectableCard extends StatelessWidget {
                 ]
               : null,
         ),
-        child: Row(
-          children: [
-            Expanded(child: child),
-            const SizedBox(width: 12),
-            AnimatedContainer(
-              duration: AppMotion.standard,
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? AppColors.primaryAccent : Colors.transparent,
-                border: Border.all(
-                  color: isSelected ? AppColors.primaryAccent : AppColors.border,
-                  width: 1.8,
-                ),
-              ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check_rounded,
-                      size: 16,
-                      color: AppColors.textOnAccent,
-                    )
-                  : null,
-            ),
-          ],
-        ),
+        child: body,
       ),
     );
   }

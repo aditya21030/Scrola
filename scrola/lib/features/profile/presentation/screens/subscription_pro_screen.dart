@@ -162,92 +162,96 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ScrolaSelectableCard(
-                              isSelected: !_yearly,
-                              onTap: () {
-                                HapticService.subtle();
-                                setState(() => _yearly = false);
-                              },
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Monthly',
-                                    style: AppTypography.subheading()
-                                        .copyWith(fontSize: 15),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '\$3.99',
-                                    style: AppTypography.numeric(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: ScrolaSelectableCard(
+                                isSelected: !_yearly,
+                                checkPosition: ScrolaCheckPosition.topRight,
+                                onTap: () {
+                                  HapticService.subtle();
+                                  setState(() => _yearly = false);
+                                },
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Monthly',
+                                      style: AppTypography.subheading()
+                                          .copyWith(fontSize: 15),
                                     ),
-                                  ),
-                                  Text(
-                                    '/ mo',
-                                    style: AppTypography.caption(
-                                      color: AppColors.secondaryText,
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '\$3.99',
+                                      style: AppTypography.numeric(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    Text(
+                                      '/ mo',
+                                      style: AppTypography.caption(
+                                        color: AppColors.secondaryText,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ScrolaSelectableCard(
-                              isSelected: _yearly,
-                              onTap: () {
-                                HapticService.subtle();
-                                setState(() => _yearly = true);
-                              },
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Yearly',
-                                        style: AppTypography.subheading()
-                                            .copyWith(fontSize: 15),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ScrolaSelectableCard(
+                                isSelected: _yearly,
+                                checkPosition: ScrolaCheckPosition.topRight,
+                                onTap: () {
+                                  HapticService.subtle();
+                                  setState(() => _yearly = true);
+                                },
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Yearly',
+                                          style: AppTypography.subheading()
+                                              .copyWith(fontSize: 15),
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryAccent,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          'Save 48%',
-                                          style: AppTypography.caption(
-                                            color: AppColors.textOnAccent,
-                                          ).copyWith(
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w800,
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryAccent,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            'Save 48%',
+                                            style: AppTypography.caption(
+                                              color: AppColors.textOnAccent,
+                                            ).copyWith(
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '\$24.99',
-                                    style: AppTypography.numeric(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
+                                      ],
                                     ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '\$24.99',
+                                      style: AppTypography.numeric(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                   ),
                                   Text(
                                     '/ yr',
@@ -261,6 +265,7 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                           ),
                         ],
                       ),
+                    ),
                     ],
                   ),
                 ),

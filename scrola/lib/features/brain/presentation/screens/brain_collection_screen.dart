@@ -103,6 +103,7 @@ class _BrainCollectionScreenState extends State<BrainCollectionScreen> {
 
                         return ScrolaSelectableCard(
                           isSelected: isEquipped,
+                          checkPosition: ScrolaCheckPosition.topRight,
                           onTap: () {
                             HapticService.subtle();
                             Navigator.of(context).push(

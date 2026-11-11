@@ -70,21 +70,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ScrolaAppBar(
                 title: 'Edit profile',
                 trailing: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     HapticService.medium();
                     _save();
                   },
-                  child: Text(
-                    'Save',
-                    style: AppTypography.caption(color: AppColors.primaryAccent)
-                        .copyWith(fontWeight: FontWeight.w700, fontSize: 15),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'Save',
+                      style: AppTypography.caption(color: AppColors.primaryAccent)
+                          .copyWith(fontWeight: FontWeight.w700, fontSize: 15),
+                    ),
                   ),
                 ),
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 16),
                       Center(
@@ -121,67 +131,92 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: skins.map((skin) {
-                          final selected = _selectedSkin == skin;
-                          final label = skin.name[0].toUpperCase() +
-                              skin.name.substring(1);
-                          return Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: ScrolaSelectableCard(
-                                isSelected: selected,
-                                radius: 18,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                onTap: () {
-                                  HapticService.subtle();
-                                  setState(() => _selectedSkin = skin);
-                                },
-                                child: Column(
-                                  children: [
-                                    BrainyMascot(
-                                      mood: BrainyMood.happy,
-                                      skin: skin,
-                                      size: 40,
-                                      animate: false,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      label,
-                                      style: AppTypography.caption(
-                                        color: selected
-                                            ? AppColors.primaryText
-                                            : AppColors.secondaryText,
-                                      ).copyWith(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (int i = 0; i < skins.length; i++) ...[
+                              if (i > 0) const SizedBox(width: 8),
+                              Expanded(
+                                child: Builder(
+                                  builder: (context) {
+                                    final skin = skins[i];
+                                    final selected = _selectedSkin == skin;
+                                    final label = skin.name[0].toUpperCase() +
+                                        skin.name.substring(1);
+                                    return ScrolaSelectableCard(
+                                      isSelected: selected,
+                                      checkPosition:
+                                          ScrolaCheckPosition.topRight,
+                                      checkBadgeSize: 16,
+                                      radius: 18,
+                                      padding: const EdgeInsets.fromLTRB(
+                                        6,
+                                        12,
+                                        6,
+                                        10,
                                       ),
-                                    ),
-                                  ],
+                                      onTap: () {
+                                        HapticService.subtle();
+                                        setState(() => _selectedSkin = skin);
+                                      },
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          BrainyMascot(
+                                            mood: BrainyMood.happy,
+                                            skin: skin,
+                                            size: 40,
+                                            animate: false,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              label,
+                                              maxLines: 1,
+                                              softWrap: false,
+                                              textAlign: TextAlign.center,
+                                              style: AppTypography.caption(
+                                                color: selected
+                                                    ? AppColors.primaryText
+                                                    : AppColors.secondaryText,
+                                              ).copyWith(
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 22),
                       _FieldBlock(
                         label: 'DISPLAY NAME',
                         controller: _nameCtrl,
+                        textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       _FieldBlock(
                         label: 'USERNAME',
                         controller: _usernameCtrl,
                         prefixText: '@',
+                        textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       _FieldBlock(
                         label: 'EMAIL',
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.done,
                       ),
                     ],
                   ),
@@ -206,12 +241,14 @@ class _FieldBlock extends StatelessWidget {
   final TextEditingController controller;
   final String? prefixText;
   final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
 
   const _FieldBlock({
     required this.label,
     required this.controller,
     this.prefixText,
     this.keyboardType,
+    this.textInputAction,
   });
 
   @override
@@ -225,6 +262,7 @@ class _FieldBlock extends StatelessWidget {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          textInputAction: textInputAction,
           style: AppTypography.body(color: AppColors.primaryText),
           decoration: InputDecoration(
             prefixText: prefixText,

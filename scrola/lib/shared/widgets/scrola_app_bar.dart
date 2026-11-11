@@ -8,6 +8,7 @@ class ScrolaAppBar extends StatelessWidget {
   final VoidCallback? onBack;
   final Widget? trailing;
   final bool showBack;
+  final EdgeInsetsGeometry padding;
 
   const ScrolaAppBar({
     super.key,
@@ -15,12 +16,13 @@ class ScrolaAppBar extends StatelessWidget {
     this.onBack,
     this.trailing,
     this.showBack = true,
+    this.padding = const EdgeInsets.symmetric(vertical: 8),
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: padding,
       child: Row(
         children: [
           if (showBack) ...[

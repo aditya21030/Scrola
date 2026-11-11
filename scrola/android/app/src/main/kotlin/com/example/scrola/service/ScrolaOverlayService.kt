@@ -56,6 +56,7 @@ class ScrolaOverlayService : Service() {
 
     private var isExpanded: Boolean = false
     private var isViewAddedToWindow: Boolean = false
+    private var receivedStartCommand: Boolean = false
     @Volatile
     private var isStopping: Boolean = false
     private var stickToTopCentre: Boolean = true
@@ -67,6 +68,16 @@ class ScrolaOverlayService : Service() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val longPressHandler = Handler(Looper.getMainLooper())
     private var longPressRunnable: Runnable? = null
+    private val stickyAttachFallbackRunnable = Runnable {
+        if (isStopping || receivedStartCommand) return@Runnable
+        val dm = ScrolaDataManager.getInstance(this)
+        if (!shouldDisplayOverlay(dm)) {
+            isStopping = true
+            stopSelf()
+            return@Runnable
+        }
+        handleStartOrRefresh(animateEntrance = false)
+    }
 
     companion object {
         private const val TAG = "ScrolaOverlayService"
@@ -209,10 +220,14 @@ class ScrolaOverlayService : Service() {
         super.onCreate()
         isServiceRunning = true
         isStopping = false
+        receivedStartCommand = false
         activeInstance = this
         createNotificationChannel()
         startServiceForeground()
         loadConfigFromDataManager()
+        // Some OEMs restart a START_STICKY service via onCreate() after task removal without immediately delivering onStartCommand().
+        mainHandler.removeCallbacks(stickyAttachFallbackRunnable)
+        mainHandler.postDelayed(stickyAttachFallbackRunnable, 300L)
     }
 
     private fun loadConfigFromDataManager() {
@@ -240,6 +255,8 @@ class ScrolaOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        receivedStartCommand = true
+        mainHandler.removeCallbacks(stickyAttachFallbackRunnable)
         val dm = ScrolaDataManager.getInstance(this)
         if (intent == null) {
             // START_STICKY process restart: only re-attach if Scrola overlay should be visible
@@ -291,6 +308,8 @@ class ScrolaOverlayService : Service() {
     }
 
     private fun handleStartOrRefresh(animateEntrance: Boolean) {
+        receivedStartCommand = true
+        mainHandler.removeCallbacks(stickyAttachFallbackRunnable)
         val dm = ScrolaDataManager.getInstance(this)
         if (!shouldDisplayOverlay(dm)) {
             isStopping = true
@@ -1052,6 +1071,7 @@ class ScrolaOverlayService : Service() {
         entranceAnimatorSet = null
         dismissAnimatorSet?.cancel()
         dismissAnimatorSet = null
+        mainHandler.removeCallbacksAndMessages(null)
         longPressHandler.removeCallbacksAndMessages(null)
         positionAnimator?.cancel()
         positionAnimator = null

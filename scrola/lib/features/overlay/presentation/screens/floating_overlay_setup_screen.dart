@@ -149,40 +149,43 @@ class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
                             ),
                             const SizedBox(height: 18),
                           ],
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _StyleChoiceCard(
-                                  title: 'Compact',
-                                  subtitle: 'Brainy + numbers',
-                                  selected: !isExpanded,
-                                  expandedPill: false,
-                                  watched: tracking.totalReelsToday,
-                                  remaining: tracking.remainingReels,
-                                  onTap: () {
-                                    HapticService.subtle();
-                                    tracking.updateOverlayConfig(
-                                        expanded: false);
-                                  },
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: _StyleChoiceCard(
+                                    title: 'Compact',
+                                    subtitle: 'Brainy + numbers',
+                                    selected: !isExpanded,
+                                    expandedPill: false,
+                                    watched: tracking.totalReelsToday,
+                                    remaining: tracking.remainingReels,
+                                    onTap: () {
+                                      HapticService.subtle();
+                                      tracking.updateOverlayConfig(
+                                          expanded: false);
+                                    },
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _StyleChoiceCard(
-                                  title: 'Expanded',
-                                  subtitle: 'With labels',
-                                  selected: isExpanded,
-                                  expandedPill: true,
-                                  watched: tracking.totalReelsToday,
-                                  remaining: tracking.remainingReels,
-                                  onTap: () {
-                                    HapticService.subtle();
-                                    tracking.updateOverlayConfig(
-                                        expanded: true);
-                                  },
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _StyleChoiceCard(
+                                    title: 'Expanded',
+                                    subtitle: 'With labels',
+                                    selected: isExpanded,
+                                    expandedPill: true,
+                                    watched: tracking.totalReelsToday,
+                                    remaining: tracking.remainingReels,
+                                    onTap: () {
+                                      HapticService.subtle();
+                                      tracking.updateOverlayConfig(
+                                          expanded: true);
+                                    },
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 22),
                           Text(
@@ -354,9 +357,11 @@ class _StyleChoiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ScrolaSelectableCard(
       isSelected: selected,
+      checkPosition: ScrolaCheckPosition.none,
       onTap: onTap,
       padding: const EdgeInsets.all(12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
             height: 76,
@@ -406,11 +411,48 @@ class _StyleChoiceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text(title, style: AppTypography.subheading().copyWith(fontSize: 15)),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: AppTypography.caption(color: AppColors.secondaryText),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style:
+                            AppTypography.subheading().copyWith(fontSize: 15)),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style:
+                          AppTypography.caption(color: AppColors.secondaryText),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:
+                      selected ? AppColors.primaryAccent : Colors.transparent,
+                  border: Border.all(
+                    color: selected
+                        ? AppColors.primaryAccent
+                        : AppColors.border,
+                    width: 1.8,
+                  ),
+                ),
+                child: selected
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 13,
+                        color: AppColors.textOnAccent,
+                      )
+                    : null,
+              ),
+            ],
           ),
         ],
       ),

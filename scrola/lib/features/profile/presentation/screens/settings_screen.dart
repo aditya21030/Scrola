@@ -28,245 +28,278 @@ class SettingsScreen extends StatelessWidget {
         listenable: tracking,
         builder: (context, _) {
           return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const ScrolaAppBar(title: 'Settings'),
-                  const SizedBox(height: 18),
-                  Text('TRACKING',
-                      style:
-                          AppTypography.label(color: AppColors.secondaryText)),
-                  const SizedBox(height: 10),
-                  ScrolaCard(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: ScrolaAppBar(title: 'Settings'),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _SettingLinkRow(
-                          title: 'Platforms',
-                          value: '${tracking.selectedPlatforms.length} apps',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const PlatformBreakdownScreen(),
-                            ),
+                        Text('TRACKING',
+                            style: AppTypography.label(
+                                color: AppColors.secondaryText)),
+                        const SizedBox(height: 10),
+                        ScrolaCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 2,
                           ),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _SettingLinkRow(
-                          title: 'Daily limit',
-                          value: '${tracking.totalLimit} reels',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ReelLimitSetupScreen(),
-                            ),
-                          ),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _SettingLinkRow(
-                          title: 'Tracking status',
-                          value: tracking.isAccessibilityGranted
-                              ? 'Active'
-                              : 'Setup needed',
-                          valueColor: tracking.isAccessibilityGranted
-                              ? AppColors.success
-                              : AppColors.warning,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const TrackingStatusScreen(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('COUNTER AND BLOCKING',
-                      style:
-                          AppTypography.label(color: AppColors.secondaryText)),
-                  const SizedBox(height: 10),
-                  ScrolaCard(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: Column(
-                      children: [
-                        _SettingLinkRow(
-                          title: 'Floating mascot',
-                          value: tracking.isOverlayEnabled ? 'Shown' : 'Hidden',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const FloatingOverlaySettingsScreen(),
-                            ),
-                          ),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _SettingLinkRow(
-                          title: 'Blocking',
-                          value: 'Rules',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const BlockingDashboardScreen(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('FEEL',
-                      style:
-                          AppTypography.label(color: AppColors.secondaryText)),
-                  const SizedBox(height: 10),
-                  ScrolaCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Haptic feedback',
-                                    style: AppTypography.subheading()
-                                        .copyWith(fontSize: 15),
+                          child: Column(
+                            children: [
+                              _SettingLinkRow(
+                                title: 'Platforms',
+                                value: '${tracking.selectedPlatforms.length} apps',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PlatformBreakdownScreen(),
                                   ),
+                                ),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _SettingLinkRow(
+                                title: 'Daily limit',
+                                value: '${tracking.totalLimit} reels',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const ReelLimitSetupScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _SettingLinkRow(
+                                title: 'Tracking status',
+                                value: tracking.isAccessibilityGranted
+                                    ? 'Active'
+                                    : 'Setup needed',
+                                valueColor: tracking.isAccessibilityGranted
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const TrackingStatusScreen(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text('COUNTER AND BLOCKING',
+                            style: AppTypography.label(
+                                color: AppColors.secondaryText)),
+                        const SizedBox(height: 10),
+                        ScrolaCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 2,
+                          ),
+                          child: Column(
+                            children: [
+                              _SettingLinkRow(
+                                title: 'Floating mascot',
+                                value: tracking.isOverlayEnabled
+                                    ? 'Shown'
+                                    : 'Hidden',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const FloatingOverlaySettingsScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _SettingLinkRow(
+                                title: 'Blocking',
+                                value: 'Rules',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const BlockingDashboardScreen(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text('FEEL',
+                            style: AppTypography.label(
+                                color: AppColors.secondaryText)),
+                        const SizedBox(height: 10),
+                        ScrolaCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Haptic feedback',
+                                          style: AppTypography.subheading()
+                                              .copyWith(fontSize: 15),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Tactile clicks & celebrations',
+                                          style: AppTypography.caption(
+                                            color: AppColors.secondaryText,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ScrolaToggle(
+                                    value: tracking.hapticsEnabled,
+                                    onChanged: (v) => tracking
+                                        .updateHapticsConfig(enabled: v),
+                                  ),
+                                ],
+                              ),
+                              if (tracking.hapticsEnabled) ...[
+                                const SizedBox(height: 14),
+                                ScrolaSegmentedControl<HapticIntensity>(
+                                  items: HapticIntensity.values,
+                                  selectedItem: tracking.hapticIntensity,
+                                  labelBuilder: (i) =>
+                                      i.name[0].toUpperCase() +
+                                      i.name.substring(1),
+                                  onChanged: (i) => tracking
+                                      .updateHapticsConfig(intensity: i),
+                                ),
+                              ],
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Reduce motion',
+                                      style: AppTypography.subheading()
+                                          .copyWith(fontSize: 15),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
                                   Text(
-                                    'Tactile clicks & celebrations',
+                                    MediaQuery.of(context).disableAnimations
+                                        ? 'Reduced'
+                                        : 'System',
                                     style: AppTypography.caption(
                                       color: AppColors.secondaryText,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            ScrolaToggle(
-                              value: tracking.hapticsEnabled,
-                              onChanged: (v) =>
-                                  tracking.updateHapticsConfig(enabled: v),
-                            ),
-                          ],
-                        ),
-                        if (tracking.hapticsEnabled) ...[
-                          const SizedBox(height: 14),
-                          ScrolaSegmentedControl<HapticIntensity>(
-                            items: HapticIntensity.values,
-                            selectedItem: tracking.hapticIntensity,
-                            labelBuilder: (i) =>
-                                i.name[0].toUpperCase() + i.name.substring(1),
-                            onChanged: (i) =>
-                                tracking.updateHapticsConfig(intensity: i),
-                          ),
-                        ],
-                        const Divider(color: AppColors.borderSubtle, height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Reduce motion',
-                              style: AppTypography.subheading()
-                                  .copyWith(fontSize: 15),
-                            ),
-                            Text(
-                              MediaQuery.of(context).disableAnimations
-                                  ? 'Reduced'
-                                  : 'System',
-                              style: AppTypography.caption(
-                                color: AppColors.secondaryText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('ACCOUNT',
-                      style:
-                          AppTypography.label(color: AppColors.secondaryText)),
-                  const SizedBox(height: 10),
-                  ScrolaCard(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: Column(
-                      children: [
-                        _SettingLinkRow(
-                          title: 'Subscription',
-                          value: 'Free',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const SubscriptionProScreen(),
-                            ),
+                            ],
                           ),
                         ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _SettingLinkRow(
-                          title: 'Replay setup walkthrough',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const OnboardingWizardScreen(),
-                            ),
+                        const SizedBox(height: 20),
+                        Text('ACCOUNT',
+                            style: AppTypography.label(
+                                color: AppColors.secondaryText)),
+                        const SizedBox(height: 10),
+                        ScrolaCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 2,
                           ),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _SettingLinkRow(
-                          title: 'Export my data',
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Data export ready as JSON.'),
-                              ),
-                            );
-                          },
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _SettingLinkRow(
-                          title: 'Delete local data',
-                          titleColor: AppColors.error,
-                          onTap: () {
-                            HapticService.warning();
-                            showDialog<void>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                backgroundColor: AppColors.cardSurface,
-                                title: const Text('Reset local stats?'),
-                                content: const Text(
-                                  'Your daily counts will be cleared on this device.',
+                          child: Column(
+                            children: [
+                              _SettingLinkRow(
+                                title: 'Subscription',
+                                value: 'Free',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const SubscriptionProScreen(),
+                                  ),
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(ctx).pop(),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      tracking.resetSession();
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    child: const Text(
-                                      'Reset',
-                                      style: TextStyle(color: AppColors.error),
-                                    ),
-                                  ),
-                                ],
                               ),
-                            );
-                          },
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _SettingLinkRow(
+                                title: 'Replay setup walkthrough',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const OnboardingWizardScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _SettingLinkRow(
+                                title: 'Export my data',
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Data export ready as JSON.'),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _SettingLinkRow(
+                                title: 'Delete local data',
+                                titleColor: AppColors.error,
+                                onTap: () {
+                                  HapticService.warning();
+                                  showDialog<void>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      backgroundColor: AppColors.cardSurface,
+                                      title: const Text('Reset local stats?'),
+                                      content: const Text(
+                                        'Your daily counts will be cleared on this device.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            tracking.resetSession();
+                                            Navigator.of(ctx).pop();
+                                          },
+                                          child: const Text(
+                                            'Reset',
+                                            style: TextStyle(
+                                                color: AppColors.error),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
@@ -292,13 +325,14 @@ class _SettingLinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         HapticService.subtle();
         onTap();
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 15),
         child: Row(
           children: [
             Expanded(
@@ -309,13 +343,17 @@ class _SettingLinkRow extends StatelessWidget {
                 ).copyWith(fontSize: 15),
               ),
             ),
-            if (value != null)
+            if (value != null) ...[
+              const SizedBox(width: 12),
               Text(
                 value!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.caption(
                   color: valueColor ?? AppColors.secondaryText,
                 ).copyWith(fontWeight: FontWeight.w600),
               ),
+            ],
             const SizedBox(width: 6),
             const Icon(
               Icons.chevron_right_rounded,

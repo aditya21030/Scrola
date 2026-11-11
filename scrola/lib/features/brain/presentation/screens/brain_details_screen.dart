@@ -156,13 +156,15 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                             crossAxisCount: 4,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
-                            childAspectRatio: 0.9,
+                            childAspectRatio: 0.88,
                             children: BrainyMood.values.map((m) {
                               final selected = _selectedMood == m;
                               return ScrolaSelectableCard(
                                 isSelected: selected,
+                                checkPosition: ScrolaCheckPosition.topRight,
+                                checkBadgeSize: 16,
                                 radius: 18,
-                                padding: const EdgeInsets.all(6),
+                                padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
                                 onTap: () {
                                   HapticService.subtle();
                                   setState(() => _selectedMood = m);
@@ -176,18 +178,22 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                                       size: 42,
                                       animate: false,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _moodLabel(m),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTypography.caption(
-                                        color: selected
-                                            ? AppColors.primaryText
-                                            : AppColors.secondaryText,
-                                      ).copyWith(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
+                                    const SizedBox(height: 6),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        _moodLabel(m),
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        textAlign: TextAlign.center,
+                                        style: AppTypography.caption(
+                                          color: selected
+                                              ? AppColors.primaryText
+                                              : AppColors.secondaryText,
+                                        ).copyWith(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ],

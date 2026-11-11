@@ -6,11 +6,17 @@ import 'package:scrola/core/services/gamification_engine.dart';
 import 'package:scrola/core/services/haptic_service.dart';
 import 'package:scrola/core/services/storage_service.dart';
 import 'package:scrola/core/services/tracking_service.dart';
+import 'package:scrola/features/brain/presentation/screens/brain_details_screen.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
 import 'package:scrola/features/home/presentation/widgets/scrola_bottom_nav.dart';
 import 'package:scrola/features/onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/welcome_screen.dart';
+import 'package:scrola/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:scrola/features/profile/presentation/screens/notifications_settings_screen.dart';
+import 'package:scrola/features/profile/presentation/screens/profile_screen.dart';
+import 'package:scrola/features/profile/presentation/screens/settings_screen.dart';
 import 'package:scrola/main.dart';
+import 'package:scrola/shared/widgets/scrola_card.dart';
 
 void main() {
   setUp(() {
@@ -283,5 +289,85 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('Open Overlay Settings'), findsOneWidget);
+  });
+
+  testWidgets(
+      'EditProfile, BrainDetails, Profile, Settings, and Notifications screens align cleanly at 360dp',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 804);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final tracking = TrackingService();
+    await tracking.initialize();
+
+    // 1. EditProfileScreen: skin cards equal height, 1-line labels, aligned rails
+    await tester.pumpWidget(const MaterialApp(home: EditProfileScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final backRect = tester.getRect(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    final classicCardRect = tester.getRect(
+      find.ancestor(
+        of: find.text('Classic'),
+        matching: find.byType(ScrolaSelectableCard),
+      ),
+    );
+    final goldenCardRect = tester.getRect(
+      find.ancestor(
+        of: find.text('Golden'),
+        matching: find.byType(ScrolaSelectableCard),
+      ),
+    );
+    final frostCardRect = tester.getRect(
+      find.ancestor(
+        of: find.text('Frost'),
+        matching: find.byType(ScrolaSelectableCard),
+      ),
+    );
+    final saveButtonRect = tester.getRect(find.text('Save changes'));
+
+    expect(classicCardRect.left, closeTo(20.0, 0.5));
+    expect(frostCardRect.right, closeTo(340.0, 0.5));
+    expect(classicCardRect.height, closeTo(goldenCardRect.height, 0.5));
+    expect(classicCardRect.height, closeTo(frostCardRect.height, 0.5));
+    expect(backRect.left, greaterThanOrEqualTo(20.0));
+    expect(backRect.left, lessThan(40.0)); // Aligned with 20px circle left edge
+    expect(saveButtonRect.width, greaterThan(0));
+    expect(tester.getSize(find.text('Classic')).height, lessThan(22));
+    expect(tester.getSize(find.text('Golden')).height, lessThan(22));
+
+    // 2. BrainDetailsScreen: all 8 mood cards visible cleanly with full labels
+    await tester.pumpWidget(const MaterialApp(home: BrainDetailsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    for (final label in [
+      'Happy',
+      'Neutral',
+      'Tired',
+      'Sad',
+      'Focused',
+      'Sleepy',
+      'Excited',
+      'Celebrating',
+    ]) {
+      expect(find.text(label), findsWidgets);
+    }
+
+    // 3. ProfileScreen, SettingsScreen, NotificationsSettingsScreen
+    await tester.pumpWidget(const MaterialApp(home: ProfileScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Scrola Pro'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+
+    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('TRACKING'), findsOneWidget);
+    expect(find.text('COUNTER AND BLOCKING'), findsOneWidget);
+
+    await tester.pumpWidget(const MaterialApp(home: NotificationsSettingsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('LIMIT ALERTS'), findsOneWidget);
+    expect(find.text('50%'), findsOneWidget);
+    expect(find.text('100%'), findsOneWidget);
   });
 }
