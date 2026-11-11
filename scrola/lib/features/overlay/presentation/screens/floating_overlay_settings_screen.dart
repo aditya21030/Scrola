@@ -135,6 +135,99 @@ class _FloatingOverlaySettingsScreenState
                     ),
                   ),
                   const SizedBox(height: 14),
+                  ScrolaCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Floating Brainy mascot',
+                                    style: AppTypography.subheading()
+                                        .copyWith(fontSize: 15),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _tracking.isOverlayEnabled
+                                        ? 'Visible above apps when Scrola is on'
+                                        : 'Removed — counting runs silently',
+                                    style: AppTypography.caption(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            ScrolaToggle(
+                              value: _tracking.isOverlayEnabled,
+                              onChanged: (v) => _tracking.toggleOverlay(v),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () {
+                            HapticService.light();
+                            _tracking.toggleOverlay(!_tracking.isOverlayEnabled);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _tracking.isOverlayEnabled
+                                  ? AppColors.error.withValues(alpha: 0.12)
+                                  : AppColors.primaryAccent
+                                      .withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: _tracking.isOverlayEnabled
+                                    ? AppColors.error.withValues(alpha: 0.35)
+                                    : AppColors.primaryAccent
+                                        .withValues(alpha: 0.40),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _tracking.isOverlayEnabled
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  size: 16,
+                                  color: _tracking.isOverlayEnabled
+                                      ? AppColors.error
+                                      : AppColors.primaryAccent,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _tracking.isOverlayEnabled
+                                      ? 'Remove floating mascot'
+                                      : 'Show floating mascot',
+                                  style: AppTypography.caption(
+                                    color: _tracking.isOverlayEnabled
+                                        ? AppColors.error
+                                        : AppColors.primaryAccent,
+                                  ).copyWith(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(

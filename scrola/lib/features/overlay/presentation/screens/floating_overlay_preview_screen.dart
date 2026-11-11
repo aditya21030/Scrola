@@ -178,12 +178,12 @@ class _FloatingOverlayPreviewScreenState
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Stick to top centre',
+                                        'Stick to top notch',
                                         style: AppTypography.subheading()
                                             .copyWith(fontSize: 15),
                                       ),
                                       Text(
-                                        'Moves with your camera cutout',
+                                        'Pinned cleanly below camera cutout',
                                         style: AppTypography.caption(
                                           color: AppColors.secondaryText,
                                         ),
@@ -204,13 +204,23 @@ class _FloatingOverlayPreviewScreenState
                             ),
                             const SizedBox(height: 18),
                             ScrolaPrimaryButton(
-                              label: 'Looks good',
+                              label: 'Show floating mascot',
                               useMediumHaptic: true,
                               onPressed: () {
                                 _tracking.toggleOverlay(true);
                                 Navigator.of(context).pop();
                               },
                             ),
+                            if (_tracking.isOverlayEnabled) ...[
+                              const SizedBox(height: 8),
+                              ScrolaLinkButton(
+                                label: 'Remove floating mascot',
+                                onPressed: () {
+                                  _tracking.toggleOverlay(false);
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
                           ],
                         ),
                       ),

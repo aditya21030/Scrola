@@ -1,5 +1,7 @@
 package com.example.scrola.service
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
@@ -17,7 +19,11 @@ import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.Settings
 import android.util.TypedValue
 import android.view.Gravity
@@ -45,18 +51,22 @@ class ScrolaOverlayService : Service() {
     private var primaryTextView: TextView? = null
     private var dividerView: View? = null
     private var secondaryTextView: TextView? = null
+    private var closeButtonView: TextView? = null
 
     private var isExpanded: Boolean = false
     private var stickToTopCentre: Boolean = true
     private var overlaySize: String = "Medium"
     private var lastPlatform: String = ""
     private var positionAnimator: ValueAnimator? = null
+    private val longPressHandler = Handler(Looper.getMainLooper())
+    private var longPressRunnable: Runnable? = null
 
     companion object {
         const val ACTION_START = "ACTION_START_OVERLAY"
         const val ACTION_STOP = "ACTION_STOP_OVERLAY"
         const val ACTION_UPDATE = "ACTION_UPDATE_OVERLAY"
         const val ACTION_REFRESH_CONFIG = "ACTION_REFRESH_OVERLAY_CONFIG"
+        const val ACTION_DISMISS_USER = "ACTION_DISMISS_OVERLAY_BY_USER"
 
         const val EXTRA_TODAY = "EXTRA_TODAY"
         const val EXTRA_LIMIT = "EXTRA_LIMIT"
@@ -183,6 +193,10 @@ class ScrolaOverlayService : Service() {
                 stopSelf()
                 return START_NOT_STICKY
             }
+            ACTION_DISMISS_USER -> {
+                dismissByUser(animateOut = false)
+                return START_NOT_STICKY
+            }
             ACTION_START -> {
                 loadConfigFromDataManager()
                 applyLayoutSizingAndPosition(animateSnap = false)
@@ -246,11 +260,30 @@ class ScrolaOverlayService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         )
 
+        val dismissIntent = Intent(this, ScrolaOverlayService::class.java).apply {
+            action = ACTION_DISMISS_USER
+        }
+        val dismissPendingIntent = PendingIntent.getService(
+            this,
+            1,
+            dismissIntent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            } else {
+                PendingIntent.FLAG_UPDATE_CURRENT
+            }
+        )
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Scrola Active")
-            .setContentText("Brainy is guarding your feed")
+            .setContentText("Brainy is guarding your feed (long-press pill to hide)")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setContentIntent(pendingIntent)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "Remove mascot",
+                dismissPendingIntent
+            )
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
@@ -440,6 +473,29 @@ class ScrolaOverlayService : Service() {
         }
         pillContainer?.addView(secondaryTextView)
 
+        // 5. Compact close / remove button visible cleanly when expanded
+        closeButtonView = TextView(this).apply {
+            text = "✕"
+            gravity = Gravity.CENTER
+            setTextColor(Color.parseColor("#E5E5E5"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f)
+            typeface = Typeface.DEFAULT_BOLD
+            includeFontPadding = false
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#262626"))
+                setStroke(dpToPx(1), Color.parseColor("#3D3D3D"))
+            }
+            visibility = if (isExpanded) View.VISIBLE else View.GONE
+            setOnClickListener {
+                dismissByUser(animateOut = true)
+            }
+        }
+        val closeLp = LinearLayout.LayoutParams(dpToPx(22), dpToPx(22)).apply {
+            leftMargin = dpToPx(8)
+        }
+        pillContainer?.addView(closeButtonView, closeLp)
+
         val pillLp = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -565,6 +621,7 @@ class ScrolaOverlayService : Service() {
         var initialTouchX = 0f
         var initialTouchY = 0f
         var hasMoved = false
+        var longPressed = false
         var lastTapTime = 0L
 
         pillContainer?.setOnTouchListener { _, event ->
@@ -576,17 +633,30 @@ class ScrolaOverlayService : Service() {
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
                     hasMoved = false
+                    longPressed = false
+                    longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
+                    longPressRunnable = Runnable {
+                        if (!hasMoved) {
+                            longPressed = true
+                            performDismissHaptic()
+                            dismissByUser(animateOut = true)
+                        }
+                    }
+                    longPressHandler.postDelayed(longPressRunnable!!, 500L)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (stickToTopCentre) {
-                        // Locked cleanly at top notch when "Top Notch" mode is active
-                        return@setOnTouchListener true
-                    }
                     val dx = (event.rawX - initialTouchX).toInt()
                     val dy = (event.rawY - initialTouchY).toInt()
                     if (abs(dx) > 10 || abs(dy) > 10) {
                         hasMoved = true
+                        longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
+                    }
+                    if (stickToTopCentre) {
+                        // Locked cleanly at top notch when "Top Notch" mode is active
+                        return@setOnTouchListener true
+                    }
+                    if (hasMoved) {
                         val metrics = resources.displayMetrics
                         val halfWidth = metrics.widthPixels / 2
                         val minY = getNotchDockY()
@@ -602,6 +672,9 @@ class ScrolaOverlayService : Service() {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
+                    if (longPressed) return@setOnTouchListener true
+
                     if (hasMoved && !stickToTopCentre) {
                         ScrolaDataManager.getInstance(this@ScrolaOverlayService)
                             .setFreeOverlayPosition(currentParams.x, currentParams.y)
@@ -624,8 +697,55 @@ class ScrolaOverlayService : Service() {
                     }
                     true
                 }
+                MotionEvent.ACTION_CANCEL -> {
+                    longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
+                    false
+                }
                 else -> false
             }
+        }
+    }
+
+    private fun performDismissHaptic() {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(40L, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(40L)
+            }
+        }
+    }
+
+    private fun dismissByUser(animateOut: Boolean) {
+        ScrolaDataManager.getInstance(this).setOverlayEnabled(false)
+        val broadcast = Intent(ScrolaAccessibilityService.BROADCAST_REEL_EVENT).apply {
+            setPackage(packageName)
+            putExtra(ScrolaAccessibilityService.EXTRA_EVENT_TYPE, "overlay_dismissed")
+            putExtra(ScrolaAccessibilityService.EXTRA_PLATFORM, "")
+        }
+        sendBroadcast(broadcast)
+
+        val pill = pillContainer
+        if (!animateOut || pill == null) {
+            stopSelf()
+            return
+        }
+
+        pill.animate().cancel()
+        val scaleX = ObjectAnimator.ofFloat(pill, View.SCALE_X, pill.scaleX, 0.45f)
+        val scaleY = ObjectAnimator.ofFloat(pill, View.SCALE_Y, pill.scaleY, 0.45f)
+        val alpha = ObjectAnimator.ofFloat(pill, View.ALPHA, pill.alpha, 0f)
+        AnimatorSet().apply {
+            playTogether(scaleX, scaleY, alpha)
+            duration = 170L
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    stopSelf()
+                }
+            })
+            start()
         }
     }
 
@@ -674,6 +794,7 @@ class ScrolaOverlayService : Service() {
             } else {
                 "$remaining left$shortPlatform"
             }
+            closeButtonView?.visibility = View.VISIBLE
         } else {
             primaryTextView?.text = "$today"
             secondaryTextView?.text = when {
@@ -681,6 +802,7 @@ class ScrolaOverlayService : Service() {
                 isLimitReached -> "0 left"
                 else -> "$remaining left"
             }
+            closeButtonView?.visibility = View.GONE
         }
 
         val strokeColor = when {
@@ -718,6 +840,7 @@ class ScrolaOverlayService : Service() {
 
     override fun onDestroy() {
         isServiceRunning = false
+        longPressHandler.removeCallbacksAndMessages(null)
         positionAnimator?.cancel()
         positionAnimator = null
         if (rootContainer != null) {

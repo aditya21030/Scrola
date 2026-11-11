@@ -64,6 +64,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    if (!tracking.isOverlayEnabled) {
+      HapticService.medium();
+      await tracking.toggleTracking(true, startOverlayNow: false);
+      return;
+    }
+
     if (_isLaunchingToNotch) return;
     setState(() => _isLaunchingToNotch = true);
 
@@ -98,6 +104,40 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _handleToggleOverlay(TrackingService tracking) async {
+    if (tracking.isOverlayEnabled) {
+      HapticService.light();
+      await tracking.toggleOverlay(false);
+      return;
+    }
+
+    if (!tracking.isOverlayGranted) {
+      HapticService.light();
+      _push(context, const FloatingOverlaySetupScreen());
+      return;
+    }
+
+    if (!tracking.isTrackingEnabled) {
+      HapticService.light();
+      await tracking.toggleOverlay(true);
+      return;
+    }
+
+    if (_isLaunchingToNotch) return;
+    setState(() => _isLaunchingToNotch = true);
+    await playNotchFlightAnimation(
+      context: context,
+      mascotKey: _mascotKey,
+      mood: tracking.currentMood,
+      skin: tracking.equippedSkin,
+      stickToNotch: tracking.overlayStickToNotch,
+      onArrive: () {
+        tracking.toggleOverlay(true);
+      },
+    );
+    if (mounted) setState(() => _isLaunchingToNotch = false);
   }
 
   @override
@@ -202,9 +242,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           isTracking: isScrolaOn,
                           permissionsReady: permissionsReady,
                           stickToNotch: tracking.overlayStickToNotch,
+                          isOverlayEnabled: tracking.isOverlayEnabled,
                           isLaunchingToNotch: _isLaunchingToNotch,
                           mascotKey: _mascotKey,
                           onToggleScrola: () => _handleToggleScrola(tracking),
+                          onToggleOverlay: () => _handleToggleOverlay(tracking),
                           onMascotTap: () => _push(
                             context,
                             BrainDetailsScreen(

@@ -19,9 +19,11 @@ class HeroGaugeSection extends StatefulWidget {
   final bool isTracking;
   final bool permissionsReady;
   final bool stickToNotch;
+  final bool isOverlayEnabled;
   final bool isLaunchingToNotch;
   final Key? mascotKey;
   final VoidCallback? onToggleScrola;
+  final VoidCallback? onToggleOverlay;
   final VoidCallback? onMascotTap;
   final VoidCallback? onStreakTap;
   final VoidCallback? onXpTap;
@@ -41,9 +43,11 @@ class HeroGaugeSection extends StatefulWidget {
     this.isTracking = false,
     this.permissionsReady = true,
     this.stickToNotch = true,
+    this.isOverlayEnabled = true,
     this.isLaunchingToNotch = false,
     this.mascotKey,
     this.onToggleScrola,
+    this.onToggleOverlay,
     this.onMascotTap,
     this.onStreakTap,
     this.onXpTap,
@@ -393,12 +397,26 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _ScrolaPowerToggleCard(
-              permissionsReady: widget.permissionsReady,
-              isTracking: widget.isTracking,
-              stickToNotch: widget.stickToNotch,
-              isLaunching: widget.isLaunchingToNotch,
-              onTap: widget.onToggleScrola!,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ScrolaPowerToggleCard(
+                  permissionsReady: widget.permissionsReady,
+                  isTracking: widget.isTracking,
+                  stickToNotch: widget.stickToNotch,
+                  isOverlayEnabled: widget.isOverlayEnabled,
+                  isLaunching: widget.isLaunchingToNotch,
+                  onTap: widget.onToggleScrola!,
+                ),
+                if (widget.permissionsReady && widget.onToggleOverlay != null) ...[
+                  const SizedBox(height: 8),
+                  _FloatingMascotQuickChip(
+                    isOverlayEnabled: widget.isOverlayEnabled,
+                    isTracking: widget.isTracking,
+                    onTap: widget.onToggleOverlay!,
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -407,10 +425,78 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
   }
 }
 
+class _FloatingMascotQuickChip extends StatelessWidget {
+  final bool isOverlayEnabled;
+  final bool isTracking;
+  final VoidCallback onTap;
+
+  const _FloatingMascotQuickChip({
+    required this.isOverlayEnabled,
+    required this.isTracking,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final String label = isOverlayEnabled
+        ? (isTracking
+            ? 'Remove floating mascot'
+            : 'Floating mascot enabled · Tap to remove')
+        : 'Floating mascot removed · Tap to restore';
+
+    return GestureDetector(
+      onTap: () {
+        HapticService.subtle();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSolid,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isOverlayEnabled
+                ? AppColors.borderSubtle
+                : AppColors.primaryAccent.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isOverlayEnabled
+                  ? Icons.visibility_off_rounded
+                  : Icons.visibility_rounded,
+              size: 15,
+              color: isOverlayEnabled
+                  ? AppColors.secondaryText
+                  : AppColors.primaryAccent,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.caption(
+                  color: isOverlayEnabled
+                      ? AppColors.secondaryText
+                      : AppColors.primaryAccent,
+                ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ScrolaPowerToggleCard extends StatelessWidget {
   final bool permissionsReady;
   final bool isTracking;
   final bool stickToNotch;
+  final bool isOverlayEnabled;
   final bool isLaunching;
   final VoidCallback onTap;
 
@@ -418,6 +504,7 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
     required this.permissionsReady,
     required this.isTracking,
     required this.stickToNotch,
+    required this.isOverlayEnabled,
     required this.isLaunching,
     required this.onTap,
   });
@@ -436,10 +523,14 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
     final String subtitle = !canTurnOn
         ? 'Required so Brainy can count & guard feeds'
         : isTracking
-            ? (stickToNotch
-                ? 'Pinned cleanly at top notch'
-                : 'Floating freely on screen')
-            : 'Sends Brainy into the top notch & starts counting';
+            ? (!isOverlayEnabled
+                ? 'Counting quietly (floating mascot removed)'
+                : stickToNotch
+                    ? 'Pinned cleanly at top notch'
+                    : 'Floating freely on screen')
+            : (isOverlayEnabled
+                ? 'Sends Brainy into the top notch & starts counting'
+                : 'Starts counting silently without floating mascot');
 
     final Color bg = !canTurnOn
         ? const Color(0xFF1F1712)

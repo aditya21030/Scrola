@@ -96,8 +96,8 @@ class SettingsScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         _SettingLinkRow(
-                          title: 'Floating counter',
-                          value: tracking.isOverlayEnabled ? 'On' : 'Off',
+                          title: 'Floating mascot',
+                          value: tracking.isOverlayEnabled ? 'Shown' : 'Hidden',
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) =>

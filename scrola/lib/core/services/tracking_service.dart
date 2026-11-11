@@ -352,6 +352,10 @@ class TrackingService extends ChangeNotifier {
       FocusModeService().incrementBlockedAttempt();
       await HapticService.error();
       notifyListeners();
+    } else if (event.eventType == 'overlay_dismissed') {
+      await _storage?.setOverlayEnabled(false);
+      await HapticService.light();
+      notifyListeners();
     }
   }
 
