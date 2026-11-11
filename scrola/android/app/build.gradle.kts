@@ -20,10 +20,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.scrola"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.yousful.scrola"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -32,9 +29,12 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Sign with debug keys for testing so sideloading works out of the box;
+            // enable both v1 (JAR) and v2 signing for broad device installer compatibility.
+            signingConfig = signingConfigs.getByName("debug").apply {
+                enableV1Signing = true
+                enableV2Signing = true
+            }
         }
     }
 }
