@@ -10,10 +10,6 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 class HeroGaugeSection extends StatefulWidget {
   final int reelsToday;
   final int totalLimit;
-  final int streakDays;
-  final int xpToday;
-  final int currentLevel;
-  final String levelTitle;
   final BrainyMood mood;
   final BrainySkin skin;
   final bool isTracking;
@@ -25,19 +21,12 @@ class HeroGaugeSection extends StatefulWidget {
   final VoidCallback? onToggleScrola;
   final VoidCallback? onToggleOverlay;
   final VoidCallback? onMascotTap;
-  final VoidCallback? onStreakTap;
-  final VoidCallback? onXpTap;
-  final VoidCallback? onLevelTap;
   final VoidCallback? onCounterTap;
 
   const HeroGaugeSection({
     super.key,
     required this.reelsToday,
     required this.totalLimit,
-    required this.streakDays,
-    required this.xpToday,
-    required this.currentLevel,
-    required this.levelTitle,
     required this.mood,
     required this.skin,
     this.isTracking = false,
@@ -49,9 +38,6 @@ class HeroGaugeSection extends StatefulWidget {
     this.onToggleScrola,
     this.onToggleOverlay,
     this.onMascotTap,
-    this.onStreakTap,
-    this.onXpTap,
-    this.onLevelTap,
     this.onCounterTap,
   });
 
@@ -60,18 +46,12 @@ class HeroGaugeSection extends StatefulWidget {
 }
 
 class _HeroGaugeSectionState extends State<HeroGaugeSection>
-    with TickerProviderStateMixin {
-  late final AnimationController _floatController;
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ringController;
 
   @override
   void initState() {
     super.initState();
-    _floatController = AnimationController(
-      vsync: this,
-      duration: AppMotion.floatCycle,
-    )..repeat(reverse: true);
-
     _ringController = AnimationController(
       vsync: this,
       duration: AppMotion.ringDraw,
@@ -80,7 +60,6 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
 
   @override
   void dispose() {
-    _floatController.dispose();
     _ringController.dispose();
     super.dispose();
   }
@@ -160,10 +139,9 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
 
             return SizedBox(
               width: arenaWidth,
-              height: ringSize + 12,
+              height: ringSize,
               child: Stack(
                 alignment: Alignment.center,
-                clipBehavior: Clip.none,
                 children: [
                   AnimatedBuilder(
                     animation: _ringController,
@@ -195,119 +173,6 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                           size: ringSize * 0.62,
                           animate: !reduceMotion,
                         ),
-                      ),
-                    ),
-                  ),
-                  // Left floating orb: streak
-                  Positioned(
-                    left: 8,
-                    top: ringSize * 0.25,
-                    child: _FloatingOrb(
-                      controller: _floatController,
-                      phaseOffset: 0.0,
-                      reduceMotion: reduceMotion,
-                      size: 62,
-                      onTap: widget.onStreakTap,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.local_fire_department_rounded,
-                            color: AppColors.primaryAccent,
-                            size: 16,
-                          ),
-                          Text(
-                            '${widget.streakDays}',
-                            style: AppTypography.numeric(
-                              color: AppColors.primaryText,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              height: 1.05,
-                            ),
-                          ),
-                          Text(
-                            'streak',
-                            style: AppTypography.caption(
-                              color: AppColors.secondaryText,
-                            ).copyWith(fontSize: 10),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Top-right floating orb: XP today
-                  Positioned(
-                    right: 10,
-                    top: ringSize * 0.16,
-                    child: _FloatingOrb(
-                      controller: _floatController,
-                      phaseOffset: 0.4,
-                      reduceMotion: reduceMotion,
-                      size: 60,
-                      onTap: widget.onXpTap,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.bolt_rounded,
-                            color: AppColors.primaryAccent,
-                            size: 16,
-                          ),
-                          Text(
-                            '+${widget.xpToday}',
-                            style: AppTypography.numeric(
-                              color: AppColors.primaryText,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              height: 1.05,
-                            ),
-                          ),
-                          Text(
-                            'XP',
-                            style: AppTypography.caption(
-                              color: AppColors.secondaryText,
-                            ).copyWith(fontSize: 10),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Bottom-right floating orb: Level
-                  Positioned(
-                    right: 8,
-                    bottom: ringSize * 0.10,
-                    child: _FloatingOrb(
-                      controller: _floatController,
-                      phaseOffset: 0.8,
-                      reduceMotion: reduceMotion,
-                      size: 64,
-                      onTap: widget.onLevelTap,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.emoji_events_outlined,
-                            color: AppColors.primaryAccent,
-                            size: 15,
-                          ),
-                          Text(
-                            'Lv ${widget.currentLevel}',
-                            style: AppTypography.numeric(
-                              color: AppColors.primaryText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              height: 1.05,
-                            ),
-                          ),
-                          Text(
-                            widget.levelTitle.split(' ').first,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.caption(
-                              color: AppColors.secondaryText,
-                            ).copyWith(fontSize: 9.5),
-                          ),
-                        ],
                       ),
                     ),
                   ),
@@ -655,62 +520,6 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FloatingOrb extends StatelessWidget {
-  final AnimationController controller;
-  final double phaseOffset;
-  final bool reduceMotion;
-  final double size;
-  final VoidCallback? onTap;
-  final Widget child;
-
-  const _FloatingOrb({
-    required this.controller,
-    required this.phaseOffset,
-    required this.reduceMotion,
-    required this.size,
-    required this.child,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, child) {
-        final offset = reduceMotion
-            ? 0.0
-            : math.sin((controller.value + phaseOffset) * 2 * math.pi) * 4.5;
-        return Transform.translate(
-          offset: Offset(0, offset),
-          child: child,
-        );
-      },
-      child: GestureDetector(
-        onTap: () {
-          HapticService.subtle();
-          onTap?.call();
-        },
-        child: Container(
-          width: size,
-          height: size,
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-          ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: child,
-          ),
         ),
       ),
     );

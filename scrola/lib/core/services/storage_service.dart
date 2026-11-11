@@ -18,20 +18,42 @@ class StorageService {
     return _instance!;
   }
 
+  static const List<String> supportedPlatformIds = [
+    'instagram',
+    'youtube',
+    'tiktok',
+    'snapchat',
+    'facebook',
+    'x',
+    'reddit',
+    'moj',
+  ];
+
+  static const Map<String, int> defaultPlatformLimits = {
+    'instagram': 20,
+    'youtube': 15,
+    'tiktok': 15,
+    'snapchat': 5,
+    'facebook': 10,
+    'x': 10,
+    'reddit': 10,
+    'moj': 10,
+  };
+
   static const String _keyOnboardingComplete = 'scrola_onboarding_complete';
   static const String _keySelectedGoal = 'scrola_selected_goal';
   static const String _keySelectedPlatforms = 'scrola_selected_platforms';
 
   static const String _keyLastDate = 'scrola_last_date';
   static const String _keyTotalToday = 'scrola_total_today';
-  static const String _keyInstagram = 'scrola_instagram';
-  static const String _keyYouTube = 'scrola_youtube';
-  static const String _keyFacebook = 'scrola_facebook';
-  static const String _keySnapchat = 'scrola_snapchat';
   static const String _keySessionReels = 'scrola_session_reels';
   static const String _keyScreenTimeSec = 'scrola_screen_time_sec';
   static const String _keyFocusMinsToday = 'scrola_focus_mins_today';
   static const String _keyFocusSessionsToday = 'scrola_focus_sessions_today';
+
+  static String _countKey(String platformId) => 'scrola_${platformId.toLowerCase()}';
+  static String _limitKey(String platformId) =>
+      'scrola_${platformId.toLowerCase()}_limit';
 
   static const String _keyStreakDays = 'scrola_streak_days';
   static const String _keyLastStreakDate = 'scrola_last_streak_date';
@@ -40,10 +62,6 @@ class StorageService {
   static const String _keyEquippedSkin = 'scrola_equipped_skin';
 
   static const String _keyTotalLimit = 'scrola_total_limit';
-  static const String _keyInstagramLimit = 'scrola_instagram_limit';
-  static const String _keyYouTubeLimit = 'scrola_youtube_limit';
-  static const String _keyFacebookLimit = 'scrola_facebook_limit';
-  static const String _keySnapchatLimit = 'scrola_snapchat_limit';
 
   static const String _keyTrackingEnabled = 'scrola_tracking_enabled';
   static const String _keyPlatformLimitsEnabled = 'scrola_platform_limits_enabled';
@@ -81,10 +99,9 @@ class StorageService {
     if (today != lastDate) {
       _prefs?.setString(_keyLastDate, today);
       _prefs?.setInt(_keyTotalToday, 0);
-      _prefs?.setInt(_keyInstagram, 0);
-      _prefs?.setInt(_keyYouTube, 0);
-      _prefs?.setInt(_keyFacebook, 0);
-      _prefs?.setInt(_keySnapchat, 0);
+      for (final platformId in supportedPlatformIds) {
+        _prefs?.setInt(_countKey(platformId), 0);
+      }
       _prefs?.setInt(_keySessionReels, 0);
       _prefs?.setInt(_keyScreenTimeSec, 0);
       _prefs?.setInt(_keyFocusMinsToday, 0);
@@ -111,10 +128,16 @@ class StorageService {
 
   // Daily Consumption Counts
   int get totalReelsToday => _prefs?.getInt(_keyTotalToday) ?? 0;
-  int get instagramReels => _prefs?.getInt(_keyInstagram) ?? 0;
-  int get youtubeReels => _prefs?.getInt(_keyYouTube) ?? 0;
-  int get facebookReels => _prefs?.getInt(_keyFacebook) ?? 0;
-  int get snapchatReels => _prefs?.getInt(_keySnapchat) ?? 0;
+  int reelsForPlatform(String platformId) =>
+      _prefs?.getInt(_countKey(platformId)) ?? 0;
+  int get instagramReels => reelsForPlatform('instagram');
+  int get youtubeReels => reelsForPlatform('youtube');
+  int get tiktokReels => reelsForPlatform('tiktok');
+  int get facebookReels => reelsForPlatform('facebook');
+  int get snapchatReels => reelsForPlatform('snapchat');
+  int get xReels => reelsForPlatform('x');
+  int get redditReels => reelsForPlatform('reddit');
+  int get mojReels => reelsForPlatform('moj');
   int get sessionReels => _prefs?.getInt(_keySessionReels) ?? 0;
   int get screenTimeSeconds => _prefs?.getInt(_keyScreenTimeSec) ?? 0;
   int get focusMinutesToday => _prefs?.getInt(_keyFocusMinsToday) ?? 0;
@@ -126,19 +149,9 @@ class StorageService {
     await _prefs?.setInt(_keySessionReels, sessionReels + 1);
     await _prefs?.setInt(_keyScreenTimeSec, screenTimeSeconds + 30);
 
-    switch (platform.toLowerCase()) {
-      case 'instagram':
-        await _prefs?.setInt(_keyInstagram, instagramReels + 1);
-        break;
-      case 'youtube':
-        await _prefs?.setInt(_keyYouTube, youtubeReels + 1);
-        break;
-      case 'facebook':
-        await _prefs?.setInt(_keyFacebook, facebookReels + 1);
-        break;
-      case 'snapchat':
-        await _prefs?.setInt(_keySnapchat, snapchatReels + 1);
-        break;
+    final normalized = platform.trim().toLowerCase();
+    if (normalized.isNotEmpty) {
+      await _prefs?.setInt(_countKey(normalized), reelsForPlatform(normalized) + 1);
     }
   }
 
@@ -150,18 +163,16 @@ class StorageService {
 
   Future<void> syncCounts({
     required int total,
-    required int instagram,
-    required int youtube,
-    required int facebook,
-    required int snapchat,
+    Map<String, int>? platformCounts,
     required int session,
   }) async {
     _checkDailyReset();
     await _prefs?.setInt(_keyTotalToday, total);
-    await _prefs?.setInt(_keyInstagram, instagram);
-    await _prefs?.setInt(_keyYouTube, youtube);
-    await _prefs?.setInt(_keyFacebook, facebook);
-    await _prefs?.setInt(_keySnapchat, snapchat);
+    if (platformCounts != null) {
+      for (final entry in platformCounts.entries) {
+        await _prefs?.setInt(_countKey(entry.key), entry.value);
+      }
+    }
     await _prefs?.setInt(_keySessionReels, session);
     await _prefs?.setInt(_keyScreenTimeSec, total * 30);
   }
@@ -172,10 +183,25 @@ class StorageService {
 
   // Limits
   int get totalLimit => _prefs?.getInt(_keyTotalLimit) ?? 40;
-  int get instagramLimit => _prefs?.getInt(_keyInstagramLimit) ?? 20;
-  int get youtubeLimit => _prefs?.getInt(_keyYouTubeLimit) ?? 15;
-  int get facebookLimit => _prefs?.getInt(_keyFacebookLimit) ?? 10;
-  int get snapchatLimit => _prefs?.getInt(_keySnapchatLimit) ?? 5;
+  int limitForPlatform(String platformId) {
+    final normalized = platformId.trim().toLowerCase();
+    return _prefs?.getInt(_limitKey(normalized)) ??
+        defaultPlatformLimits[normalized] ??
+        10;
+  }
+
+  Map<String, int> get allPlatformLimits => {
+        for (final id in supportedPlatformIds) id: limitForPlatform(id),
+      };
+
+  int get instagramLimit => limitForPlatform('instagram');
+  int get youtubeLimit => limitForPlatform('youtube');
+  int get tiktokLimit => limitForPlatform('tiktok');
+  int get facebookLimit => limitForPlatform('facebook');
+  int get snapchatLimit => limitForPlatform('snapchat');
+  int get xLimit => limitForPlatform('x');
+  int get redditLimit => limitForPlatform('reddit');
+  int get mojLimit => limitForPlatform('moj');
 
   Future<void> setLimits({
     int? total,
@@ -183,12 +209,20 @@ class StorageService {
     int? youtube,
     int? facebook,
     int? snapchat,
+    Map<String, int>? platformLimits,
   }) async {
     if (total != null) await _prefs?.setInt(_keyTotalLimit, total);
-    if (instagram != null) await _prefs?.setInt(_keyInstagramLimit, instagram);
-    if (youtube != null) await _prefs?.setInt(_keyYouTubeLimit, youtube);
-    if (facebook != null) await _prefs?.setInt(_keyFacebookLimit, facebook);
-    if (snapchat != null) await _prefs?.setInt(_keySnapchatLimit, snapchat);
+    if (instagram != null) {
+      await _prefs?.setInt(_limitKey('instagram'), instagram);
+    }
+    if (youtube != null) await _prefs?.setInt(_limitKey('youtube'), youtube);
+    if (facebook != null) await _prefs?.setInt(_limitKey('facebook'), facebook);
+    if (snapchat != null) await _prefs?.setInt(_limitKey('snapchat'), snapchat);
+    if (platformLimits != null) {
+      for (final entry in platformLimits.entries) {
+        await _prefs?.setInt(_limitKey(entry.key), entry.value);
+      }
+    }
   }
 
   // Gamification

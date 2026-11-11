@@ -415,12 +415,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
 
   // 04 - Platform Selection
   Widget _buildPlatformSelection() {
-    final platforms = [
-      (id: 'instagram', name: 'Instagram Reels', platform: SocialPlatform.instagram),
-      (id: 'youtube', name: 'YouTube Shorts', platform: SocialPlatform.youtube),
-      (id: 'facebook', name: 'Facebook Reels', platform: SocialPlatform.facebook),
-      (id: 'snapchat', name: 'Snapchat Spotlight', platform: SocialPlatform.snapchat),
-    ];
+    const platforms = SocialPlatform.values;
 
     return _stepScaffold(
       body: Column(
@@ -434,31 +429,31 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
           const SizedBox(height: 22),
           for (int i = 0; i < platforms.length; i++) ...[
             Builder(builder: (context) {
-              final item = platforms[i];
-              final isSelected = _selectedPlatforms.contains(item.id);
+              final platform = platforms[i];
+              final isSelected = _selectedPlatforms.contains(platform.id);
               return ScrolaSelectableCard(
                 isSelected: isSelected,
                 onTap: () {
                   HapticService.subtle();
                   setState(() {
                     if (isSelected && _selectedPlatforms.length > 1) {
-                      _selectedPlatforms.remove(item.id);
+                      _selectedPlatforms.remove(platform.id);
                     } else {
-                      _selectedPlatforms.add(item.id);
+                      _selectedPlatforms.add(platform.id);
                     }
                   });
                 },
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: Row(
                   children: [
-                    PlatformIcon(platform: item.platform, size: 42),
+                    PlatformIcon(platform: platform, size: 42),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            item.name,
+                            platform.reelsName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.subheading(),
@@ -881,7 +876,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
           ),
           const SizedBox(height: 12),
           Text(
-            'To float above Instagram, YouTube and other apps, Scrola uses Android\'s "display over other apps" permission.',
+            'To float above Instagram, YouTube, TikTok and other reel apps, Scrola uses Android\'s "display over other apps" permission.',
             style: AppTypography.body(),
           ),
           const SizedBox(height: 8),

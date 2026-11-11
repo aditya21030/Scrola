@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/gamification_engine.dart';
@@ -5,11 +6,11 @@ import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/platform_icon.dart';
 import '../../../brain/presentation/screens/brain_details_screen.dart';
 import '../../../brain/presentation/screens/brain_overview_screen.dart';
 import '../../../brain/presentation/screens/rewards_screen.dart';
 import '../../../brain/presentation/screens/streak_calendar_screen.dart';
-import '../../../brain/presentation/screens/xp_progress_screen.dart';
 import '../../../focus/presentation/screens/active_focus_session_screen.dart';
 import '../../../focus/presentation/screens/focus_dashboard_screen.dart';
 import '../../../insights/presentation/screens/live_tracking_screen.dart';
@@ -39,7 +40,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _mascotKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
   bool _isLaunchingToNotch = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   String _greetingForHour(int hour) {
     if (hour < 12) return 'Good morning';
@@ -161,44 +169,35 @@ class _HomeScreenState extends State<HomeScreen> {
         final isScrolaOn = permissionsReady && tracking.isTrackingEnabled;
         final greeting = _greetingForHour(DateTime.now().hour);
 
+        final countsByPlatform = <SocialPlatform, int>{
+          for (final platform in SocialPlatform.values)
+            platform: tracking.reelsForId(platform.id),
+        };
+        final limitsByPlatform = <SocialPlatform, int>{
+          for (final platform in SocialPlatform.values)
+            platform: tracking.limitForId(platform.id),
+        };
+
         return Scaffold(
           backgroundColor: AppColors.primaryBackground,
           body: Stack(
             children: [
-              // Warm hero top gradient (#26120A -> #101010 matching 12-home-dashboard.html)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 540,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        const Color(0xFF26120A),
-                        AppColors.primaryBackground,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 40,
-                left: 0,
-                right: 0,
-                height: 320,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment.center,
-                      radius: 0.72,
-                      colors: [
-                        AppColors.primaryAccent.withValues(alpha: 0.30),
-                        AppColors.primaryAccent.withValues(alpha: 0.0),
-                      ],
-                    ),
+              // Seamless full-viewport warm glow that lifts & fades smoothly on scroll
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _scrollController,
+                    builder: (context, _) {
+                      final offset = _scrollController.hasClients
+                          ? _scrollController.offset
+                          : 0.0;
+                      return CustomPaint(
+                        painter: _HomeAmbientGlowPainter(
+                          scrollOffset: offset,
+                          topPadding: MediaQuery.paddingOf(context).top,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -213,6 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     await tracking.syncFromNative();
                   },
                   child: SingleChildScrollView(
+                    controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(
                       parent: BouncingScrollPhysics(),
                     ),
@@ -233,10 +233,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         HeroGaugeSection(
                           reelsToday: tracking.totalReelsToday,
                           totalLimit: tracking.totalLimit,
-                          streakDays: tracking.streakDays,
-                          xpToday: 20,
-                          currentLevel: levelInfo.level,
-                          levelTitle: stage.title,
                           mood: tracking.currentMood,
                           skin: tracking.equippedSkin,
                           isTracking: isScrolaOn,
@@ -253,17 +249,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               initialSkin: tracking.equippedSkin,
                             ),
                           ),
-                          onStreakTap: () =>
-                              _push(context, const StreakCalendarScreen()),
-                          onXpTap: () =>
-                              _push(context, const XpProgressScreen()),
-                          onLevelTap: () {
-                            if (widget.onSwitchTab != null) {
-                              widget.onSwitchTab!(3);
-                            } else {
-                              _push(context, const BrainOverviewScreen());
-                            }
-                          },
                           onCounterTap: () =>
                               _push(context, const ReelLimitSetupScreen()),
                         ),
@@ -281,14 +266,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 24),
                               PlatformBreakdownSection(
-                                instagramReels: tracking.instagramReels,
-                                instagramLimit: tracking.instagramLimit,
-                                youtubeReels: tracking.youtubeReels,
-                                youtubeLimit: tracking.youtubeLimit,
-                                facebookReels: tracking.facebookReels,
-                                facebookLimit: tracking.facebookLimit,
-                                snapchatReels: tracking.snapchatReels,
-                                snapchatLimit: tracking.snapchatLimit,
+                                counts: countsByPlatform,
+                                limits: limitsByPlatform,
                                 onDetailsTap: () => _push(
                                     context, const PlatformBreakdownScreen()),
                                 onPlatformTap: (_) => _push(
@@ -456,4 +435,45 @@ class _StatusDotItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HomeAmbientGlowPainter extends CustomPainter {
+  final double scrollOffset;
+  final double topPadding;
+
+  const _HomeAmbientGlowPainter({
+    required this.scrollOffset,
+    required this.topPadding,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fade = (1.0 - (scrollOffset / 320.0)).clamp(0.0, 1.0);
+    if (fade <= 0.005) return;
+
+    final center = Offset(
+      size.width * 0.5,
+      topPadding + 220.0 - scrollOffset * 0.85,
+    );
+    final radius = math.max(size.width, 360.0) * 0.88;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          AppColors.primaryAccent.withValues(alpha: 0.24 * fade),
+          AppColors.primaryAccent.withValues(alpha: 0.12 * fade),
+          const Color(0xFF9C3A14).withValues(alpha: 0.045 * fade),
+          AppColors.primaryBackground.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.30, 0.62, 1.0],
+      ).createShader(rect);
+
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(_HomeAmbientGlowPainter oldDelegate) =>
+      oldDelegate.scrollOffset != scrollOffset ||
+      oldDelegate.topPadding != topPadding;
 }

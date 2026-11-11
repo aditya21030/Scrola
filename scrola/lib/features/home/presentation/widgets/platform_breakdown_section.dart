@@ -6,33 +6,23 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/platform_icon.dart';
 
 class PlatformBreakdownSection extends StatelessWidget {
-  final int instagramReels;
-  final int instagramLimit;
-  final int youtubeReels;
-  final int youtubeLimit;
-  final int facebookReels;
-  final int facebookLimit;
-  final int snapchatReels;
-  final int snapchatLimit;
+  final Map<SocialPlatform, int> counts;
+  final Map<SocialPlatform, int> limits;
   final VoidCallback? onDetailsTap;
   final ValueChanged<SocialPlatform>? onPlatformTap;
 
   const PlatformBreakdownSection({
     super.key,
-    required this.instagramReels,
-    required this.instagramLimit,
-    required this.youtubeReels,
-    required this.youtubeLimit,
-    required this.facebookReels,
-    required this.facebookLimit,
-    required this.snapchatReels,
-    required this.snapchatLimit,
+    required this.counts,
+    required this.limits,
     this.onDetailsTap,
     this.onPlatformTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    const platforms = SocialPlatform.values;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -60,58 +50,35 @@ class PlatformBreakdownSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _PlatformTileCard(
-                platform: SocialPlatform.instagram,
-                label: 'Instagram Reels',
-                count: instagramReels,
-                limit: instagramLimit,
-                brandColor: AppColors.instagram,
-                onTap: () => onPlatformTap?.call(SocialPlatform.instagram),
+        for (int i = 0; i < platforms.length; i += 2) ...[
+          if (i > 0) const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCard(platforms[i]),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _PlatformTileCard(
-                platform: SocialPlatform.youtube,
-                label: 'YouTube Shorts',
-                count: youtubeReels,
-                limit: youtubeLimit,
-                brandColor: AppColors.youtube,
-                onTap: () => onPlatformTap?.call(SocialPlatform.youtube),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _PlatformTileCard(
-                platform: SocialPlatform.facebook,
-                label: 'Facebook Reels',
-                count: facebookReels,
-                limit: facebookLimit,
-                brandColor: AppColors.facebook,
-                onTap: () => onPlatformTap?.call(SocialPlatform.facebook),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _PlatformTileCard(
-                platform: SocialPlatform.snapchat,
-                label: 'Snapchat Spotlight',
-                count: snapchatReels,
-                limit: snapchatLimit,
-                brandColor: AppColors.snapchat,
-                onTap: () => onPlatformTap?.call(SocialPlatform.snapchat),
-              ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 12),
+              if (i + 1 < platforms.length)
+                Expanded(
+                  child: _buildCard(platforms[i + 1]),
+                )
+              else
+                const Spacer(),
+            ],
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _buildCard(SocialPlatform platform) {
+    return _PlatformTileCard(
+      platform: platform,
+      label: platform.reelsName,
+      count: counts[platform] ?? 0,
+      limit: limits[platform] ?? platform.defaultLimit,
+      brandColor: platform.brandColor,
+      onTap: () => onPlatformTap?.call(platform),
     );
   }
 }

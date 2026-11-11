@@ -85,17 +85,20 @@ class MainActivity : FlutterActivity() {
                     val totalLimit = call.argument<Int>("totalLimit")
                     if (totalLimit != null) dataManager.setTotalLimit(totalLimit)
 
-                    val instagramLimit = call.argument<Int>("instagramLimit")
-                    if (instagramLimit != null) dataManager.setPlatformLimit("instagram", instagramLimit)
+                    for (platform in ScrolaDataManager.SUPPORTED_PLATFORMS) {
+                        val specificLimit = call.argument<Int>("${platform}Limit")
+                        if (specificLimit != null) {
+                            dataManager.setPlatformLimit(platform, specificLimit)
+                        }
+                    }
 
-                    val youtubeLimit = call.argument<Int>("youtubeLimit")
-                    if (youtubeLimit != null) dataManager.setPlatformLimit("youtube", youtubeLimit)
-
-                    val facebookLimit = call.argument<Int>("facebookLimit")
-                    if (facebookLimit != null) dataManager.setPlatformLimit("facebook", facebookLimit)
-
-                    val snapchatLimit = call.argument<Int>("snapchatLimit")
-                    if (snapchatLimit != null) dataManager.setPlatformLimit("snapchat", snapchatLimit)
+                    val platformLimitsMap = call.argument<Map<String, Any>>("platformLimits")
+                    platformLimitsMap?.forEach { (platform, rawVal) ->
+                        val intVal = (rawVal as? Number)?.toInt()
+                        if (intVal != null) {
+                            dataManager.setPlatformLimit(platform, intVal)
+                        }
+                    }
 
                     val focusActive = call.argument<Boolean>("isFocusActive")
                     if (focusActive != null) dataManager.setFocusModeActive(focusActive)
@@ -135,18 +138,17 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
                 "getNativeStats" -> {
-                    val stats = mapOf(
+                    val stats = mutableMapOf<String, Any>(
                         "totalToday" to dataManager.getTotalReelsToday(),
-                        "instagram" to dataManager.getPlatformReels("instagram"),
-                        "youtube" to dataManager.getPlatformReels("youtube"),
-                        "facebook" to dataManager.getPlatformReels("facebook"),
-                        "snapchat" to dataManager.getPlatformReels("snapchat"),
                         "sessionCount" to dataManager.getSessionCount(),
                         "totalLimit" to dataManager.getTotalLimit(),
                         "isFocusActive" to dataManager.isFocusModeActive(),
                         "isTrackingEnabled" to dataManager.isTrackingEnabled(),
                         "overlayExpanded" to dataManager.isOverlayExpanded()
                     )
+                    for (platform in ScrolaDataManager.SUPPORTED_PLATFORMS) {
+                        stats[platform] = dataManager.getPlatformReels(platform)
+                    }
                     result.success(stats)
                 }
                 "resetSession" -> {

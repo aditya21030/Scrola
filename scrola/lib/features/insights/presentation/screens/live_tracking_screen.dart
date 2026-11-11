@@ -47,6 +47,9 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
         builder: (context, _) {
           final isLive = _tracking.isAccessibilityGranted;
           final remaining = _tracking.remainingReels;
+          final activePlatform =
+              SocialPlatformMeta.tryParse(_tracking.lastPlatform) ??
+                  SocialPlatform.instagram;
 
           return SafeArea(
             child: Padding(
@@ -167,8 +170,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
                       children: [
                         Row(
                           children: [
-                            const PlatformIcon(
-                              platform: SocialPlatform.instagram,
+                            PlatformIcon(
+                              platform: activePlatform,
                               size: 42,
                             ),
                             const SizedBox(width: 14),
@@ -177,7 +180,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Instagram Reels',
+                                    activePlatform.reelsName,
                                     style: AppTypography.subheading(),
                                   ),
                                   const SizedBox(height: 2),

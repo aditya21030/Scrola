@@ -5,6 +5,7 @@ import 'package:scrola/core/services/gamification_engine.dart';
 import 'package:scrola/core/services/haptic_service.dart';
 import 'package:scrola/core/services/storage_service.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
+import 'package:scrola/features/home/presentation/widgets/scrola_bottom_nav.dart';
 import 'package:scrola/features/onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:scrola/main.dart';
@@ -38,11 +39,29 @@ void main() {
 
     expect(find.text('REELS TODAY'), findsOneWidget);
     expect(find.text('Platforms'), findsOneWidget);
+    expect(find.text('TikTok'), findsOneWidget);
+    expect(find.text('X Videos'), findsOneWidget);
+    expect(find.text('Reddit Watch'), findsOneWidget);
+    expect(find.text('Moj Reels'), findsOneWidget);
     expect(find.text('Brain level'), findsOneWidget);
     expect(find.text('This week'), findsOneWidget);
 
+    // Floating streak / XP / level orbs were removed from HomeScreen hero
+    expect(find.text('+20'), findsNothing);
+    expect(find.text('XP'), findsNothing);
+    expect(find.text('streak'), findsNothing);
+
+    // Verify scrolling up on HomeScreen runs smoothly without layout/paint errors
+    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -320));
+    await tester.pump(const Duration(milliseconds: 250));
+
     // Switch across tabs cleanly
-    await tester.tap(find.byType(GestureDetector).at(2));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(ScrolaBottomNav),
+        matching: find.byType(GestureDetector),
+      ).at(2),
+    );
     await tester.pump(const Duration(milliseconds: 250));
   });
 
@@ -88,12 +107,22 @@ void main() {
     await HapticService.subtle();
   });
 
-  test('StorageService defaults keep Scrola off and notch pinned', () async {
+  test('StorageService defaults keep Scrola off and track all short-video apps', () async {
     SharedPreferences.setMockInitialValues({});
     final storage = await StorageService.getInstance();
     expect(storage.isTrackingEnabled, isFalse);
     expect(storage.platformLimitsEnabled, isFalse);
     expect(storage.overlayStickToNotch, isTrue);
+
+    await storage.recordReel('tiktok');
+    await storage.recordReel('x');
+    await storage.recordReel('reddit');
+    await storage.recordReel('moj');
+    expect(storage.tiktokReels, 1);
+    expect(storage.xReels, 1);
+    expect(storage.redditReels, 1);
+    expect(storage.mojReels, 1);
+    expect(storage.totalReelsToday, 4);
   });
 
   testWidgets('WelcomeScreen and OnboardingWizardScreen fit 320dp cleanly',

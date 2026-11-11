@@ -24,11 +24,8 @@ class _FloatingOverlaySettingsScreenState
     extends State<FloatingOverlaySettingsScreen> {
   final TrackingService _tracking = TrackingService();
   bool _reactToPace = true;
-  final Map<String, bool> _showOverApps = {
-    'Instagram': true,
-    'YouTube': true,
-    'Facebook': true,
-    'Snapchat': true,
+  final Map<SocialPlatform, bool> _showOverApps = {
+    for (final platform in SocialPlatform.values) platform: true,
   };
 
   double _scaleForSize(String size) {
@@ -340,37 +337,21 @@ class _FloatingOverlaySettingsScreenState
                     ),
                     child: Column(
                       children: [
-                        _AppToggleRow(
-                          platform: SocialPlatform.instagram,
-                          name: 'Instagram',
-                          value: _showOverApps['Instagram']!,
-                          onChanged: (v) =>
-                              setState(() => _showOverApps['Instagram'] = v),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _AppToggleRow(
-                          platform: SocialPlatform.youtube,
-                          name: 'YouTube',
-                          value: _showOverApps['YouTube']!,
-                          onChanged: (v) =>
-                              setState(() => _showOverApps['YouTube'] = v),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _AppToggleRow(
-                          platform: SocialPlatform.facebook,
-                          name: 'Facebook',
-                          value: _showOverApps['Facebook']!,
-                          onChanged: (v) =>
-                              setState(() => _showOverApps['Facebook'] = v),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _AppToggleRow(
-                          platform: SocialPlatform.snapchat,
-                          name: 'Snapchat',
-                          value: _showOverApps['Snapchat']!,
-                          onChanged: (v) =>
-                              setState(() => _showOverApps['Snapchat'] = v),
-                        ),
+                        for (int i = 0; i < SocialPlatform.values.length; i++) ...[
+                          if (i > 0)
+                            const Divider(
+                              color: AppColors.borderSubtle,
+                              height: 1,
+                            ),
+                          _AppToggleRow(
+                            platform: SocialPlatform.values[i],
+                            name: SocialPlatform.values[i].shortName,
+                            value: _showOverApps[SocialPlatform.values[i]] ?? true,
+                            onChanged: (v) => setState(
+                              () => _showOverApps[SocialPlatform.values[i]] = v,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

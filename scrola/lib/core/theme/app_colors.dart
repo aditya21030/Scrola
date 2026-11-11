@@ -36,16 +36,24 @@ class AppColors {
   static const Color error = Color(0xFFFF5252);
   static const Color errorBackground = Color(0xFF2E1515);
 
-  // Platform Brand Colors (from design screens)
+  // Platform Brand Colors
   static const Color instagram = Color(0xFFE1306C);
-  static const Color youtube = Color(0xFFE5222B);
+  static const Color youtube = Color(0xFFFF0000);
+  static const Color tiktok = Color(0xFFFE2C55);
   static const Color facebook = Color(0xFF1877F2);
-  static const Color snapchat = Color(0xFFFFE600);
+  static const Color snapchat = Color(0xFFFFFC00);
+  static const Color xPlatform = Color(0xFFE5E5EA);
+  static const Color reddit = Color(0xFFFF4500);
+  static const Color moj = Color(0xFFFF8800);
 
   // Platform Glow Tints
   static const Color instagramGlow = Color(0x47E1306C);
-  static const Color youtubeGlow = Color(0x47E5222B);
+  static const Color youtubeGlow = Color(0x47FF0000);
+  static const Color tiktokGlow = Color(0x47FE2C55);
   static const Color facebookGlow = Color(0x471877F2);
-  static const Color snapchatGlow = Color(0x47FFE600);
+  static const Color snapchatGlow = Color(0x47FFFC00);
+  static const Color xGlow = Color(0x33FFFFFF);
+  static const Color redditGlow = Color(0x47FF4500);
+  static const Color mojGlow = Color(0x47FF8800);
   static const Color orangeGlow = Color(0x40FF6B24);
 }

@@ -32,6 +32,31 @@ class ScrolaDataManager private constructor(context: Context) {
         @Volatile
         private var instance: ScrolaDataManager? = null
 
+        val SUPPORTED_PLATFORMS = listOf(
+            "instagram",
+            "youtube",
+            "tiktok",
+            "snapchat",
+            "facebook",
+            "x",
+            "reddit",
+            "moj"
+        )
+
+        fun getDefaultPlatformLimit(platform: String, fallbackTotal: Int = 40): Int {
+            return when (platform.lowercase()) {
+                "instagram" -> 20
+                "youtube" -> 15
+                "tiktok" -> 15
+                "snapchat" -> 5
+                "facebook" -> 10
+                "x" -> 10
+                "reddit" -> 10
+                "moj" -> 10
+                else -> fallbackTotal
+            }
+        }
+
         fun getInstance(context: Context): ScrolaDataManager {
             return instance ?: synchronized(this) {
                 instance ?: ScrolaDataManager(context).also { instance = it }
@@ -51,15 +76,14 @@ class ScrolaDataManager private constructor(context: Context) {
         val today = getTodayDateString()
         val lastDate = prefs.getString(KEY_LAST_DATE, "")
         if (today != lastDate) {
-            prefs.edit()
+            val editor = prefs.edit()
                 .putString(KEY_LAST_DATE, today)
                 .putInt(KEY_TOTAL_TODAY, 0)
-                .putInt("reels_instagram", 0)
-                .putInt("reels_youtube", 0)
-                .putInt("reels_facebook", 0)
-                .putInt("reels_snapchat", 0)
                 .putInt(KEY_SESSION_COUNT, 0)
-                .apply()
+            for (platform in SUPPORTED_PLATFORMS) {
+                editor.putInt("reels_$platform", 0)
+            }
+            editor.apply()
         }
     }
 
@@ -210,13 +234,10 @@ class ScrolaDataManager private constructor(context: Context) {
         if (!isPlatformLimitsEnabled()) return false
 
         val count = getPlatformReels(platform)
-        val limit = getPlatformLimit(platform, when (platform) {
-            "instagram" -> 20
-            "youtube" -> 15
-            "facebook" -> 10
-            "snapchat" -> 5
-            else -> totalLimit
-        })
+        val limit = getPlatformLimit(
+            platform,
+            getDefaultPlatformLimit(platform, totalLimit)
+        )
         return count >= limit
     }
 }

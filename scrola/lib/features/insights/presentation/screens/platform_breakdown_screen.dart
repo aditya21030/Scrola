@@ -54,42 +54,16 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
         listenable: _tracking,
         builder: (context, _) {
           final m = _multiplier(_period);
-          final ig = _tracking.instagramReels * m;
-          final yt = _tracking.youtubeReels * m;
-          final fb = _tracking.facebookReels * m;
-          final sc = _tracking.snapchatReels * m;
-          final total = math.max(0, ig + yt + fb + sc);
-
-          final items = [
-            _PlatformItem(
-              platform: SocialPlatform.instagram,
-              name: 'Instagram Reels',
-              count: ig,
-              limit: _tracking.instagramLimit * m,
-              color: AppColors.instagram,
-            ),
-            _PlatformItem(
-              platform: SocialPlatform.youtube,
-              name: 'YouTube Shorts',
-              count: yt,
-              limit: _tracking.youtubeLimit * m,
-              color: AppColors.youtube,
-            ),
-            _PlatformItem(
-              platform: SocialPlatform.facebook,
-              name: 'Facebook Reels',
-              count: fb,
-              limit: _tracking.facebookLimit * m,
-              color: AppColors.facebook,
-            ),
-            _PlatformItem(
-              platform: SocialPlatform.snapchat,
-              name: 'Snapchat Spotlight',
-              count: sc,
-              limit: _tracking.snapchatLimit * m,
-              color: AppColors.snapchat,
-            ),
-          ];
+          final items = SocialPlatform.values.map((platform) {
+            return _PlatformItem(
+              platform: platform,
+              name: platform.reelsName,
+              count: _tracking.reelsForId(platform.id) * m,
+              limit: _tracking.limitForId(platform.id) * m,
+              color: platform.brandColor,
+            );
+          }).toList();
+          final total = items.fold<int>(0, (sum, item) => sum + item.count);
 
           return SafeArea(
             child: SingleChildScrollView(

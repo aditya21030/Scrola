@@ -17,23 +17,20 @@ class PlatformLimitsScreen extends StatefulWidget {
 
 class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
   final TrackingService _tracking = TrackingService();
-  late int _ig;
-  late int _yt;
-  late int _fb;
-  late int _sc;
+  late final Map<SocialPlatform, int> _limits;
   late bool _enforcePerApp;
 
   @override
   void initState() {
     super.initState();
-    _ig = _tracking.instagramLimit;
-    _yt = _tracking.youtubeLimit;
-    _fb = _tracking.facebookLimit;
-    _sc = _tracking.snapchatLimit;
+    _limits = {
+      for (final platform in SocialPlatform.values)
+        platform: _tracking.limitForId(platform.id),
+    };
     _enforcePerApp = _tracking.platformLimitsEnabled;
   }
 
-  int get _sum => _ig + _yt + _fb + _sc;
+  int get _sum => _limits.values.fold(0, (a, b) => a + b);
 
   @override
   Widget build(BuildContext context) {
@@ -150,45 +147,22 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
                   opacity: _enforcePerApp ? 1.0 : 0.55,
                   child: ListView(
                     children: [
-                      _PlatformLimitTile(
-                        platform: SocialPlatform.instagram,
-                        name: 'Instagram Reels',
-                        value: _ig,
-                        onDelta: (d) => setState(() {
-                          _enforcePerApp = true;
-                          _ig = (_ig + d).clamp(0, 150);
+                      for (int i = 0; i < SocialPlatform.values.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 12),
+                        Builder(builder: (_) {
+                          final platform = SocialPlatform.values[i];
+                          return _PlatformLimitTile(
+                            platform: platform,
+                            name: platform.reelsName,
+                            value: _limits[platform]!,
+                            onDelta: (d) => setState(() {
+                              _enforcePerApp = true;
+                              _limits[platform] =
+                                  (_limits[platform]! + d).clamp(0, 150);
+                            }),
+                          );
                         }),
-                      ),
-                      const SizedBox(height: 12),
-                      _PlatformLimitTile(
-                        platform: SocialPlatform.youtube,
-                        name: 'YouTube Shorts',
-                        value: _yt,
-                        onDelta: (d) => setState(() {
-                          _enforcePerApp = true;
-                          _yt = (_yt + d).clamp(0, 150);
-                        }),
-                      ),
-                      const SizedBox(height: 12),
-                      _PlatformLimitTile(
-                        platform: SocialPlatform.facebook,
-                        name: 'Facebook Reels',
-                        value: _fb,
-                        onDelta: (d) => setState(() {
-                          _enforcePerApp = true;
-                          _fb = (_fb + d).clamp(0, 150);
-                        }),
-                      ),
-                      const SizedBox(height: 12),
-                      _PlatformLimitTile(
-                        platform: SocialPlatform.snapchat,
-                        name: 'Snapchat Spotlight',
-                        value: _sc,
-                        onDelta: (d) => setState(() {
-                          _enforcePerApp = true;
-                          _sc = (_sc + d).clamp(0, 150);
-                        }),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -199,10 +173,14 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
                 useMediumHaptic: true,
                 onPressed: () {
                   _tracking.updateLimits(
-                    instagram: _ig,
-                    youtube: _yt,
-                    facebook: _fb,
-                    snapchat: _sc,
+                    instagram: _limits[SocialPlatform.instagram],
+                    youtube: _limits[SocialPlatform.youtube],
+                    facebook: _limits[SocialPlatform.facebook],
+                    snapchat: _limits[SocialPlatform.snapchat],
+                    platformLimits: {
+                      for (final entry in _limits.entries)
+                        entry.key.id: entry.value,
+                    },
                     platformLimitsEnabled: _enforcePerApp,
                   );
                   Navigator.of(context).pop();

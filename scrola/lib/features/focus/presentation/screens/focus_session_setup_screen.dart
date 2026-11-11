@@ -23,10 +23,11 @@ class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
   int _minutes = 25;
   bool _strictMode = false;
   final Map<SocialPlatform, bool> _blockedApps = {
-    SocialPlatform.instagram: true,
-    SocialPlatform.youtube: true,
-    SocialPlatform.facebook: false,
-    SocialPlatform.snapchat: false,
+    for (final platform in SocialPlatform.values)
+      platform:
+          platform == SocialPlatform.instagram ||
+          platform == SocialPlatform.youtube ||
+          platform == SocialPlatform.tiktok,
   };
 
   @override
@@ -159,40 +160,23 @@ class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
                         ),
                         child: Column(
                           children: [
-                            _AppRow(
-                              platform: SocialPlatform.instagram,
-                              name: 'Instagram Reels',
-                              value: _blockedApps[SocialPlatform.instagram]!,
-                              onChanged: (v) => setState(() =>
-                                  _blockedApps[SocialPlatform.instagram] = v),
-                            ),
-                            const Divider(
-                                color: AppColors.borderSubtle, height: 1),
-                            _AppRow(
-                              platform: SocialPlatform.youtube,
-                              name: 'YouTube Shorts',
-                              value: _blockedApps[SocialPlatform.youtube]!,
-                              onChanged: (v) => setState(() =>
-                                  _blockedApps[SocialPlatform.youtube] = v),
-                            ),
-                            const Divider(
-                                color: AppColors.borderSubtle, height: 1),
-                            _AppRow(
-                              platform: SocialPlatform.facebook,
-                              name: 'Facebook Reels',
-                              value: _blockedApps[SocialPlatform.facebook]!,
-                              onChanged: (v) => setState(() =>
-                                  _blockedApps[SocialPlatform.facebook] = v),
-                            ),
-                            const Divider(
-                                color: AppColors.borderSubtle, height: 1),
-                            _AppRow(
-                              platform: SocialPlatform.snapchat,
-                              name: 'Snapchat Spotlight',
-                              value: _blockedApps[SocialPlatform.snapchat]!,
-                              onChanged: (v) => setState(() =>
-                                  _blockedApps[SocialPlatform.snapchat] = v),
-                            ),
+                            for (int i = 0; i < SocialPlatform.values.length; i++) ...[
+                              if (i > 0)
+                                const Divider(
+                                  color: AppColors.borderSubtle,
+                                  height: 1,
+                                ),
+                              _AppRow(
+                                platform: SocialPlatform.values[i],
+                                name: SocialPlatform.values[i].reelsName,
+                                value: _blockedApps[SocialPlatform.values[i]] ??
+                                    false,
+                                onChanged: (v) => setState(
+                                  () =>
+                                      _blockedApps[SocialPlatform.values[i]] = v,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),

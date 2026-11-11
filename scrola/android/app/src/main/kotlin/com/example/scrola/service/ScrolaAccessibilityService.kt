@@ -77,10 +77,16 @@ class ScrolaAccessibilityService : AccessibilityService() {
 
     private fun resolvePlatform(packageName: String): String? {
         return when (packageName) {
-            "com.instagram.android" -> "instagram"
+            "com.instagram.android", "com.instagram.lite" -> "instagram"
             "com.google.android.youtube" -> "youtube"
-            "com.facebook.katana" -> "facebook"
+            "com.facebook.katana", "com.facebook.lite" -> "facebook"
             "com.snapchat.android" -> "snapchat"
+            "com.zhiliaoapp.musically",
+            "com.ss.android.ugc.trill",
+            "com.zhiliaoapp.musically.go" -> "tiktok"
+            "com.twitter.android" -> "x"
+            "com.reddit.frontpage" -> "reddit"
+            "in.mohalla.video", "in.mohalla.video.lite" -> "moj"
             else -> null
         }
     }
@@ -93,16 +99,28 @@ class ScrolaAccessibilityService : AccessibilityService() {
         val rootNode = rootInActiveWindow ?: return
 
         val wasInFeed = isInShortsFeed
-        isInShortsFeed = when (platform) {
+        isInShortsFeed = isPlatformInShortsFeed(platform, rootNode, event)
+
+        if (isInShortsFeed && !wasInFeed) {
+            onShortsFeedEntered(platform)
+        }
+    }
+
+    private fun isPlatformInShortsFeed(
+        platform: String,
+        rootNode: AccessibilityNodeInfo,
+        event: AccessibilityEvent
+    ): Boolean {
+        return when (platform) {
             "instagram" -> isInstagramReels(rootNode, event)
             "youtube" -> isYouTubeShorts(rootNode, event)
             "facebook" -> isFacebookReels(rootNode, event)
             "snapchat" -> isSnapchatSpotlight(rootNode, event)
+            "tiktok" -> isTikTokFeed(rootNode, event)
+            "x" -> isXVideosFeed(rootNode, event)
+            "reddit" -> isRedditWatchFeed(rootNode, event)
+            "moj" -> isMojFeed(rootNode, event)
             else -> false
-        }
-
-        if (isInShortsFeed && !wasInFeed) {
-            onShortsFeedEntered(platform)
         }
     }
 
@@ -171,6 +189,71 @@ class ScrolaAccessibilityService : AccessibilityService() {
         return textNodes.isNotEmpty()
     }
 
+    private fun isTikTokFeed(root: AccessibilityNodeInfo, event: AccessibilityEvent): Boolean {
+        // Ignore comment drawers/input modals so reading comments does not count as reels
+        if (root.findAccessibilityNodeInfosByText("Add comment").isNotEmpty()) {
+            return false
+        }
+        val className = event.className?.toString() ?: ""
+        if (className.contains("ViewPager", ignoreCase = true)) {
+            return true
+        }
+        val forYou = root.findAccessibilityNodeInfosByText("For You")
+        val following = root.findAccessibilityNodeInfosByText("Following")
+        return forYou.isNotEmpty() || following.isNotEmpty()
+    }
+
+    private fun isXVideosFeed(root: AccessibilityNodeInfo, event: AccessibilityEvent): Boolean {
+        val className = event.className?.toString() ?: ""
+        if (className.contains("Immersive", ignoreCase = true) ||
+            className.contains("VideoPlayer", ignoreCase = true) ||
+            className.contains("ViewPager", ignoreCase = true)
+        ) {
+            return true
+        }
+        val viewIds = listOf(
+            "com.twitter.android:id/immersive_video_pager",
+            "com.twitter.android:id/video_player_view",
+            "com.twitter.android:id/av_media_video_player"
+        )
+        return viewIds.any { root.findAccessibilityNodeInfosByViewId(it).isNotEmpty() }
+    }
+
+    private fun isRedditWatchFeed(root: AccessibilityNodeInfo, event: AccessibilityEvent): Boolean {
+        val className = event.className?.toString() ?: ""
+        if (className.contains("WatchFeed", ignoreCase = true) ||
+            className.contains("VideoPager", ignoreCase = true) ||
+            className.contains("VideoPlayer", ignoreCase = true)
+        ) {
+            return true
+        }
+        val viewIds = listOf(
+            "com.reddit.frontpage:id/watch_feed",
+            "com.reddit.frontpage:id/video_pager",
+            "com.reddit.frontpage:id/video_player"
+        )
+        if (viewIds.any { root.findAccessibilityNodeInfosByViewId(it).isNotEmpty() }) {
+            return true
+        }
+        val contentDesc = event.contentDescription?.toString() ?: ""
+        return contentDesc.contains("Watch", ignoreCase = true) &&
+            root.findAccessibilityNodeInfosByViewId("com.reddit.frontpage:id/video_container").isNotEmpty()
+    }
+
+    private fun isMojFeed(root: AccessibilityNodeInfo, event: AccessibilityEvent): Boolean {
+        if (root.findAccessibilityNodeInfosByText("Add a comment").isNotEmpty()) {
+            return false
+        }
+        val className = event.className?.toString() ?: ""
+        if (className.contains("ViewPager", ignoreCase = true) ||
+            className.contains("VideoPlayer", ignoreCase = true)
+        ) {
+            return true
+        }
+        return root.findAccessibilityNodeInfosByText("For You").isNotEmpty() ||
+            root.findAccessibilityNodeInfosByText("Following").isNotEmpty()
+    }
+
     private fun onShortsFeedEntered(platform: String) {
         checkAndEnforceLimits(platform)
 
@@ -199,13 +282,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
 
         val root = rootInActiveWindow
         val inFeed = if (root != null) {
-            when (platform) {
-                "instagram" -> isInstagramReels(root, event)
-                "youtube" -> isYouTubeShorts(root, event)
-                "facebook" -> isFacebookReels(root, event)
-                "snapchat" -> isSnapchatSpotlight(root, event)
-                else -> false
-            }
+            isPlatformInShortsFeed(platform, root, event)
         } else isInShortsFeed
 
         isInShortsFeed = inFeed

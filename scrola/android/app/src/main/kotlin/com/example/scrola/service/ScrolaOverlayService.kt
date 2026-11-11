@@ -782,8 +782,12 @@ class ScrolaOverlayService : Service() {
         val shortPlatform = when (platform.lowercase()) {
             "instagram" -> " · IG"
             "youtube" -> " · YT"
+            "tiktok" -> " · TT"
             "facebook" -> " · FB"
             "snapchat" -> " · SC"
+            "x" -> " · X"
+            "reddit" -> " · RD"
+            "moj" -> " · MJ"
             else -> ""
         }
 

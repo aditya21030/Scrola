@@ -20,10 +20,11 @@ class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
   bool _waitBeforeUnlock = true;
   bool _showBrainy = true;
   final Map<SocialPlatform, bool> _apps = {
-    SocialPlatform.instagram: true,
-    SocialPlatform.youtube: true,
-    SocialPlatform.facebook: false,
-    SocialPlatform.snapchat: false,
+    for (final platform in SocialPlatform.values)
+      platform:
+          platform == SocialPlatform.instagram ||
+          platform == SocialPlatform.youtube ||
+          platform == SocialPlatform.tiktok,
   };
 
   @override
@@ -206,37 +207,21 @@ class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
                     ),
                     child: Column(
                       children: [
-                        _BlockAppToggle(
-                          platform: SocialPlatform.instagram,
-                          name: 'Instagram',
-                          value: _apps[SocialPlatform.instagram]!,
-                          onChanged: (v) => setState(
-                              () => _apps[SocialPlatform.instagram] = v),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _BlockAppToggle(
-                          platform: SocialPlatform.youtube,
-                          name: 'YouTube',
-                          value: _apps[SocialPlatform.youtube]!,
-                          onChanged: (v) =>
-                              setState(() => _apps[SocialPlatform.youtube] = v),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _BlockAppToggle(
-                          platform: SocialPlatform.facebook,
-                          name: 'Facebook',
-                          value: _apps[SocialPlatform.facebook]!,
-                          onChanged: (v) => setState(
-                              () => _apps[SocialPlatform.facebook] = v),
-                        ),
-                        const Divider(color: AppColors.borderSubtle, height: 1),
-                        _BlockAppToggle(
-                          platform: SocialPlatform.snapchat,
-                          name: 'Snapchat',
-                          value: _apps[SocialPlatform.snapchat]!,
-                          onChanged: (v) => setState(
-                              () => _apps[SocialPlatform.snapchat] = v),
-                        ),
+                        for (int i = 0; i < SocialPlatform.values.length; i++) ...[
+                          if (i > 0)
+                            const Divider(
+                              color: AppColors.borderSubtle,
+                              height: 1,
+                            ),
+                          _BlockAppToggle(
+                            platform: SocialPlatform.values[i],
+                            name: SocialPlatform.values[i].shortName,
+                            value: _apps[SocialPlatform.values[i]] ?? false,
+                            onChanged: (v) => setState(
+                              () => _apps[SocialPlatform.values[i]] = v,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

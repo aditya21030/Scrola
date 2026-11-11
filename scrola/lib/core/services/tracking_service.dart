@@ -18,6 +18,7 @@ class TrackingService extends ChangeNotifier {
   bool _isOverlayGranted = false;
   bool _isNotificationGranted = true;
   bool _isInitialized = false;
+  String _lastPlatform = 'instagram';
 
   bool get isAccessibilityGranted => _isAccessibilityGranted;
   bool get isOverlayGranted => _isOverlayGranted;
@@ -40,17 +41,36 @@ class TrackingService extends ChangeNotifier {
   int get remainingReels => (totalLimit - totalReelsToday).clamp(0, totalLimit);
   bool get isLimitReached => totalReelsToday >= totalLimit;
 
+  int reelsForId(String id) => _storage?.reelsForPlatform(id) ?? 0;
+  int limitForId(String id) =>
+      _storage?.limitForPlatform(id) ??
+      StorageService.defaultPlatformLimits[id] ??
+      10;
+  String get lastPlatform => _lastPlatform;
+
   int get instagramReels => _storage?.instagramReels ?? 0;
   int get instagramLimit => _storage?.instagramLimit ?? 20;
 
   int get youtubeReels => _storage?.youtubeReels ?? 0;
   int get youtubeLimit => _storage?.youtubeLimit ?? 15;
 
+  int get tiktokReels => _storage?.tiktokReels ?? 0;
+  int get tiktokLimit => _storage?.tiktokLimit ?? 15;
+
   int get facebookReels => _storage?.facebookReels ?? 0;
   int get facebookLimit => _storage?.facebookLimit ?? 10;
 
   int get snapchatReels => _storage?.snapchatReels ?? 0;
   int get snapchatLimit => _storage?.snapchatLimit ?? 5;
+
+  int get xReels => _storage?.xReels ?? 0;
+  int get xLimit => _storage?.xLimit ?? 10;
+
+  int get redditReels => _storage?.redditReels ?? 0;
+  int get redditLimit => _storage?.redditLimit ?? 10;
+
+  int get mojReels => _storage?.mojReels ?? 0;
+  int get mojLimit => _storage?.mojLimit ?? 10;
 
   int get sessionReels => _storage?.sessionReels ?? 0;
   int get screenTimeMinutes => (_storage?.screenTimeSeconds ?? 0) ~/ 60;
@@ -130,18 +150,15 @@ class TrackingService extends ChangeNotifier {
       final stats = await ScrolaNativeBridge.getNativeStats();
       if (stats.isNotEmpty && _storage != null) {
         final nativeTotal = (stats['totalToday'] as num?)?.toInt() ?? 0;
-        final nativeIG = (stats['instagram'] as num?)?.toInt() ?? 0;
-        final nativeYT = (stats['youtube'] as num?)?.toInt() ?? 0;
-        final nativeFB = (stats['facebook'] as num?)?.toInt() ?? 0;
-        final nativeSC = (stats['snapchat'] as num?)?.toInt() ?? 0;
         final nativeSession = (stats['sessionCount'] as num?)?.toInt() ?? 0;
+        final platformCounts = <String, int>{
+          for (final id in StorageService.supportedPlatformIds)
+            id: (stats[id] as num?)?.toInt() ?? 0,
+        };
 
         await _storage!.syncCounts(
           total: nativeTotal,
-          instagram: nativeIG,
-          youtube: nativeYT,
-          facebook: nativeFB,
-          snapchat: nativeSC,
+          platformCounts: platformCounts,
           session: nativeSession,
         );
         notifyListeners();
@@ -195,6 +212,7 @@ class TrackingService extends ChangeNotifier {
     int? youtube,
     int? facebook,
     int? snapchat,
+    Map<String, int>? platformLimits,
     bool? platformLimitsEnabled,
   }) async {
     await _storage?.setLimits(
@@ -203,6 +221,7 @@ class TrackingService extends ChangeNotifier {
       youtube: youtube,
       facebook: facebook,
       snapchat: snapchat,
+      platformLimits: platformLimits,
     );
     if (platformLimitsEnabled != null) {
       await _storage?.setPlatformLimitsEnabled(platformLimitsEnabled);
@@ -321,6 +340,7 @@ class TrackingService extends ChangeNotifier {
       youtubeLimit: _storage!.youtubeLimit,
       facebookLimit: _storage!.facebookLimit,
       snapchatLimit: _storage!.snapchatLimit,
+      platformLimits: _storage!.allPlatformLimits,
       isFocusActive: FocusModeService().isActive || _storage!.isDetoxActive,
       isOverlayEnabled: _storage!.isOverlayEnabled,
       isTrackingEnabled: _storage!.isTrackingEnabled,
@@ -337,6 +357,9 @@ class TrackingService extends ChangeNotifier {
     debugPrint('Received reel event: ${event.eventType} on ${event.platform}');
 
     if (event.eventType == 'reel_watched') {
+      if (event.platform.trim().isNotEmpty) {
+        _lastPlatform = event.platform.trim().toLowerCase();
+      }
       await _storage?.recordReel(event.platform);
 
       // Design spec Section 6: "Never vibrate while counting reels."
