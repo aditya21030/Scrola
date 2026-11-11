@@ -71,15 +71,43 @@ class _BrainyMascotState extends State<BrainyMascot> with SingleTickerProviderSt
       case BrainySkin.classic:
         return null;
       case BrainySkin.ember:
-        return const ColorFilter.mode(Color(0x55FF3B30), BlendMode.srcATop);
+        // Shift orange body toward deep coral-red while preserving whites/blacks/alpha.
+        return const ColorFilter.matrix(<double>[
+          1.00, 0.00, 0.00, 0, 0,
+          0.10, 0.45, 0.45, 0, 0,
+          0.02, 0.28, 0.70, 0, 0,
+          0.00, 0.00, 0.00, 1, 0,
+        ]);
       case BrainySkin.golden:
-        return const ColorFilter.mode(Color(0x55FFD60A), BlendMode.srcATop);
+        // Shift orange body to warm golden amber while keeping catchlights white.
+        return const ColorFilter.matrix(<double>[
+          1.00, 0.00, 0.00, 0, 0,
+          0.46, 0.54, 0.00, 0, 0,
+         -0.08, 0.12, 0.96, 0, 0,
+          0.00, 0.00, 0.00, 1, 0,
+        ]);
       case BrainySkin.frost:
-        return const ColorFilter.mode(Color(0x6664D2FF), BlendMode.hue);
+        // Matrix avoids BlendMode.hue leaking across parent canvas layers.
+        return const ColorFilter.matrix(<double>[
+          0.04, 0.20, 0.76, 0, 0,
+          0.38, 0.62, 0.00, 0, 0,
+          0.88, 0.06, 0.06, 0, 0,
+          0.00, 0.00, 0.00, 1, 0,
+        ]);
       case BrainySkin.mint:
-        return const ColorFilter.mode(Color(0x6636C98F), BlendMode.hue);
+        return const ColorFilter.matrix(<double>[
+          0.06, 0.36, 0.58, 0, 0,
+          0.64, 0.36, 0.00, 0, 0,
+          0.28, 0.26, 0.46, 0, 0,
+          0.00, 0.00, 0.00, 1, 0,
+        ]);
       case BrainySkin.midnight:
-        return const ColorFilter.mode(Color(0x881C1C1E), BlendMode.srcATop);
+        return const ColorFilter.matrix(<double>[
+          0.12, 0.24, 0.64, 0, 0,
+          0.12, 0.28, 0.60, 0, 0,
+          0.20, 0.24, 0.56, 0, 0,
+          0.00, 0.00, 0.00, 1, 0,
+        ]);
     }
   }
 
