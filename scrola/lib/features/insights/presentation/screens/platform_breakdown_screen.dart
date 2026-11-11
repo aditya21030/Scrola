@@ -54,7 +54,8 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
         listenable: _tracking,
         builder: (context, _) {
           final m = _multiplier(_period);
-          final items = SocialPlatform.values.map((platform) {
+          final visiblePlatforms = _tracking.visiblePlatforms;
+          final items = visiblePlatforms.map((platform) {
             return _PlatformItem(
               platform: platform,
               name: platform.reelsName,

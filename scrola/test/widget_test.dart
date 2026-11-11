@@ -7,8 +7,11 @@ import 'package:scrola/core/services/haptic_service.dart';
 import 'package:scrola/core/services/storage_service.dart';
 import 'package:scrola/core/services/tracking_service.dart';
 import 'package:scrola/features/brain/presentation/screens/brain_details_screen.dart';
+import 'package:scrola/features/home/presentation/screens/home_screen.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
 import 'package:scrola/features/home/presentation/widgets/scrola_bottom_nav.dart';
+import 'package:scrola/features/insights/presentation/screens/platform_breakdown_screen.dart';
+import 'package:scrola/features/insights/presentation/screens/platform_limits_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/edit_profile_screen.dart';
@@ -16,6 +19,7 @@ import 'package:scrola/features/profile/presentation/screens/notifications_setti
 import 'package:scrola/features/profile/presentation/screens/profile_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/settings_screen.dart';
 import 'package:scrola/main.dart';
+import 'package:scrola/shared/widgets/platform_icon.dart';
 import 'package:scrola/shared/widgets/scrola_card.dart';
 
 void main() {
@@ -47,10 +51,13 @@ void main() {
 
     expect(find.text('REELS TODAY'), findsOneWidget);
     expect(find.text('Platforms'), findsOneWidget);
-    expect(find.text('TikTok'), findsOneWidget);
-    expect(find.text('X Videos'), findsOneWidget);
-    expect(find.text('Reddit Watch'), findsOneWidget);
-    expect(find.text('Moj Reels'), findsOneWidget);
+    expect(find.text('Instagram Reels'), findsOneWidget);
+    expect(find.text('YouTube Shorts'), findsOneWidget);
+    expect(find.text('/ 20'), findsNWidgets(2));
+    expect(find.text('TikTok'), findsNothing);
+    expect(find.text('X Videos'), findsNothing);
+    expect(find.text('Reddit Watch'), findsNothing);
+    expect(find.text('Moj Reels'), findsNothing);
     expect(find.text('Brain level'), findsOneWidget);
     expect(find.text('This week'), findsOneWidget);
 
@@ -369,5 +376,125 @@ void main() {
     expect(find.text('LIMIT ALERTS'), findsOneWidget);
     expect(find.text('50%'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Selected onboarding apps scope Home, Breakdown, and Limits screens instead of 8 apps',
+      (WidgetTester tester) async {
+    const channel = MethodChannel('com.scrola.app/native');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      switch (call.method) {
+        case 'isAccessibilityServiceEnabled':
+        case 'isOverlayPermissionGranted':
+        case 'isNotificationPermissionGranted':
+        case 'syncLimits':
+        case 'refreshOverlayConfig':
+          return true;
+        case 'getNativeStats':
+          return <String, dynamic>{'totalToday': 0, 'sessionCount': 0};
+        default:
+          return null;
+      }
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final tracking = TrackingService();
+    await tracking.initialize();
+
+    // 1. Selecting 3 apps on onboarding scopes cards and divides 40 cleanly (14/13/13)
+    await tracking.completeOnboarding(
+      goal: 'Reduce doomscrolling',
+      dailyLimit: 40,
+      platforms: ['instagram', 'tiktok', 'snapchat'],
+    );
+
+    expect(tracking.activePlatforms, [
+      SocialPlatform.instagram,
+      SocialPlatform.tiktok,
+      SocialPlatform.snapchat,
+    ]);
+    expect(tracking.limitForId('instagram'), 14);
+    expect(tracking.limitForId('tiktok'), 13);
+    expect(tracking.limitForId('snapchat'), 13);
+    expect(tracking.limitForId('youtube'), 0);
+
+    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Instagram Reels'), findsOneWidget);
+    expect(find.text('TikTok'), findsOneWidget);
+    expect(find.text('Snapchat Spotlight'), findsOneWidget);
+    expect(find.text('/ 14'), findsOneWidget);
+    expect(find.text('/ 13'), findsNWidgets(2));
+    expect(find.text('YouTube Shorts'), findsNothing);
+    expect(find.text('Facebook Reels'), findsNothing);
+    expect(find.text('X Videos'), findsNothing);
+    expect(find.text('Reddit Watch'), findsNothing);
+    expect(find.text('Moj Reels'), findsNothing);
+
+    await tester.pumpWidget(const MaterialApp(home: PlatformBreakdownScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Instagram Reels'), findsOneWidget);
+    expect(find.text('TikTok'), findsOneWidget);
+    expect(find.text('Snapchat Spotlight'), findsOneWidget);
+    expect(find.text('0 / 14 limit'), findsOneWidget);
+    expect(find.text('0 / 13 limit'), findsNWidgets(2));
+    expect(find.text('YouTube Shorts'), findsNothing);
+    expect(find.text('Moj Reels'), findsNothing);
+
+    await tester.pumpWidget(const MaterialApp(home: PlatformLimitsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Instagram Reels'), findsOneWidget);
+    expect(find.text('TikTok'), findsOneWidget);
+    expect(find.text('Snapchat Spotlight'), findsOneWidget);
+    expect(find.text('14 reels'), findsOneWidget);
+    expect(find.text('13 reels'), findsNWidgets(2));
+    expect(find.text('40 / 40 reels'), findsOneWidget);
+    expect(find.text('All of your daily limit is assigned.'), findsOneWidget);
+    expect(find.text('YouTube Shorts'), findsNothing);
+    expect(find.text('Facebook Reels'), findsNothing);
+
+    // 2. Selecting 2 apps with a 30-reel daily limit divides cleanly into 15 + 15
+    await tracking.completeOnboarding(
+      goal: 'Protect focus',
+      dailyLimit: 30,
+      platforms: ['facebook', 'reddit'],
+    );
+
+    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Facebook Reels'), findsOneWidget);
+    expect(find.text('Reddit Watch'), findsOneWidget);
+    expect(find.text('/ 15'), findsNWidgets(2));
+    expect(find.text('Instagram Reels'), findsNothing);
+    expect(find.text('YouTube Shorts'), findsNothing);
+    expect(find.text('TikTok'), findsNothing);
+    expect(find.text('Snapchat Spotlight'), findsNothing);
+    expect(find.text('X Videos'), findsNothing);
+    expect(find.text('Moj Reels'), findsNothing);
+
+    // 3. Updating daily limit in shared mode updates the 2-app split, while custom per-app mode keeps explicit caps
+    await tracking.updateLimits(total: 50);
+    expect(tracking.limitForId('facebook'), 25);
+    expect(tracking.limitForId('reddit'), 25);
+
+    await tracking.updateLimits(
+      platformLimits: {'facebook': 32, 'reddit': 18},
+      platformLimitsEnabled: true,
+    );
+    expect(tracking.limitForId('facebook'), 32);
+    expect(tracking.limitForId('reddit'), 18);
   });
 }

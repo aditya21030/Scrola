@@ -4,6 +4,7 @@ import 'focus_mode_service.dart';
 import 'gamification_engine.dart';
 import 'haptic_service.dart';
 import 'scrola_native_bridge.dart';
+import '../../shared/widgets/platform_icon.dart';
 import 'storage_service.dart';
 
 class TrackingService extends ChangeNotifier {
@@ -34,7 +35,24 @@ class TrackingService extends ChangeNotifier {
   // Onboarding & Goal
   bool get isOnboardingComplete => _storage?.isOnboardingComplete ?? false;
   String get selectedGoal => _storage?.selectedGoal ?? 'Stay under a daily limit';
-  List<String> get selectedPlatforms => _storage?.selectedPlatforms ?? ['instagram', 'youtube'];
+  List<String> get selectedPlatforms =>
+      StorageService.normalizeSelectedPlatformIds(
+          _storage?.selectedPlatforms ?? const ['instagram', 'youtube']);
+
+  List<SocialPlatform> get activePlatforms => [
+        for (final id in selectedPlatforms)
+          if (SocialPlatformMeta.tryParse(id) != null)
+            SocialPlatformMeta.tryParse(id)!,
+      ];
+
+  List<SocialPlatform> get visiblePlatforms {
+    final activeSet = activePlatforms.toSet();
+    return [
+      for (final platform in SocialPlatform.values)
+        if (activeSet.contains(platform) || reelsForId(platform.id) > 0)
+          platform,
+    ];
+  }
 
   // Real-time metrics
   int get totalReelsToday => _storage?.totalReelsToday ?? 0;
@@ -43,10 +61,17 @@ class TrackingService extends ChangeNotifier {
   bool get isLimitReached => totalReelsToday >= totalLimit;
 
   int reelsForId(String id) => _storage?.reelsForPlatform(id) ?? 0;
-  int limitForId(String id) =>
-      _storage?.limitForPlatform(id) ??
-      StorageService.defaultPlatformLimits[id] ??
-      10;
+  int limitForId(String id) {
+    final normalized = id.trim().toLowerCase();
+    if (_storage != null) {
+      return _storage!.limitForPlatform(normalized);
+    }
+    final allocated = StorageService.allocateLimitsForPlatforms(
+      totalLimit: totalLimit,
+      selectedIds: selectedPlatforms,
+    );
+    return allocated[normalized] ?? 0;
+  }
   String get lastPlatform => _lastPlatform;
 
   int get instagramReels => _storage?.instagramReels ?? 0;
@@ -258,9 +283,21 @@ class TrackingService extends ChangeNotifier {
     required int dailyLimit,
     required List<String> platforms,
   }) async {
+    final normalizedPlatforms =
+        StorageService.normalizeSelectedPlatformIds(platforms);
+    final allocatedLimits = StorageService.allocateLimitsForPlatforms(
+      totalLimit: dailyLimit,
+      selectedIds: normalizedPlatforms,
+    );
     await _storage?.setSelectedGoal(goal);
-    await _storage?.setSelectedPlatforms(platforms);
-    await _storage?.setLimits(total: dailyLimit);
+    await _storage?.setSelectedPlatforms(normalizedPlatforms);
+    await _storage?.setLimits(
+      total: dailyLimit,
+      platformLimits: {
+        for (final id in StorageService.supportedPlatformIds)
+          id: allocatedLimits[id] ?? 0,
+      },
+    );
     await _storage?.setPlatformLimitsEnabled(false);
     // Do not auto-enable Scrola when onboarding finishes; user explicitly turns ON.
     await _storage?.setTrackingEnabled(false);
@@ -278,13 +315,36 @@ class TrackingService extends ChangeNotifier {
     Map<String, int>? platformLimits,
     bool? platformLimitsEnabled,
   }) async {
+    final nextLimitsEnabled =
+        platformLimitsEnabled ?? (_storage?.platformLimitsEnabled ?? false);
+    final Map<String, int>? effectivePlatformLimits;
+    if (platformLimits != null) {
+      effectivePlatformLimits = platformLimits;
+    } else if (!nextLimitsEnabled &&
+        total != null &&
+        instagram == null &&
+        youtube == null &&
+        facebook == null &&
+        snapchat == null) {
+      final allocated = StorageService.allocateLimitsForPlatforms(
+        totalLimit: total,
+        selectedIds: selectedPlatforms,
+      );
+      effectivePlatformLimits = {
+        for (final id in StorageService.supportedPlatformIds)
+          id: allocated[id] ?? 0,
+      };
+    } else {
+      effectivePlatformLimits = null;
+    }
+
     await _storage?.setLimits(
       total: total,
       instagram: instagram,
       youtube: youtube,
       facebook: facebook,
       snapchat: snapchat,
-      platformLimits: platformLimits,
+      platformLimits: effectivePlatformLimits,
     );
     if (platformLimitsEnabled != null) {
       await _storage?.setPlatformLimitsEnabled(platformLimitsEnabled);

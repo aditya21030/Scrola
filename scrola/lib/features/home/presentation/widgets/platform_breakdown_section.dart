@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/platform_icon.dart';
 
 class PlatformBreakdownSection extends StatelessWidget {
+  final List<SocialPlatform>? platforms;
   final Map<SocialPlatform, int> counts;
   final Map<SocialPlatform, int> limits;
   final VoidCallback? onDetailsTap;
@@ -13,6 +14,7 @@ class PlatformBreakdownSection extends StatelessWidget {
 
   const PlatformBreakdownSection({
     super.key,
+    this.platforms,
     required this.counts,
     required this.limits,
     this.onDetailsTap,
@@ -21,7 +23,8 @@ class PlatformBreakdownSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const platforms = SocialPlatform.values;
+    final activePlatforms = platforms ??
+        (counts.isNotEmpty ? counts.keys.toList() : SocialPlatform.values);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,17 +53,17 @@ class PlatformBreakdownSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        for (int i = 0; i < platforms.length; i += 2) ...[
+        for (int i = 0; i < activePlatforms.length; i += 2) ...[
           if (i > 0) const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _buildCard(platforms[i]),
+                child: _buildCard(activePlatforms[i]),
               ),
               const SizedBox(width: 12),
-              if (i + 1 < platforms.length)
+              if (i + 1 < activePlatforms.length)
                 Expanded(
-                  child: _buildCard(platforms[i + 1]),
+                  child: _buildCard(activePlatforms[i + 1]),
                 )
               else
                 const Spacer(),
@@ -76,7 +79,7 @@ class PlatformBreakdownSection extends StatelessWidget {
       platform: platform,
       label: platform.reelsName,
       count: counts[platform] ?? 0,
-      limit: limits[platform] ?? platform.defaultLimit,
+      limit: limits[platform] ?? 0,
       brandColor: platform.brandColor,
       onTap: () => onPlatformTap?.call(platform),
     );

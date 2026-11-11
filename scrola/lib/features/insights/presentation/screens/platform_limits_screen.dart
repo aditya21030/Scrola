@@ -24,7 +24,7 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
   void initState() {
     super.initState();
     _limits = {
-      for (final platform in SocialPlatform.values)
+      for (final platform in _tracking.activePlatforms)
         platform: _tracking.limitForId(platform.id),
     };
     _enforcePerApp = _tracking.platformLimitsEnabled;
@@ -56,12 +56,17 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'ALLOCATED',
-                          style: AppTypography.label(
-                            color: AppColors.secondaryText,
+                        Expanded(
+                          child: Text(
+                            'ALLOCATED',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.label(
+                              color: AppColors.secondaryText,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           '$_sum / $total reels',
                           style: AppTypography.numeric(
@@ -146,24 +151,27 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
                   duration: const Duration(milliseconds: 200),
                   opacity: _enforcePerApp ? 1.0 : 0.55,
                   child: ListView(
-                    children: [
-                      for (int i = 0; i < SocialPlatform.values.length; i++) ...[
-                        if (i > 0) const SizedBox(height: 12),
-                        Builder(builder: (_) {
-                          final platform = SocialPlatform.values[i];
-                          return _PlatformLimitTile(
-                            platform: platform,
-                            name: platform.reelsName,
-                            value: _limits[platform]!,
-                            onDelta: (d) => setState(() {
-                              _enforcePerApp = true;
-                              _limits[platform] =
-                                  (_limits[platform]! + d).clamp(0, 150);
-                            }),
-                          );
-                        }),
-                      ],
-                    ],
+                    children: () {
+                      final activePlatforms = _tracking.activePlatforms;
+                      return [
+                        for (int i = 0; i < activePlatforms.length; i++) ...[
+                          if (i > 0) const SizedBox(height: 12),
+                          Builder(builder: (_) {
+                            final platform = activePlatforms[i];
+                            return _PlatformLimitTile(
+                              platform: platform,
+                              name: platform.reelsName,
+                              value: _limits[platform]!,
+                              onDelta: (d) => setState(() {
+                                _enforcePerApp = true;
+                                _limits[platform] =
+                                    (_limits[platform]! + d).clamp(0, 150);
+                              }),
+                            );
+                          }),
+                        ],
+                      ];
+                    }(),
                   ),
                 ),
               ),

@@ -120,10 +120,38 @@ class StorageService {
     await _prefs?.setString(_keySelectedGoal, goal);
   }
 
-  List<String> get selectedPlatforms =>
-      _prefs?.getStringList(_keySelectedPlatforms) ?? ['instagram', 'youtube'];
+  static List<String> normalizeSelectedPlatformIds(Iterable<String> rawIds) {
+    final selectedSet = rawIds
+        .map((e) => e.trim().toLowerCase())
+        .where((e) => supportedPlatformIds.contains(e))
+        .toSet();
+    final ordered = [
+      for (final id in supportedPlatformIds)
+        if (selectedSet.contains(id)) id,
+    ];
+    return ordered.isEmpty ? const ['instagram', 'youtube'] : ordered;
+  }
+
+  static Map<String, int> allocateLimitsForPlatforms({
+    required int totalLimit,
+    required List<String> selectedIds,
+  }) {
+    final normalized = normalizeSelectedPlatformIds(selectedIds);
+    final count = normalized.length;
+    final clampedTotal = totalLimit < 0 ? 0 : totalLimit;
+    final base = clampedTotal ~/ count;
+    final remainder = clampedTotal % count;
+    return {
+      for (int i = 0; i < count; i++)
+        normalized[i]: base + (i < remainder ? 1 : 0),
+    };
+  }
+
+  List<String> get selectedPlatforms => normalizeSelectedPlatformIds(
+      _prefs?.getStringList(_keySelectedPlatforms) ?? ['instagram', 'youtube']);
   Future<void> setSelectedPlatforms(List<String> platforms) async {
-    await _prefs?.setStringList(_keySelectedPlatforms, platforms);
+    await _prefs?.setStringList(
+        _keySelectedPlatforms, normalizeSelectedPlatformIds(platforms));
   }
 
   // Daily Consumption Counts
@@ -185,7 +213,15 @@ class StorageService {
   int get totalLimit => _prefs?.getInt(_keyTotalLimit) ?? 40;
   int limitForPlatform(String platformId) {
     final normalized = platformId.trim().toLowerCase();
+    final allocated = allocateLimitsForPlatforms(
+      totalLimit: totalLimit,
+      selectedIds: selectedPlatforms,
+    );
+    if (!platformLimitsEnabled) {
+      return allocated[normalized] ?? 0;
+    }
     return _prefs?.getInt(_limitKey(normalized)) ??
+        allocated[normalized] ??
         defaultPlatformLimits[normalized] ??
         10;
   }

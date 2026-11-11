@@ -192,12 +192,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final isScrolaOn = permissionsReady && tracking.isTrackingEnabled;
         final greeting = _greetingForHour(DateTime.now().hour);
 
+        final visiblePlatforms = tracking.visiblePlatforms;
         final countsByPlatform = <SocialPlatform, int>{
-          for (final platform in SocialPlatform.values)
+          for (final platform in visiblePlatforms)
             platform: tracking.reelsForId(platform.id),
         };
         final limitsByPlatform = <SocialPlatform, int>{
-          for (final platform in SocialPlatform.values)
+          for (final platform in visiblePlatforms)
             platform: tracking.limitForId(platform.id),
         };
 
@@ -290,6 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 24),
                               PlatformBreakdownSection(
+                                platforms: visiblePlatforms,
                                 counts: countsByPlatform,
                                 limits: limitsByPlatform,
                                 onDetailsTap: () => _push(
