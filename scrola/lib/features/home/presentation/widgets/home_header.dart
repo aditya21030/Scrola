@@ -21,12 +21,13 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = isTracking ? AppColors.success : AppColors.warning;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Greeting & User Name
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,33 +36,38 @@ class HomeHeader extends StatelessWidget {
                 Text(
                   greeting,
                   style: AppTypography.caption(
-                    color: AppColors.secondaryText,
-                  ).copyWith(fontSize: 13),
+                    color: AppColors.warmText,
+                  ).copyWith(fontSize: 13, fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: 2),
                 Text(
                   userName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.title(
                     color: AppColors.primaryText,
-                  ).copyWith(fontSize: 26, fontWeight: FontWeight.w800),
+                  ).copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    height: 28 / 24,
+                  ),
                 ),
               ],
             ),
           ),
-
-          // "Tracking on" Status Pill
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: () {
               HapticService.subtle();
               onTrackingTap?.call();
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: AppColors.successBackground,
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppColors.success.withValues(alpha: 0.25),
+                  color: Colors.white.withValues(alpha: 0.10),
                   width: 1,
                 ),
               ),
@@ -69,27 +75,23 @@ class HomeHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: AppColors.success,
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: statusColor,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.success,
-                          blurRadius: 4,
-                          spreadRadius: 1,
+                          color: statusColor.withValues(alpha: 0.8),
+                          blurRadius: 8,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: 6),
                   Text(
-                    isTracking ? 'Tracking on' : 'Paused',
-                    style: AppTypography.label(
-                      color: AppColors.success,
-                      letterSpacing: 0.2,
-                    ).copyWith(
+                    isTracking ? 'Tracking on' : 'Setup needed',
+                    style: AppTypography.caption(color: statusColor).copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -98,23 +100,20 @@ class HomeHeader extends StatelessWidget {
               ),
             ),
           ),
-
-          const SizedBox(width: 12),
-
-          // Notification Bell Button
+          const SizedBox(width: 10),
           GestureDetector(
             onTap: () {
               HapticService.light();
               onNotificationTap?.call();
             },
             child: Container(
-              width: 42,
-              height: 42,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: AppColors.secondaryBackground,
                 shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
                 border: Border.all(
-                  color: AppColors.border,
+                  color: Colors.white.withValues(alpha: 0.10),
                   width: 1,
                 ),
               ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_typography.dart';
-import 'features/home/presentation/screens/home_screen.dart';
+import 'features/onboarding/presentation/screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +38,7 @@ class ScrolaApp extends StatelessWidget {
           labelLarge: AppTypography.label(),
         ),
       ),
-      home: const HomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }

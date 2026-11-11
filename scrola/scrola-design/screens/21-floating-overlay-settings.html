@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21 Floating Overlay Settings · Scrola</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter',sans-serif}
+*{box-sizing:border-box}
+.jk{font-family:'Plus Jakarta Sans',sans-serif}
+.tn{font-variant-numeric:tabular-nums}
+.card{background:#242424;border:1px solid #353535;border-radius:24px}
+.lab{font:600 11px/16px 'Inter',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A3A3A3}
+.btn{height:56px;border-radius:28px;border:0;font:700 16px 'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 24px;cursor:pointer}
+.pri{background:#FF6B24;color:#101010}
+.sec{background:transparent;color:#fff;border:1.5px solid #353535}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.in{animation:up .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ring{from{stroke-dashoffset:390}to{stroke-dashoffset:156}}
+.rp{animation:ring 1.2s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.fb{transform-origin:left;animation:fill 1s cubic-bezier(.2,.8,.2,1) .4s both}
+@property --n{syntax:'<integer>';inherits:false;initial-value:24}
+@keyframes cnt{from{--n:0}to{--n:24}}
+.cnt{animation:cnt 1.2s ease-out .2s both;counter-reset:n var(--n)}
+.cnt::after{content:counter(n)}
+@keyframes br{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.mb{transform-origin:50% 92%;animation:br 3.6s ease-in-out infinite}
+@keyframes bl{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.eye{transform-box:fill-box;transform-origin:center;animation:bl 4.5s infinite}
+@media (prefers-reduced-motion:reduce){
+*{animation:none !important}
+}
+
+.gl{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:24px}.gl.fl{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);backdrop-filter:blur(14px)}
+@keyframes ring2{from{stroke-dashoffset:60}to{stroke-dashoffset:0}}
+.r2{animation:ring2 1.4s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.fl{animation:fl 4s ease-in-out infinite}
+@keyframes pl{0%,100%{box-shadow:0 0 0 0 rgba(255,107,36,.5)}50%{box-shadow:0 0 0 7px rgba(255,107,36,0)}}
+.pl{animation:pl 2s infinite}
+
+.pg{background:#FF6B24;color:#101010;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.lk{background:none;border:0;font:600 15px Inter,sans-serif;color:#A3A3A3;height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+@keyframes pr{0%{transform:scale(.88);opacity:.7}100%{transform:scale(1.12);opacity:0}}
+.rg{animation:pr 3.2s ease-out infinite}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
+.rs{animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ld{from{transform:scaleX(.05)}to{transform:scaleX(.66)}}
+.ld{transform-origin:left;animation:ld 1.8s cubic-bezier(.2,.8,.2,1) .3s both}
+
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.gr{transform-origin:bottom;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+</style>
+
+<style>html,body{background:#000}</style>
+</head>
+<body>
+
+<main style="width:390px;height:844px;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;padding:56px 20px 28px;background:radial-gradient(75% 42% at 50% 16%,rgba(255,107,36,0.12),rgba(255,107,36,0) 72%),#101010"><svg width="390" height="844" style="position:absolute;inset:0;opacity:.07;mix-blend-mode:screen;pointer-events:none" aria-hidden="true"><filter id="nz"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/></filter><rect width="390" height="844" filter="url(#nz)"/></svg><div style="display:flex;align-items:center;justify-content:space-between;position:relative;z-index:3"><span class="gl" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d='M19 12H5M11 6l-6 6 6 6'/></svg></span><span class="jk" style="font-weight:700;font-size:20px">Counter settings</span><span style="min-width:44px;display:flex;justify-content:flex-end"><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#FF6B24;padding:3px;display:flex;justify-content:flex-end"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></span></div>
+<section class="gl" style="margin-top:16px;padding:14px 0 0;border-radius:24px;overflow:hidden;position:relative"><div style="position:relative;width:342px;height:92px;overflow:hidden;border-radius:26px 26px 0 0;background:linear-gradient(165deg,#5A2812,#241109 60%,#150B07);border:1px solid rgba(255,255,255,.14);border-bottom:0;margin:0 auto"><span style="position:absolute;left:12px;top:6px;font:700 9px Inter,sans-serif;color:#A3A3A3">9:41</span><span style="position:absolute;right:12px;top:6px;font:700 9px Inter,sans-serif;color:#A3A3A3">5G ▮</span><div style="position:absolute;left:50%;top:4px;transform:translateX(-50%) scale(0.9);transform-origin:top center"><div style="width:252px;height:48px;border-radius:24px;background:#000;border:1px solid rgba(255,255,255,.14);box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 0 6px rgba(255,107,36,.12);display:flex;align-items:center;justify-content:space-between;padding:0 10px"><div style="width:84px;text-align:right"><div class="jk tn" style="font-weight:800;font-size:18px;line-height:18px">24</div><div style="font:600 9.5px Inter,sans-serif;color:#A3A3A3;margin-top:-1px">watched</div></div><div style="filter:drop-shadow(0 0 6px rgba(255,107,36,.05));margin-top:-2px"><svg viewBox="0 0 140 130" width="44" height="41" aria-hidden="true"><defs><radialGradient id="anpexpanded" cx=".34" cy=".25" r=".95"><stop offset="0" stop-color="#FFE6D2"/><stop offset=".32" stop-color="#FFA468"/><stop offset=".68" stop-color="#FF6B24"/><stop offset="1" stop-color="#C9420C"/></radialGradient><linearGradient id="snpexpanded" x1="0" y1=".4" x2="0" y2="1"><stop offset="0" stop-color="#7A2204" stop-opacity="0"/><stop offset="1" stop-color="#7A2204" stop-opacity=".55"/></linearGradient><linearGradient id="rnpexpanded" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient><radialGradient id="cnpexpanded"><stop offset="0" stop-color="#FFC9A6" stop-opacity=".85"/><stop offset="1" stop-color="#FFC9A6" stop-opacity="0"/></radialGradient><radialGradient id="knpexpanded"><stop offset="0" stop-color="#FF6B24" stop-opacity=".6"/><stop offset="1" stop-color="#FF6B24" stop-opacity="0"/></radialGradient></defs><ellipse cx="70" cy="121" rx="56" ry="9" fill="url(#knpexpanded)"/><ellipse cx="70" cy="122" rx="34" ry="4.5" fill="#000" opacity=".5"/><g class="mb"><ellipse cx="55" cy="112" rx="13" ry="8" fill="#A5360A"/><ellipse cx="86" cy="112" rx="13" ry="8" fill="#A5360A"/><path d="M30 70C14 62 16 38 38 36C42 18 66 12 70 24C74 12 98 18 102 36C124 38 126 62 110 70C122 88 100 108 84 98C78 106 62 106 56 98C40 108 18 88 30 70Z" fill="#8F2D07" transform="translate(0,6)"/><path d="M30 70C14 62 16 38 38 36C42 18 66 12 70 24C74 12 98 18 102 36C124 38 126 62 110 70C122 88 100 108 84 98C78 106 62 106 56 98C40 108 18 88 30 70Z" fill="url(#anpexpanded)"/><path d="M30 70C14 62 16 38 38 36C42 18 66 12 70 24C74 12 98 18 102 36C124 38 126 62 110 70C122 88 100 108 84 98C78 106 62 106 56 98C40 108 18 88 30 70Z" fill="url(#snpexpanded)"/><path d="M30 70C14 62 16 38 38 36C42 18 66 12 70 24C74 12 98 18 102 36C124 38 126 62 110 70C122 88 100 108 84 98C78 106 62 106 56 98C40 108 18 88 30 70Z" fill="none" stroke="url(#rnpexpanded)" stroke-width="2.6"/><g stroke-linecap="round" fill="none"><g stroke="#B93C0C" stroke-width="3.6" opacity=".6"><path d="M70 26C66 40 74 52 68 64"/><path d="M40 52q10 3 13 13"/><path d="M100 52q-10 3-13 13"/></g><g stroke="#fff" stroke-width="1.8" opacity=".35" transform="translate(2.5,-1)"><path d="M70 26C66 40 74 52 68 64"/><path d="M40 52q10 3 13 13"/></g></g><ellipse cx="48" cy="31" rx="15" ry="6.5" transform="rotate(-28 48 31)" fill="#fff" opacity=".6"/><circle cx="31" cy="48" r="2.6" fill="#fff" opacity=".7"/><circle cx="38" cy="89" r="10" fill="url(#cnpexpanded)"/><circle cx="102" cy="89" r="10" fill="url(#cnpexpanded)"/><g class="eye"><circle cx="54" cy="77" r="7.5" fill="#1E0C04"/><circle cx="56.5" cy="74" r="3" fill="#fff"/><circle cx="51.5" cy="80" r="1.4" fill="#fff" opacity=".8"/><circle cx="86" cy="77" r="7.5" fill="#1E0C04"/><circle cx="88.5" cy="74" r="3" fill="#fff"/><circle cx="83.5" cy="80" r="1.4" fill="#fff" opacity=".8"/></g><path d="M62 88q8 9 16 0z" fill="#1E0C04"/><path d="M66 93q4 3 8 0q-4-3-8 0z" fill="#FF7A8A"/></g></svg></div><div style="width:84px;text-align:left"><div class="jk tn" style="font-weight:800;font-size:18px;line-height:18px;color:#FF8A4C">16</div><div style="font:600 9.5px Inter,sans-serif;color:#A3A3A3;margin-top:-1px">left</div></div></div></div></div></section>
+<div class="lab" style="margin:14px 0 6px;position:relative">Counter shows</div>
+<section class="gl" style="padding:0 16px;position:relative"><div style="display:flex;align-items:center;gap:12px;min-height:60px"><div style="flex:1"><div style="font:700 15.5px Inter,sans-serif">Reels watched</div><div style="font:500 12.5px Inter,sans-serif;color:#A3A3A3">Left of Brainy</div></div><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#FF6B24;padding:3px;display:flex;justify-content:flex-end"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></div><div style="height:1px;background:rgba(255,255,255,.1)"></div><div style="display:flex;align-items:center;gap:12px;min-height:60px"><div style="flex:1"><div style="font:700 15.5px Inter,sans-serif">Reels remaining</div><div style="font:500 12.5px Inter,sans-serif;color:#A3A3A3">Right of Brainy</div></div><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#FF6B24;padding:3px;display:flex;justify-content:flex-end"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></div><div style="height:1px;background:rgba(255,255,255,.1)"></div><div style="display:flex;align-items:center;gap:12px;min-height:60px"><div style="flex:1"><div style="font:700 15.5px Inter,sans-serif">Brainy reacts to your pace</div><div style="font:500 12.5px Inter,sans-serif;color:#A3A3A3">Mood changes as you scroll</div></div><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#FF6B24;padding:3px;display:flex;justify-content:flex-end"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></div></section>
+<section class="gl" style="margin-top:12px;padding:12px 16px 6px;position:relative"><div style="font:700 15.5px Inter,sans-serif">Position</div><div style="display:flex;background:rgba(255,255,255,.06);border-radius:22px;padding:4px;margin-top:12px"><span style="flex:1;text-align:center;height:36px;border-radius:18px;font:700 13px/36px Inter,sans-serif;background:#FF6B24;color:#101010">Top centre</span><span style="flex:1;text-align:center;height:36px;border-radius:18px;font:700 13px/36px Inter,sans-serif;color:#A3A3A3">Free</span></div><div style="padding:12px 0"><div style="display:flex;justify-content:space-between;font:700 15px Inter,sans-serif;margin-bottom:10px"><span>Size</span><span class="tn" style="color:#FF8A4C">Medium</span></div><div style="position:relative;height:22px;display:flex;align-items:center"><i style="position:absolute;left:0;right:0;height:8px;border-radius:4px;background:rgba(255,255,255,.1)"></i><i class="fb" style="position:absolute;left:0;width:50%;height:8px;border-radius:4px;background:#FF6B24;box-shadow:0 0 7px rgba(255,107,36,.05)"></i><i style="position:absolute;left:calc(50% - 11px);width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid #FF6B24;box-shadow:0 0 8px rgba(255,107,36,.05)"></i></div></div></section>
+<section class="gl" style="margin-top:12px;padding:12px 16px;position:relative"><div style="font:700 15.5px Inter,sans-serif;margin-bottom:10px">Show over</div><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="height:34px;padding:0 14px;border-radius:17px;font:700 13px/34px Inter,sans-serif;background:#FF6B24;color:#101010">Instagram</span><span style="height:34px;padding:0 14px;border-radius:17px;font:700 13px/34px Inter,sans-serif;background:#FF6B24;color:#101010">YouTube</span><span style="height:34px;padding:0 14px;border-radius:17px;font:700 13px/34px Inter,sans-serif;background:rgba(255,255,255,.07);color:#A3A3A3;border:1px solid rgba(255,255,255,.1);line-height:32px">Facebook</span><span style="height:34px;padding:0 14px;border-radius:17px;font:700 13px/34px Inter,sans-serif;background:rgba(255,255,255,.07);color:#A3A3A3;border:1px solid rgba(255,255,255,.1);line-height:32px">Snapchat</span></div></section></main>
+
+</body>
+</html>

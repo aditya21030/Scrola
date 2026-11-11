@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/brainy_mascot.dart';
 
 class HeroGaugeSection extends StatefulWidget {
   final int reelsToday;
@@ -11,15 +14,31 @@ class HeroGaugeSection extends StatefulWidget {
   final int xpToday;
   final int currentLevel;
   final String levelTitle;
+  final BrainyMood mood;
+  final BrainySkin skin;
+  final bool isTracking;
+  final VoidCallback? onMascotTap;
+  final VoidCallback? onStreakTap;
+  final VoidCallback? onXpTap;
+  final VoidCallback? onLevelTap;
+  final VoidCallback? onCounterTap;
 
   const HeroGaugeSection({
     super.key,
-    this.reelsToday = 24,
-    this.totalLimit = 40,
-    this.streakDays = 7,
-    this.xpToday = 20,
-    this.currentLevel = 4,
-    this.levelTitle = 'Curious',
+    required this.reelsToday,
+    required this.totalLimit,
+    required this.streakDays,
+    required this.xpToday,
+    required this.currentLevel,
+    required this.levelTitle,
+    required this.mood,
+    required this.skin,
+    this.isTracking = true,
+    this.onMascotTap,
+    this.onStreakTap,
+    this.onXpTap,
+    this.onLevelTap,
+    this.onCounterTap,
   });
 
   @override
@@ -28,487 +47,470 @@ class HeroGaugeSection extends StatefulWidget {
 
 class _HeroGaugeSectionState extends State<HeroGaugeSection>
     with TickerProviderStateMixin {
-  late AnimationController _floatController;
-  late Animation<double> _floatAnimation;
-
-  late AnimationController _progressController;
-  late Animation<double> _progressAnimation;
+  late final AnimationController _floatController;
+  late final AnimationController _ringController;
 
   @override
   void initState() {
     super.initState();
-    // Gentle floating breathing animation for Brainy
     _floatController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2800),
+      duration: AppMotion.floatCycle,
     )..repeat(reverse: true);
 
-    _floatAnimation = Tween<double>(begin: -4.0, end: 4.0).animate(
-      CurvedAnimation(
-        parent: _floatController,
-        curve: Curves.easeInOutSine,
-      ),
-    );
-
-    // Smooth entrance for the gauge progress
-    _progressController = AnimationController(
+    _ringController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-
-    final double targetFraction = (widget.reelsToday / widget.totalLimit).clamp(0.0, 1.0);
-    _progressAnimation = Tween<double>(begin: 0.0, end: targetFraction).animate(
-      CurvedAnimation(
-        parent: _progressController,
-        curve: const Cubic(0.2, 0.8, 0.2, 1.0),
-      ),
-    );
-
-    _progressController.forward();
+      duration: AppMotion.ringDraw,
+    )..forward();
   }
 
   @override
   void dispose() {
     _floatController.dispose();
-    _progressController.dispose();
+    _ringController.dispose();
     super.dispose();
+  }
+
+  String _speechText(int remaining) {
+    if (!widget.isTracking) return 'Enable tracking to count.';
+    if (remaining <= 0) return 'Limit hit. Brainy needs rest.';
+    if (remaining <= (widget.totalLimit * 0.25).round()) {
+      return '$remaining left. Slow down!';
+    }
+    return '$remaining left. Easy day.';
   }
 
   @override
   Widget build(BuildContext context) {
-    final int reelsRemaining = math.max(0, widget.totalLimit - widget.reelsToday);
+    final safeLimit = math.max(1, widget.totalLimit);
+    final remaining = math.max(0, safeLimit - widget.reelsToday);
+    final progress = (widget.reelsToday / safeLimit).clamp(0.0, 1.0);
+    final reduceMotion = AppMotion.isReducedMotion(context);
+
+    final paceColor = !widget.isTracking
+        ? AppColors.warning
+        : remaining == 0
+            ? AppColors.error
+            : remaining <= (safeLimit * 0.25)
+                ? AppColors.warning
+                : AppColors.success;
+
+    final paceLabel = !widget.isTracking
+        ? 'Setup needed'
+        : remaining == 0
+            ? 'Limit reached'
+            : remaining <= (safeLimit * 0.25)
+                ? 'Nearly there'
+                : 'On pace';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Orbit Gauge and Mascot Arena
-        SizedBox(
-          width: 340,
-          height: 310,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Ambient Orange Glow behind Mascot
-              Positioned(
-                top: 40,
-                child: Container(
-                  width: 220,
-                  height: 220,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        AppColors.primaryAccent.withValues(alpha: 0.28),
-                        AppColors.primaryAccent.withValues(alpha: 0.08),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.55, 1.0],
+        Padding(
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () {
+                HapticService.subtle();
+                widget.onMascotTap?.call();
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: Text(
+                  _speechText(remaining),
+                  style: AppTypography.caption(color: AppColors.primaryText)
+                      .copyWith(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+          ),
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final arenaWidth = math.min(constraints.maxWidth, 360.0);
+            final ringSize = math.min(arenaWidth * 0.78, 290.0);
+
+            return SizedBox(
+              width: arenaWidth,
+              height: ringSize + 12,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedBuilder(
+                    animation: _ringController,
+                    builder: (context, _) {
+                      final t = reduceMotion
+                          ? 1.0
+                          : AppMotion.easeOut.transform(_ringController.value);
+                      return CustomPaint(
+                        size: Size(ringSize, ringSize),
+                        painter: _HeroOrbitRingPainter(
+                          progress: progress * t,
+                        ),
+                      );
+                    },
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      HapticService.light();
+                      widget.onMascotTap?.call();
+                    },
+                    child: BrainyMascot(
+                      mood: widget.mood,
+                      skin: widget.skin,
+                      size: ringSize * 0.62,
+                      animate: !reduceMotion,
                     ),
                   ),
-                ),
-              ),
-
-              // Animated Circular Orbit Gauge & Ticks
-              AnimatedBuilder(
-                animation: _progressAnimation,
-                builder: (context, child) {
-                  return CustomPaint(
-                    size: const Size(290, 290),
-                    painter: _OrbitGaugePainter(
-                      progress: _progressAnimation.value,
-                    ),
-                  );
-                },
-              ),
-
-              // Orbit Chip 1: Streak (Left)
-              Positioned(
-                left: 14,
-                top: 88,
-                child: _buildOrbitBadge(
-                  icon: const Icon(
-                    Icons.local_fire_department_rounded,
-                    color: AppColors.primaryAccent,
-                    size: 16,
-                  ),
-                  primaryText: '${widget.streakDays}',
-                  secondaryText: 'streak',
-                  onTap: () {
-                    HapticService.light();
-                  },
-                ),
-              ),
-
-              // Orbit Chip 2: XP (Top-Right)
-              Positioned(
-                right: 22,
-                top: 72,
-                child: _buildOrbitBadge(
-                  icon: const Icon(
-                    Icons.bolt_rounded,
-                    color: AppColors.warning,
-                    size: 16,
-                  ),
-                  primaryText: '+${widget.xpToday}',
-                  secondaryText: 'XP',
-                  onTap: () {
-                    HapticService.light();
-                  },
-                ),
-              ),
-
-              // Orbit Chip 3: Level (Bottom-Right)
-              Positioned(
-                right: 18,
-                bottom: 50,
-                child: _buildOrbitBadge(
-                  icon: const Icon(
-                    Icons.emoji_events_rounded,
-                    color: Color(0xFFD49C57),
-                    size: 15,
-                  ),
-                  primaryText: 'Lv ${widget.currentLevel}',
-                  secondaryText: widget.levelTitle,
-                  onTap: () {
-                    HapticService.light();
-                  },
-                ),
-              ),
-
-              // Floating Speech Bubble ("Great pace, Alex!")
-              Positioned(
-                top: 18,
-                left: 20,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardSurface.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.border,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                  // Left floating orb: streak
+                  Positioned(
+                    left: 8,
+                    top: ringSize * 0.25,
+                    child: _FloatingOrb(
+                      controller: _floatController,
+                      phaseOffset: 0.0,
+                      reduceMotion: reduceMotion,
+                      size: 62,
+                      onTap: widget.onStreakTap,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.local_fire_department_rounded,
+                            color: AppColors.primaryAccent,
+                            size: 16,
+                          ),
+                          Text(
+                            '${widget.streakDays}',
+                            style: AppTypography.numeric(
+                              color: AppColors.primaryText,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              height: 1.05,
+                            ),
+                          ),
+                          Text(
+                            'streak',
+                            style: AppTypography.caption(
+                              color: AppColors.secondaryText,
+                            ).copyWith(fontSize: 10),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Text(
-                    'Great pace, Alex!',
-                    style: AppTypography.label(
-                      color: AppColors.primaryText,
-                      letterSpacing: 0.2,
-                    ).copyWith(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
+                  // Top-right floating orb: XP today
+                  Positioned(
+                    right: 10,
+                    top: ringSize * 0.16,
+                    child: _FloatingOrb(
+                      controller: _floatController,
+                      phaseOffset: 0.4,
+                      reduceMotion: reduceMotion,
+                      size: 60,
+                      onTap: widget.onXpTap,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.bolt_rounded,
+                            color: AppColors.primaryAccent,
+                            size: 16,
+                          ),
+                          Text(
+                            '+${widget.xpToday}',
+                            style: AppTypography.numeric(
+                              color: AppColors.primaryText,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              height: 1.05,
+                            ),
+                          ),
+                          Text(
+                            'XP',
+                            style: AppTypography.caption(
+                              color: AppColors.secondaryText,
+                            ).copyWith(fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Bottom-right floating orb: Level
+                  Positioned(
+                    right: 8,
+                    bottom: ringSize * 0.10,
+                    child: _FloatingOrb(
+                      controller: _floatController,
+                      phaseOffset: 0.8,
+                      reduceMotion: reduceMotion,
+                      size: 64,
+                      onTap: widget.onLevelTap,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.emoji_events_outlined,
+                            color: AppColors.primaryAccent,
+                            size: 15,
+                          ),
+                          Text(
+                            'Lv ${widget.currentLevel}',
+                            style: AppTypography.numeric(
+                              color: AppColors.primaryText,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              height: 1.05,
+                            ),
+                          ),
+                          Text(
+                            widget.levelTitle.split(' ').first,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.caption(
+                              color: AppColors.secondaryText,
+                            ).copyWith(fontSize: 9.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-
-              // Mascot: Brainy (Center with Floating Animation)
-              AnimatedBuilder(
-                animation: _floatAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, _floatAnimation.value),
-                    child: child,
-                  );
-                },
-                child: Image.asset(
-                  'assets/brainy_mascot.png',
-                  width: 140,
-                  height: 140,
-                  fit: BoxFit.contain,
-                ),
+            );
+          },
+        ),
+        GestureDetector(
+          onTap: () {
+            HapticService.subtle();
+            widget.onCounterTap?.call();
+          },
+          child: Column(
+            children: [
+              Text(
+                'REELS TODAY',
+                style: AppTypography.label(color: AppColors.secondaryText),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '${widget.reelsToday}',
+                    style: AppTypography.heroDisplay(),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '/ $safeLimit',
+                    style: AppTypography.numeric(
+                      color: AppColors.secondaryText,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryAccent,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      remaining > 0 ? '$remaining reels left' : 'Limit reached',
+                      style: AppTypography.caption(
+                        color: AppColors.textOnAccent,
+                      ).copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: paceColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: paceColor.withValues(alpha: 0.28),
+                      ),
+                    ),
+                    child: Text(
+                      paceLabel,
+                      style: AppTypography.caption(color: paceColor)
+                          .copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-
-        const SizedBox(height: 10),
-
-        // "REELS TODAY" label
-        Text(
-          'REELS TODAY',
-          style: AppTypography.label(
-            color: AppColors.secondaryText,
-            letterSpacing: 1.5,
-          ).copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-
-        const SizedBox(height: 6),
-
-        // Key Numbers: 24 / 40
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              '${widget.reelsToday}',
-              style: AppTypography.display(
-                color: AppColors.primaryText,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '/ ${widget.totalLimit}',
-              style: AppTypography.title(
-                color: AppColors.secondaryText,
-              ).copyWith(
-                fontSize: 26,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 14),
-
-        // Status Badges Row: [16 reels left] [On pace]
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Orange Solid Pill
-            GestureDetector(
-              onTap: () => HapticService.subtle(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryAccent,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryAccent.withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  '$reelsRemaining reels left',
-                  style: AppTypography.body(
-                    color: AppColors.textOnAccent,
-                  ).copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 10),
-
-            // Green "On pace" Pill
-            GestureDetector(
-              onTap: () => HapticService.subtle(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.successBackground,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.success.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  'On pace',
-                  style: AppTypography.body(
-                    color: AppColors.success,
-                  ).copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
+}
 
-  Widget _buildOrbitBadge({
-    required Widget icon,
-    required String primaryText,
-    required String secondaryText,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.elevatedSurface.withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: AppColors.border,
-            width: 1,
+class _FloatingOrb extends StatelessWidget {
+  final AnimationController controller;
+  final double phaseOffset;
+  final bool reduceMotion;
+  final double size;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  const _FloatingOrb({
+    required this.controller,
+    required this.phaseOffset,
+    required this.reduceMotion,
+    required this.size,
+    required this.child,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final offset = reduceMotion
+            ? 0.0
+            : math.sin((controller.value + phaseOffset) * 2 * math.pi) * 4.5;
+        return Transform.translate(
+          offset: Offset(0, offset),
+          child: child,
+        );
+      },
+      child: GestureDetector(
+        onTap: () {
+          HapticService.subtle();
+          onTap?.call();
+        },
+        child: Container(
+          width: size,
+          height: size,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: 0.06),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            icon,
-            const SizedBox(height: 1),
-            Text(
-              primaryText,
-              style: AppTypography.subheading(
-                color: AppColors.primaryText,
-              ).copyWith(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
-              ),
-            ),
-            Text(
-              secondaryText,
-              style: AppTypography.caption(
-                color: AppColors.secondaryText,
-              ).copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                height: 1.1,
-              ),
-            ),
-          ],
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: child,
+          ),
         ),
       ),
     );
   }
 }
 
-class _OrbitGaugePainter extends CustomPainter {
-  final double progress; // 0.0 to 1.0
+class _HeroOrbitRingPainter extends CustomPainter {
+  final double progress;
 
-  _OrbitGaugePainter({required this.progress});
+  _HeroOrbitRingPainter({required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2 + 6);
-    final radius = size.width * 0.44;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (math.min(size.width, size.height) / 2) - 14;
 
-    // Draw background tick marks on the inactive portion (from ~130 deg to ~230 deg)
-    final tickPaint = Paint()
-      ..color = AppColors.border.withValues(alpha: 0.7)
-      ..strokeWidth = 1.2
-      ..strokeCap = StrokeCap.round;
+    // Dotted base ring
+    final dotPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.16)
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
 
-    const totalTicks = 28;
-    const startTickAngle = 135 * (math.pi / 180);
-    const tickSweepAngle = 110 * (math.pi / 180);
-
-    for (int i = 0; i <= totalTicks; i++) {
-      final angle = startTickAngle + (i / totalTicks) * tickSweepAngle;
-      final inner = Offset(
-        center.dx + (radius - 5) * math.cos(angle),
-        center.dy + (radius - 5) * math.sin(angle),
+    const dashCount = 48;
+    const fullAngle = 2 * math.pi;
+    for (int i = 0; i < dashCount; i++) {
+      final a = -math.pi / 2 + (i / dashCount) * fullAngle;
+      final p = Offset(
+        center.dx + radius * math.cos(a),
+        center.dy + radius * math.sin(a),
       );
-      final outer = Offset(
-        center.dx + (radius + 5) * math.cos(angle),
-        center.dy + (radius + 5) * math.sin(angle),
-      );
-      canvas.drawLine(inner, outer, tickPaint);
+      canvas.drawCircle(p, 1.3, dotPaint..style = PaintingStyle.fill);
     }
 
-    // Active Glowing Arc:
-    // Sweeps from top-left (~ -40 degrees) around clockwise down to ~ 115 degrees
-    // Matching the reference image where the glowing orange arc wraps around the right side down to the bottom
-    const startAngle = -45 * (math.pi / 180);
-    const maxSweepAngle = 210 * (math.pi / 180);
-    final sweepAngle = maxSweepAngle * progress;
+    if (progress <= 0.005) return;
 
-    // Background track arc
-    final trackPaint = Paint()
-      ..color = AppColors.cardSurface.withValues(alpha: 0.6)
-      ..strokeWidth = 5.0
+    final sweep = progress * 2 * math.pi;
+    const startAngle = -math.pi / 2;
+
+    // Subtle orange glow under arc
+    final glowPaint = Paint()
+      ..color = AppColors.primaryAccent.withValues(alpha: 0.28)
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       startAngle,
-      maxSweepAngle,
+      sweep,
       false,
-      trackPaint,
+      glowPaint,
     );
 
-    if (progress > 0.01) {
-      // Glow behind active arc
-      final glowPaint = Paint()
-        ..color = AppColors.primaryAccent.withValues(alpha: 0.4)
-        ..strokeWidth = 10.0
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    final arcPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [AppColors.primaryAccent, AppColors.accentHighlight],
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
 
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        false,
-        glowPaint,
-      );
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweep,
+      false,
+      arcPaint,
+    );
 
-      // Active vibrant orange arc
-      final activePaint = Paint()
-        ..color = AppColors.primaryAccent
-        ..strokeWidth = 5.5
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        false,
-        activePaint,
-      );
-
-      // Thumb / Handle indicator at the end of progress
-      final currentAngle = startAngle + sweepAngle;
-      final thumbCenter = Offset(
-        center.dx + radius * math.cos(currentAngle),
-        center.dy + radius * math.sin(currentAngle),
-      );
-
-      // Thumb glow
-      final thumbGlowPaint = Paint()
-        ..color = AppColors.primaryAccent.withValues(alpha: 0.5)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-      canvas.drawCircle(thumbCenter, 9, thumbGlowPaint);
-
-      // Thumb outer orange ring
-      final thumbOuterPaint = Paint()
-        ..color = AppColors.primaryAccent
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(thumbCenter, 7.5, thumbOuterPaint);
-
-      // Thumb inner bright dot
-      final thumbInnerPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(thumbCenter, 4.0, thumbInnerPaint);
-    }
+    final endAngle = startAngle + sweep;
+    final knobCenter = Offset(
+      center.dx + radius * math.cos(endAngle),
+      center.dy + radius * math.sin(endAngle),
+    );
+    canvas.drawCircle(
+      knobCenter,
+      9,
+      Paint()..color = AppColors.primaryAccent.withValues(alpha: 0.35),
+    );
+    canvas.drawCircle(
+      knobCenter,
+      5,
+      Paint()..color = AppColors.accentHighlight,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _OrbitGaugePainter oldDelegate) {
-    return oldDelegate.progress != progress;
-  }
+  bool shouldRepaint(_HeroOrbitRingPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }

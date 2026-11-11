@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_fonts: ^8.2.1
   shared_preferences: ^2.5.6
+  flutter_svg: ^2.3.3
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +62,7 @@ flutter:
 
   assets:
     - assets/
+    - assets/mascot/
 
 
   # To add assets to your application, add an assets section, like this:

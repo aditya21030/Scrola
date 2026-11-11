@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>33 Blocking Dashboard · Scrola</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter',sans-serif}
+*{box-sizing:border-box}
+.jk{font-family:'Plus Jakarta Sans',sans-serif}
+.tn{font-variant-numeric:tabular-nums}
+.card{background:#242424;border:1px solid #353535;border-radius:24px}
+.lab{font:600 11px/16px 'Inter',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A3A3A3}
+.btn{height:56px;border-radius:28px;border:0;font:700 16px 'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 24px;cursor:pointer}
+.pri{background:#FF6B24;color:#101010}
+.sec{background:transparent;color:#fff;border:1.5px solid #353535}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.in{animation:up .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ring{from{stroke-dashoffset:390}to{stroke-dashoffset:156}}
+.rp{animation:ring 1.2s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.fb{transform-origin:left;animation:fill 1s cubic-bezier(.2,.8,.2,1) .4s both}
+@property --n{syntax:'<integer>';inherits:false;initial-value:24}
+@keyframes cnt{from{--n:0}to{--n:24}}
+.cnt{animation:cnt 1.2s ease-out .2s both;counter-reset:n var(--n)}
+.cnt::after{content:counter(n)}
+@keyframes br{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.mb{transform-origin:50% 92%;animation:br 3.6s ease-in-out infinite}
+@keyframes bl{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.eye{transform-box:fill-box;transform-origin:center;animation:bl 4.5s infinite}
+@media (prefers-reduced-motion:reduce){
+*{animation:none !important}
+}
+
+.gl{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:24px}.gl.fl{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);backdrop-filter:blur(14px)}
+@keyframes ring2{from{stroke-dashoffset:60}to{stroke-dashoffset:0}}
+.r2{animation:ring2 1.4s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.fl{animation:fl 4s ease-in-out infinite}
+@keyframes pl{0%,100%{box-shadow:0 0 0 0 rgba(255,107,36,.5)}50%{box-shadow:0 0 0 7px rgba(255,107,36,0)}}
+.pl{animation:pl 2s infinite}
+
+.pg{background:#FF6B24;color:#101010;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.lk{background:none;border:0;font:600 15px Inter,sans-serif;color:#A3A3A3;height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+@keyframes pr{0%{transform:scale(.88);opacity:.7}100%{transform:scale(1.12);opacity:0}}
+.rg{animation:pr 3.2s ease-out infinite}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
+.rs{animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ld{from{transform:scaleX(.05)}to{transform:scaleX(.66)}}
+.ld{transform-origin:left;animation:ld 1.8s cubic-bezier(.2,.8,.2,1) .3s both}
+
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.gr{transform-origin:bottom;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+</style>
+
+<style>html,body{background:#000}</style>
+</head>
+<body>
+
+<main style="width:390px;height:844px;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;padding:56px 20px 28px;background:radial-gradient(75% 42% at 50% 20%,rgba(255,107,36,0.15),rgba(255,107,36,0) 72%),#101010"><svg width="390" height="844" style="position:absolute;inset:0;opacity:.07;mix-blend-mode:screen;pointer-events:none" aria-hidden="true"><filter id="nz"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/></filter><rect width="390" height="844" filter="url(#nz)"/></svg><div style="display:flex;justify-content:space-between;align-items:center;position:relative"><span class="jk" style="font-weight:800;font-size:28px;letter-spacing:-.5px">Blocking</span><span class="gl tn" style="height:34px;padding:0 14px;border-radius:17px;font:700 13px/34px Inter,sans-serif;color:#FF8A4C">Active</span></div>
+<section class="gl" style="margin-top:16px;padding:18px 16px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;background:radial-gradient(80% 120% at 0% 50%,rgba(54,201,143,.2),rgba(54,201,143,0) 70%),linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03))"><div style="position:relative;width:84px;height:84px;flex:none"><div style="position:absolute;inset:0;border-radius:26px;background:linear-gradient(135deg,#5CE0AE,#36C98F);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(54,201,143,.5)"><svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="#101010" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2.2 2.2L15 10"/></svg></div></div><div><div class="jk" style="font-weight:800;font-size:22px">Blocking is on</div><div style="font:500 13px/19px Inter,sans-serif;color:#A3A3A3;margin-top:2px">Reels in 2 apps are blocked until 7:00 am.</div></div></section>
+<section class="gl" style="display:flex;padding:14px 8px;margin-top:12px;position:relative"><div style="flex:1;text-align:center"><div class="jk tn" style="font-weight:800;font-size:24px;line-height:28px">14</div><div style="font:500 12px Inter,sans-serif;color:#A3A3A3">Blocks this week</div></div><i style="width:1px;background:rgba(255,255,255,.12)"></i><div style="flex:1;text-align:center"><div class="jk tn" style="font-weight:800;font-size:24px;line-height:28px">2</div><div style="font:500 12px Inter,sans-serif;color:#A3A3A3">Apps covered</div></div><i style="width:1px;background:rgba(255,255,255,.12)"></i><div style="flex:1;text-align:center"><div class="jk tn" style="font-weight:800;font-size:24px;line-height:28px">3</div><div style="font:500 12px Inter,sans-serif;color:#A3A3A3">Unlocks left</div></div></section>
+<div class="lab" style="margin:18px 0 6px;position:relative">Rules</div>
+<section class="gl" style="padding:0 16px;position:relative"><div style="display:flex;align-items:center;gap:12px;height:66px"><span style="width:42px;height:42px;border-radius:14px;background:rgba(255,107,36,.16);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF8A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div style="flex:1"><div style="font:700 15.5px Inter,sans-serif">Night schedule</div><div style="font:500 12.5px Inter,sans-serif;color:#A3A3A3">10:00 pm – 7:00 am</div></div><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#FF6B24;padding:3px;display:flex;justify-content:flex-end"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></div><div style="height:1px;background:rgba(255,255,255,.1)"></div><div style="display:flex;align-items:center;gap:12px;height:66px"><span style="width:42px;height:42px;border-radius:14px;background:rgba(255,107,36,.16);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF8A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span><div style="flex:1"><div style="font:700 15.5px Inter,sans-serif">During focus sessions</div><div style="font:500 12.5px Inter,sans-serif;color:#A3A3A3">Starts automatically</div></div><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#FF6B24;padding:3px;display:flex;justify-content:flex-end"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></div><div style="height:1px;background:rgba(255,255,255,.1)"></div><div style="display:flex;align-items:center;gap:12px;height:66px"><span style="width:42px;height:42px;border-radius:14px;background:rgba(255,107,36,.16);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF8A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div style="flex:1"><div style="font:700 15.5px Inter,sans-serif">When daily limit is reached</div><div style="font:500 12.5px Inter,sans-serif;color:#A3A3A3">Blocks until midnight</div></div><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#FF6B24;padding:3px;display:flex;justify-content:flex-end"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></div><div style="height:1px;background:rgba(255,255,255,.1)"></div><div style="display:flex;align-items:center;gap:12px;height:66px"><span style="width:42px;height:42px;border-radius:14px;background:rgba(255,107,36,.16);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF8A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10z"/></svg></span><div style="flex:1"><div style="font:700 15.5px Inter,sans-serif">Detox days</div><div style="font:500 12.5px Inter,sans-serif;color:#A3A3A3">Off</div></div><span style="position:relative;margin-left:auto;flex:none;width:52px;height:32px;border-radius:16px;background:#3A3A3A;padding:3px;display:flex;justify-content:flex-start"><i style="width:26px;height:26px;border-radius:50%;background:#101010"></i></span></div></section>
+<div style="display:flex;justify-content:center;gap:20px;margin-top:14px;position:relative"><span style="font:700 14px Inter,sans-serif;color:#FF8A4C">Schedule</span><span style="font:700 14px Inter,sans-serif;color:#FF8A4C">Settings</span></div><nav style="position:absolute;left:16px;right:16px;bottom:22px;height:68px;border-radius:34px;background:rgba(28,28,28,.92);border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-around;padding:0 8px;z-index:5"><span style="width:48px;height:48px;border-radius:24px;background:linear-gradient(135deg,#FF8A4C,#FF6B24);display:flex;align-items:center;justify-content:center;box-shadow:0 5px 12px rgba(255,107,36,.22)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#101010" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></span><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-7"/></svg></span><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM12 13v4M8 20h8M4 5h4M16 5h4"/></svg></span><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7a3 3 0 0 0-3 3 3 3 0 0 0 1 5 3 3 0 0 0 5 2V7a3 3 0 0 0-3 0zM15 7a3 3 0 0 1 3 3 3 3 0 0 1-1 5 3 3 0 0 1-5 2"/></svg></span><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span></nav></main>
+
+</body>
+</html>

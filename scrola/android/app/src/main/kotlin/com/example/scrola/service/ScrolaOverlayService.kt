@@ -30,9 +30,10 @@ class ScrolaOverlayService : Service() {
     private var overlayView: LinearLayout? = null
     private var params: WindowManager.LayoutParams? = null
 
-    private var countTextView: TextView? = null
+    private var watchedTextView: TextView? = null
     private var remainingTextView: TextView? = null
-    private var isExpanded: Boolean = true
+    private var isExpanded: Boolean = false
+    private var stickToTopCentre: Boolean = true
 
     companion object {
         const val ACTION_START = "ACTION_START_OVERLAY"
@@ -122,10 +123,10 @@ class ScrolaOverlayService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Scrola Floating Tracker",
+                "Scrola Floating Counter",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shows real-time reels screen time overlay"
+                description = "Shows real-time reels notch pill counter"
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)
@@ -141,13 +142,22 @@ class ScrolaOverlayService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Scrola Active")
+            .setContentTitle("Scrola Counter Active")
             .setContentText("Monitoring short-form video consumption")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
+    }
+
+    private fun getTopSafeOffset(): Int {
+        var topOffset = dpToPx(8)
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        if (resourceId > 0) {
+            topOffset = resources.getDimensionPixelSize(resourceId) + dpToPx(4)
+        }
+        return topOffset
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -161,56 +171,62 @@ class ScrolaOverlayService : Service() {
             WindowManager.LayoutParams.TYPE_PHONE
         }
 
+        // Notch Pill placement at top centre
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            dpToPx(42),
             layoutType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = 30
-            y = 200
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            x = 0
+            y = getTopSafeOffset()
         }
 
+        // Black capsule pill (#101010 with #2A2A2A border)
         overlayView = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dpToPx(12), dpToPx(8), dpToPx(14), dpToPx(8))
-            background = createPillBackground(Color.parseColor("#101010"), Color.parseColor("#FF6B24"))
+            setPadding(dpToPx(14), dpToPx(6), dpToPx(14), dpToPx(6))
+            background = createPillBackground(Color.parseColor("#101010"), Color.parseColor("#2A2A2A"))
         }
 
-        // Mascot dot indicator
-        val dotIndicator = View(this).apply {
-            val size = dpToPx(10)
+        // Left: Reels Watched
+        watchedTextView = TextView(this).apply {
+            text = "0"
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            paint.isFakeBoldText = true
+        }
+
+        // Center: Brainy Mascot Pill Marker
+        val brainyMarker = View(this).apply {
+            val size = dpToPx(16)
             layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                marginEnd = dpToPx(8)
+                marginStart = dpToPx(10)
+                marginEnd = dpToPx(10)
             }
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(Color.parseColor("#FF6B24"))
+                setStroke(dpToPx(2), Color.parseColor("#FFB27F"))
             }
         }
 
-        countTextView = TextView(this).apply {
-            text = "0 / 40"
-            setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        // Right: Reels Remaining (Orange #FF6B24)
+        remainingTextView = TextView(this).apply {
+            text = "40"
+            setTextColor(Color.parseColor("#FF6B24"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             paint.isFakeBoldText = true
         }
 
-        remainingTextView = TextView(this).apply {
-            text = "  •  40 left"
-            setTextColor(Color.parseColor("#A3A3A3"))
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-        }
-
-        overlayView?.addView(dotIndicator)
-        overlayView?.addView(countTextView)
+        overlayView?.addView(watchedTextView)
+        overlayView?.addView(brainyMarker)
         overlayView?.addView(remainingTextView)
 
-        // Drag & Tap Interaction
         setupTouchListener()
 
         try {
@@ -219,13 +235,14 @@ class ScrolaOverlayService : Service() {
             e.printStackTrace()
         }
 
-        // Load initial stats from ScrolaDataManager
         val dataManager = ScrolaDataManager.getInstance(this)
-        val today = dataManager.getTotalReelsToday()
-        val limit = dataManager.getTotalLimit()
-        val session = dataManager.getSessionCount()
-        val isFocus = dataManager.isFocusModeActive()
-        updateUI(today, limit, session, "", isFocus)
+        updateUI(
+            dataManager.getTotalReelsToday(),
+            dataManager.getTotalLimit(),
+            dataManager.getSessionCount(),
+            "",
+            dataManager.isFocusModeActive()
+        )
     }
 
     private fun createPillBackground(bgColor: Int, strokeColor: Int): GradientDrawable {
@@ -244,6 +261,7 @@ class ScrolaOverlayService : Service() {
         var initialTouchX = 0f
         var initialTouchY = 0f
         var hasMoved = false
+        var lastTapTime = 0L
 
         overlayView?.setOnTouchListener { _, event ->
             when (event.action) {
@@ -260,17 +278,11 @@ class ScrolaOverlayService : Service() {
                     val dy = (event.rawY - initialTouchY).toInt()
                     if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
                         hasMoved = true
-
-                        // Screen edge boundary clamping to prevent dragging off-screen
                         val metrics = resources.displayMetrics
-                        val viewWidth = overlayView?.width ?: dpToPx(120)
-                        val viewHeight = overlayView?.height ?: dpToPx(44)
-                        val maxX = Math.max(0, metrics.widthPixels - viewWidth)
-                        val maxY = Math.max(0, metrics.heightPixels - viewHeight - dpToPx(40))
-
-                        params?.x = (initialX + dx).coerceIn(0, maxX)
-                        params?.y = (initialY + dy).coerceIn(dpToPx(30), maxY)
-
+                        val halfW = metrics.widthPixels / 2 - dpToPx(60)
+                        val maxY = Math.max(0, metrics.heightPixels - dpToPx(90))
+                        params?.x = (initialX + dx).coerceIn(-halfW, halfW)
+                        params?.y = (initialY + dy).coerceIn(dpToPx(20), maxY)
                         try {
                             windowManager?.updateViewLayout(overlayView, params)
                         } catch (e: Exception) {
@@ -281,7 +293,18 @@ class ScrolaOverlayService : Service() {
                 }
                 MotionEvent.ACTION_UP -> {
                     if (!hasMoved) {
-                        toggleExpandCollapse()
+                        val now = System.currentTimeMillis()
+                        if (now - lastTapTime < 350) {
+                            // Double tap launches Scrola directly
+                            val launchIntent = Intent(this@ScrolaOverlayService, MainActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(launchIntent)
+                        } else {
+                            // Single tap toggles Compact <-> Expanded
+                            toggleExpandCollapse()
+                        }
+                        lastTapTime = now
                     }
                     true
                 }
@@ -292,31 +315,44 @@ class ScrolaOverlayService : Service() {
 
     private fun toggleExpandCollapse() {
         isExpanded = !isExpanded
-        remainingTextView?.visibility = if (isExpanded) View.VISIBLE else View.GONE
+        params?.height = if (isExpanded) dpToPx(48) else dpToPx(42)
+        val dataManager = ScrolaDataManager.getInstance(this)
+        updateUI(
+            dataManager.getTotalReelsToday(),
+            dataManager.getTotalLimit(),
+            dataManager.getSessionCount(),
+            "",
+            dataManager.isFocusModeActive()
+        )
     }
 
     fun updateUI(today: Int, limit: Int, session: Int, platform: String, isFocus: Boolean) {
         val remaining = Math.max(0, limit - today)
         val isLimitReached = today >= limit || isFocus
 
-        countTextView?.text = "$today / $limit"
-        remainingTextView?.text = if (isFocus) {
-            "  •  FOCUS LOCKED"
-        } else if (isLimitReached) {
-            "  •  LIMIT REACHED"
+        if (isExpanded) {
+            watchedTextView?.text = "$today watched"
+            remainingTextView?.text = if (isFocus) "LOCKED" else "$remaining left"
         } else {
-            "  •  $remaining left"
+            watchedTextView?.text = "$today"
+            remainingTextView?.text = if (isFocus) "LOCK" else "$remaining"
         }
 
-        // Color coding based on status
         val strokeColor = when {
-            isFocus -> Color.parseColor("#FF5252")
-            isLimitReached -> Color.parseColor("#FF5252")
+            isFocus || isLimitReached -> Color.parseColor("#FF5252")
+            today >= (limit * 0.8) -> Color.parseColor("#FFC15A")
+            else -> Color.parseColor("#2A2A2A")
+        }
+
+        val rightColor = when {
+            isFocus || isLimitReached -> Color.parseColor("#FF5252")
             today >= (limit * 0.8) -> Color.parseColor("#FFC15A")
             else -> Color.parseColor("#FF6B24")
         }
 
+        remainingTextView?.setTextColor(rightColor)
         overlayView?.background = createPillBackground(Color.parseColor("#101010"), strokeColor)
+
         try {
             windowManager?.updateViewLayout(overlayView, params)
         } catch (e: Exception) {
