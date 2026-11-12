@@ -15,6 +15,8 @@ class TrackingService extends ChangeNotifier {
   StorageService? _storage;
   StreamSubscription<ReelEvent>? _eventSubscription;
   Future<void>? _refreshPermissionsInFlight;
+  bool _focusListenerAttached = false;
+  bool _lastFocusEnforcing = false;
 
   bool _isAccessibilityGranted = false;
   bool _isOverlayGranted = false;
@@ -72,6 +74,19 @@ class TrackingService extends ChangeNotifier {
     );
     return allocated[normalized] ?? 0;
   }
+
+  int savedLimitForId(String id) {
+    final normalized = id.trim().toLowerCase();
+    if (_storage != null) {
+      return _storage!.savedLimitForPlatform(normalized);
+    }
+    final allocated = StorageService.allocateLimitsForPlatforms(
+      totalLimit: totalLimit,
+      selectedIds: selectedPlatforms,
+    );
+    return allocated[normalized] ?? 0;
+  }
+
   String get lastPlatform => _lastPlatform;
 
   int get instagramReels => _storage?.instagramReels ?? 0;
@@ -108,6 +123,9 @@ class TrackingService extends ChangeNotifier {
   int get xpTotal => _storage?.xpTotal ?? 320;
   int get currentLevel => _storage?.currentLevel ?? 4;
   BrainySkin get equippedSkin => _storage?.equippedSkin ?? BrainySkin.classic;
+  bool get isDailyXpCollectedToday => _storage?.isDailyXpCollectedToday ?? false;
+  bool isRewardClaimed(String rewardId) =>
+      _storage?.isRewardClaimed(rewardId) ?? false;
 
   // Settings
   bool get isTrackingEnabled => _storage?.isTrackingEnabled ?? false;
@@ -155,22 +173,52 @@ class TrackingService extends ChangeNotifier {
     return _storage ??= await StorageService.getInstance();
   }
 
+  @visibleForTesting
+  Future<void> resetForTest() async {
+    final sub = _eventSubscription;
+    _eventSubscription = null;
+    if (sub != null) {
+      unawaited(sub.cancel().catchError((_) {}));
+    }
+    _storage = null;
+    _isInitialized = false;
+    _lastPlatform = 'instagram';
+    await _ensureStorage();
+  }
+
+  void _onFocusModeChanged() {
+    final enforcing = FocusModeService().isEnforcing;
+    if (enforcing != _lastFocusEnforcing) {
+      _lastFocusEnforcing = enforcing;
+      notifyListeners();
+    }
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     await _ensureStorage();
+    if (!_focusListenerAttached) {
+      _lastFocusEnforcing = FocusModeService().isEnforcing;
+      FocusModeService().addListener(_onFocusModeChanged);
+      _focusListenerAttached = true;
+    }
     await checkPermissions();
     await syncFromNative();
     await syncLimitsWithNative();
     await startOverlayIfActive(animateEntrance: false);
 
     _eventSubscription?.cancel();
-    _eventSubscription = ScrolaNativeBridge.reelEventsStream.listen(
-      _handleNativeReelEvent,
-      onError: (err) {
-        debugPrint('Reel stream error: $err');
-      },
-    );
+    try {
+      _eventSubscription = ScrolaNativeBridge.reelEventsStream.listen(
+        _handleNativeReelEvent,
+        onError: (err) {
+          debugPrint('Reel stream error: $err');
+        },
+      );
+    } catch (e) {
+      debugPrint('Reel stream attach error: $e');
+    }
 
     _isInitialized = true;
     notifyListeners();
@@ -192,6 +240,11 @@ class TrackingService extends ChangeNotifier {
           platformCounts: platformCounts,
           session: nativeSession,
         );
+        final nativeLastPlatform =
+            (stats['lastPlatform'] as String?)?.trim().toLowerCase();
+        if (nativeLastPlatform != null && nativeLastPlatform.isNotEmpty) {
+          _lastPlatform = nativeLastPlatform;
+        }
         if (stats['isOverlayEnabled'] is bool) {
           await _storage!.setOverlayEnabled(stats['isOverlayEnabled'] as bool);
         }
@@ -283,25 +336,17 @@ class TrackingService extends ChangeNotifier {
     required int dailyLimit,
     required List<String> platforms,
   }) async {
+    final storage = await _ensureStorage();
     final normalizedPlatforms =
         StorageService.normalizeSelectedPlatformIds(platforms);
-    final allocatedLimits = StorageService.allocateLimitsForPlatforms(
-      totalLimit: dailyLimit,
-      selectedIds: normalizedPlatforms,
-    );
-    await _storage?.setSelectedGoal(goal);
-    await _storage?.setSelectedPlatforms(normalizedPlatforms);
-    await _storage?.setLimits(
-      total: dailyLimit,
-      platformLimits: {
-        for (final id in StorageService.supportedPlatformIds)
-          id: allocatedLimits[id] ?? 0,
-      },
-    );
-    await _storage?.setPlatformLimitsEnabled(false);
+    await storage.setSelectedGoal(goal);
+    await storage.setSelectedPlatforms(normalizedPlatforms);
+    await storage.setLimits(total: dailyLimit);
+    await storage.clearCustomPlatformLimits();
+    await storage.setPlatformLimitsEnabled(false);
     // Do not auto-enable Scrola when onboarding finishes; user explicitly turns ON.
-    await _storage?.setTrackingEnabled(false);
-    await _storage?.setOnboardingComplete(true);
+    await storage.setTrackingEnabled(false);
+    await storage.setOnboardingComplete(true);
     await syncLimitsWithNative();
     notifyListeners();
   }
@@ -315,39 +360,17 @@ class TrackingService extends ChangeNotifier {
     Map<String, int>? platformLimits,
     bool? platformLimitsEnabled,
   }) async {
-    final nextLimitsEnabled =
-        platformLimitsEnabled ?? (_storage?.platformLimitsEnabled ?? false);
-    final Map<String, int>? effectivePlatformLimits;
-    if (platformLimits != null) {
-      effectivePlatformLimits = platformLimits;
-    } else if (!nextLimitsEnabled &&
-        total != null &&
-        instagram == null &&
-        youtube == null &&
-        facebook == null &&
-        snapchat == null) {
-      final allocated = StorageService.allocateLimitsForPlatforms(
-        totalLimit: total,
-        selectedIds: selectedPlatforms,
-      );
-      effectivePlatformLimits = {
-        for (final id in StorageService.supportedPlatformIds)
-          id: allocated[id] ?? 0,
-      };
-    } else {
-      effectivePlatformLimits = null;
-    }
-
-    await _storage?.setLimits(
+    final storage = await _ensureStorage();
+    await storage.setLimits(
       total: total,
       instagram: instagram,
       youtube: youtube,
       facebook: facebook,
       snapchat: snapchat,
-      platformLimits: effectivePlatformLimits,
+      platformLimits: platformLimits,
     );
     if (platformLimitsEnabled != null) {
-      await _storage?.setPlatformLimitsEnabled(platformLimitsEnabled);
+      await storage.setPlatformLimitsEnabled(platformLimitsEnabled);
     }
     await syncLimitsWithNative();
     notifyListeners();
@@ -380,7 +403,7 @@ class TrackingService extends ChangeNotifier {
           );
         }
       }
-    } else {
+    } else if (!FocusModeService().isActive && !storage.isDetoxActive) {
       await ScrolaNativeBridge.stopOverlayService();
     }
     notifyListeners();
@@ -388,7 +411,10 @@ class TrackingService extends ChangeNotifier {
 
   Future<bool> startOverlayIfActive({bool animateEntrance = true}) async {
     final storage = await _ensureStorage();
-    if (!storage.isTrackingEnabled || !storage.isOverlayEnabled) {
+    final shouldShowOverlay = storage.isTrackingEnabled ||
+        FocusModeService().isActive ||
+        storage.isDetoxActive;
+    if (!shouldShowOverlay || !storage.isOverlayEnabled) {
       return false;
     }
     if (!_isOverlayGranted) {
@@ -415,7 +441,9 @@ class TrackingService extends ChangeNotifier {
       }
       if (!_isOverlayGranted) {
         overlayStarted = false;
-      } else if (storage.isTrackingEnabled || FocusModeService().isActive) {
+      } else if (storage.isTrackingEnabled ||
+          FocusModeService().isActive ||
+          storage.isDetoxActive) {
         overlayStarted = await ScrolaNativeBridge.startOverlayService(
           animateEntrance: animateEntrance,
         );
@@ -433,9 +461,10 @@ class TrackingService extends ChangeNotifier {
     bool? expanded,
     String? size,
   }) async {
-    if (stickToNotch != null) await _storage?.setOverlayStickToNotch(stickToNotch);
-    if (expanded != null) await _storage?.setOverlayExpanded(expanded);
-    if (size != null) await _storage?.setOverlaySize(size);
+    final storage = await _ensureStorage();
+    if (stickToNotch != null) await storage.setOverlayStickToNotch(stickToNotch);
+    if (expanded != null) await storage.setOverlayExpanded(expanded);
+    if (size != null) await storage.setOverlaySize(size);
     await syncLimitsWithNative();
     await ScrolaNativeBridge.refreshOverlayConfig();
     notifyListeners();
@@ -447,10 +476,19 @@ class TrackingService extends ChangeNotifier {
     bool? strict,
     bool? detox,
   }) async {
-    if (nightBlock != null) await _storage?.setNightBlockEnabled(nightBlock);
-    if (workBlock != null) await _storage?.setWorkBlockEnabled(workBlock);
-    if (strict != null) await _storage?.setStrictBlocking(strict);
-    if (detox != null) await _storage?.setDetoxActive(detox);
+    final storage = await _ensureStorage();
+    if (nightBlock != null) await storage.setNightBlockEnabled(nightBlock);
+    if (workBlock != null) await storage.setWorkBlockEnabled(workBlock);
+    if (strict != null) await storage.setStrictBlocking(strict);
+    if (detox != null) await storage.setDetoxActive(detox);
+    await syncLimitsWithNative();
+    if (detox != null) {
+      if (detox) {
+        await startOverlayIfActive(animateEntrance: true);
+      } else if (!storage.isTrackingEnabled && !FocusModeService().isActive) {
+        await ScrolaNativeBridge.stopOverlayService();
+      }
+    }
     notifyListeners();
   }
 
@@ -458,15 +496,17 @@ class TrackingService extends ChangeNotifier {
     bool? enabled,
     HapticIntensity? intensity,
   }) async {
-    if (enabled != null) await _storage?.setHapticsEnabled(enabled);
-    if (intensity != null) await _storage?.setHapticIntensity(intensity);
+    final storage = await _ensureStorage();
+    if (enabled != null) await storage.setHapticsEnabled(enabled);
+    if (intensity != null) await storage.setHapticIntensity(intensity);
     notifyListeners();
   }
 
   Future<void> equipSkin(BrainySkin skin) async {
-    await _storage?.setEquippedSkin(skin);
-    await syncLimitsWithNative();
+    final storage = await _ensureStorage();
+    await storage.setEquippedSkin(skin);
     notifyListeners();
+    await syncLimitsWithNative();
   }
 
   Future<void> updateProfile({
@@ -474,7 +514,8 @@ class TrackingService extends ChangeNotifier {
     String? username,
     String? email,
   }) async {
-    await _storage?.setProfile(
+    final storage = await _ensureStorage();
+    await storage.setProfile(
       displayName: displayName,
       username: username,
       email: email,
@@ -483,28 +524,74 @@ class TrackingService extends ChangeNotifier {
   }
 
   Future<void> addXP(int xp) async {
-    await _storage?.addXP(xp);
+    final storage = await _ensureStorage();
+    await storage.addXP(xp);
+    notifyListeners();
+  }
+
+  Future<bool> collectDailyXP(int xp) async {
+    final storage = await _ensureStorage();
+    final marked = await storage.markDailyXpCollectedToday();
+    if (!marked) return false;
+    if (xp > 0) {
+      await storage.addXP(xp);
+    }
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> claimReward(
+    String rewardId, {
+    int xp = 0,
+    BrainySkin? equipSkinOnClaim,
+  }) async {
+    final storage = await _ensureStorage();
+    final claimed = await storage.markRewardClaimed(rewardId);
+    if (!claimed) return false;
+    if (xp > 0) {
+      await storage.addXP(xp);
+    }
+    if (equipSkinOnClaim != null) {
+      await storage.setEquippedSkin(equipSkinOnClaim);
+    }
+    notifyListeners();
+    if (equipSkinOnClaim != null) {
+      await syncLimitsWithNative();
+    }
+    return true;
+  }
+
+  Future<void> recordFocusCompleted(int minutes, {int bonusXP = 30}) async {
+    final storage = await _ensureStorage();
+    await storage.recordFocusCompleted(minutes);
+    if (bonusXP > 0) {
+      await storage.addXP(bonusXP);
+    }
     notifyListeners();
   }
 
   Future<void> syncLimitsWithNative() async {
-    if (_storage == null) return;
+    final storage = await _ensureStorage();
     await ScrolaNativeBridge.syncLimits(
-      totalLimit: _storage!.totalLimit,
-      instagramLimit: _storage!.instagramLimit,
-      youtubeLimit: _storage!.youtubeLimit,
-      facebookLimit: _storage!.facebookLimit,
-      snapchatLimit: _storage!.snapchatLimit,
-      platformLimits: _storage!.allPlatformLimits,
-      isFocusActive: FocusModeService().isActive || _storage!.isDetoxActive,
-      isOverlayEnabled: _storage!.isOverlayEnabled,
-      isTrackingEnabled: _storage!.isTrackingEnabled,
-      platformLimitsEnabled: _storage!.platformLimitsEnabled,
-      selectedPlatforms: _storage!.selectedPlatforms,
-      stickToNotch: _storage!.overlayStickToNotch,
-      overlayExpanded: _storage!.overlayExpanded,
-      overlaySize: _storage!.overlaySize,
-      skinIndex: _storage!.equippedSkin.index,
+      totalLimit: storage.totalLimit,
+      instagramLimit: storage.instagramLimit,
+      youtubeLimit: storage.youtubeLimit,
+      facebookLimit: storage.facebookLimit,
+      snapchatLimit: storage.snapchatLimit,
+      platformLimits: storage.allPlatformLimits,
+      isFocusActive: FocusModeService().isEnforcing,
+      isOverlayEnabled: storage.isOverlayEnabled,
+      isTrackingEnabled: storage.isTrackingEnabled,
+      platformLimitsEnabled: storage.platformLimitsEnabled,
+      selectedPlatforms: storage.selectedPlatforms,
+      stickToNotch: storage.overlayStickToNotch,
+      overlayExpanded: storage.overlayExpanded,
+      overlaySize: storage.overlaySize,
+      skinIndex: storage.equippedSkin.index,
+      nightBlockEnabled: storage.nightBlockEnabled,
+      workBlockEnabled: storage.workBlockEnabled,
+      strictBlocking: storage.strictBlocking,
+      detoxActive: storage.isDetoxActive,
     );
   }
 
@@ -512,10 +599,11 @@ class TrackingService extends ChangeNotifier {
     debugPrint('Received reel event: ${event.eventType} on ${event.platform}');
 
     if (event.eventType == 'reel_watched') {
+      final storage = await _ensureStorage();
       if (event.platform.trim().isNotEmpty) {
         _lastPlatform = event.platform.trim().toLowerCase();
       }
-      await _storage?.recordReel(event.platform);
+      await storage.recordReel(event.platform);
 
       // Design spec Section 6: "Never vibrate while counting reels."
       // Only fire warning/error haptics when hitting 80% or 100% thresholds
@@ -531,21 +619,39 @@ class TrackingService extends ChangeNotifier {
       await HapticService.error();
       notifyListeners();
     } else if (event.eventType == 'overlay_dismissed') {
-      await _storage?.setOverlayEnabled(false);
+      final storage = await _ensureStorage();
+      await storage.setOverlayEnabled(false);
       await HapticService.light();
       notifyListeners();
     }
   }
 
   Future<void> resetSession() async {
-    await _storage?.resetSession();
+    final storage = await _ensureStorage();
+    await storage.resetSession();
     await ScrolaNativeBridge.resetSession();
+    notifyListeners();
+  }
+
+  Future<void> resetDailyStats() async {
+    final storage = await _ensureStorage();
+    await storage.resetDailyStats();
+    _lastPlatform = '';
+    await ScrolaNativeBridge.resetDailyStats();
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _eventSubscription?.cancel();
+    final sub = _eventSubscription;
+    _eventSubscription = null;
+    if (sub != null) {
+      unawaited(sub.cancel().catchError((_) {}));
+    }
+    if (_focusListenerAttached) {
+      FocusModeService().removeListener(_onFocusModeChanged);
+      _focusListenerAttached = false;
+    }
     super.dispose();
   }
 }

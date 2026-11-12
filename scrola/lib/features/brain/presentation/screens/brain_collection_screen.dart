@@ -23,15 +23,6 @@ class _BrainCollectionScreenState extends State<BrainCollectionScreen> {
   final TrackingService _tracking = TrackingService();
   _CollectionFilter _filter = _CollectionFilter.all;
 
-  static const _unlockLevels = {
-    BrainySkin.classic: 1,
-    BrainySkin.ember: 2,
-    BrainySkin.golden: 4,
-    BrainySkin.frost: 8,
-    BrainySkin.mint: 12,
-    BrainySkin.midnight: 20,
-  };
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,11 +33,13 @@ class _BrainCollectionScreenState extends State<BrainCollectionScreen> {
           final currentLevel = _tracking.currentLevel;
           final skins = BrainySkin.values;
           final ownedCount = skins
-              .where((s) => currentLevel >= (_unlockLevels[s] ?? 1))
+              .where((s) =>
+                  currentLevel >= GamificationEngine.unlockLevelForSkin(s))
               .length;
 
           final visible = skins.where((s) {
-            final isOwned = currentLevel >= (_unlockLevels[s] ?? 1);
+            final isOwned =
+                currentLevel >= GamificationEngine.unlockLevelForSkin(s);
             return switch (_filter) {
               _CollectionFilter.all => true,
               _CollectionFilter.owned => isOwned,
@@ -84,19 +77,54 @@ class _BrainCollectionScreenState extends State<BrainCollectionScreen> {
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: GridView.builder(
-                      itemCount: visible.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.88,
-                      ),
-                      itemBuilder: (context, idx) {
-                        final skin = visible[idx];
-                        final reqLv = _unlockLevels[skin] ?? 1;
-                        final isOwned = currentLevel >= reqLv;
+                    child: visible.isEmpty
+                        ? Center(
+                            child: ScrolaCard(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.emoji_events_rounded,
+                                    color: AppColors.primaryAccent,
+                                    size: 40,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _filter == _CollectionFilter.locked
+                                        ? 'All Brainy skins unlocked!'
+                                        : 'No skins in this filter yet.',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.subheading(),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _filter == _CollectionFilter.locked
+                                        ? 'Every style is ready to equip in your collection.'
+                                        : 'Level up Brainy to unlock more styles.',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.caption(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : GridView.builder(
+                            itemCount: visible.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.88,
+                            ),
+                            itemBuilder: (context, idx) {
+                              final skin = visible[idx];
+                              final reqLv =
+                                  GamificationEngine.unlockLevelForSkin(skin);
+                              final isOwned = currentLevel >= reqLv;
                         final isEquipped = _tracking.equippedSkin == skin;
                         final name = skin.name[0].toUpperCase() +
                             skin.name.substring(1);

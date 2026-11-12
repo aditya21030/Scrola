@@ -2,6 +2,7 @@ package com.example.scrola
 
 import android.Manifest
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -75,7 +76,8 @@ class MainActivity : FlutterActivity() {
                     val limit = call.argument<Int>("limit") ?: dataManager.getTotalLimit()
                     val session = call.argument<Int>("session") ?: dataManager.getSessionCount()
                     val platform = call.argument<String>("platform") ?: ""
-                    val isFocus = call.argument<Boolean>("isFocus") ?: dataManager.isFocusModeActive()
+                    val isFocus = call.argument<Boolean>("isFocus")
+                        ?: (dataManager.isFocusModeActive() || dataManager.isDetoxActive())
 
                     ScrolaOverlayService.updateStats(this, today, limit, session, platform, isFocus)
                     result.success(true)
@@ -130,6 +132,18 @@ class MainActivity : FlutterActivity() {
                     val skinIndex = call.argument<Int>("skinIndex")
                     if (skinIndex != null) dataManager.setSkinIndex(skinIndex)
 
+                    val nightBlockEnabled = call.argument<Boolean>("nightBlockEnabled")
+                    if (nightBlockEnabled != null) dataManager.setNightBlockEnabled(nightBlockEnabled)
+
+                    val workBlockEnabled = call.argument<Boolean>("workBlockEnabled")
+                    if (workBlockEnabled != null) dataManager.setWorkBlockEnabled(workBlockEnabled)
+
+                    val strictBlocking = call.argument<Boolean>("strictBlocking")
+                    if (strictBlocking != null) dataManager.setStrictBlocking(strictBlocking)
+
+                    val detoxActive = call.argument<Boolean>("detoxActive")
+                    if (detoxActive != null) dataManager.setDetoxActive(detoxActive)
+
                     if (ScrolaOverlayService.isServiceRunning) {
                         ScrolaOverlayService.refreshConfig(this)
                     }
@@ -144,7 +158,8 @@ class MainActivity : FlutterActivity() {
                         "isFocusActive" to dataManager.isFocusModeActive(),
                         "isTrackingEnabled" to dataManager.isTrackingEnabled(),
                         "isOverlayEnabled" to dataManager.isOverlayEnabled(),
-                        "overlayExpanded" to dataManager.isOverlayExpanded()
+                        "overlayExpanded" to dataManager.isOverlayExpanded(),
+                        "lastPlatform" to dataManager.getLastPlatform()
                     )
                     for (platform in ScrolaDataManager.SUPPORTED_PLATFORMS) {
                         stats[platform] = dataManager.getPlatformReels(platform)
@@ -153,6 +168,20 @@ class MainActivity : FlutterActivity() {
                 }
                 "resetSession" -> {
                     dataManager.resetSession()
+                    result.success(true)
+                }
+                "resetDailyStats" -> {
+                    dataManager.resetDailyStats()
+                    if (ScrolaOverlayService.isServiceRunning) {
+                        ScrolaOverlayService.updateStats(
+                            this,
+                            0,
+                            dataManager.getTotalLimit(),
+                            0,
+                            "",
+                            dataManager.isFocusModeActive() || dataManager.isDetoxActive()
+                        )
+                    }
                     result.success(true)
                 }
                 else -> result.notImplemented()
@@ -176,13 +205,16 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
-        val expectedService = "${packageName}/${ScrolaAccessibilityService::class.java.canonicalName}"
+        val expectedComponent = ComponentName(this, ScrolaAccessibilityService::class.java)
         val enabledServices = Settings.Secure.getString(
             contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
 
-        return enabledServices.contains(packageName) || enabledServices.contains(expectedService)
+        return enabledServices
+            .split(':')
+            .mapNotNull { entry -> ComponentName.unflattenFromString(entry.trim()) }
+            .any { component -> component == expectedComponent }
     }
 
     private fun openAccessibilitySettings() {

@@ -11,12 +11,12 @@ import '../../../../shared/widgets/scrola_card.dart';
 
 class BrainDetailsScreen extends StatefulWidget {
   final BrainySkin initialSkin;
-  final int requiredLevel;
+  final int? requiredLevel;
 
   const BrainDetailsScreen({
     super.key,
     this.initialSkin = BrainySkin.classic,
-    this.requiredLevel = 1,
+    this.requiredLevel,
   });
 
   @override
@@ -26,6 +26,10 @@ class BrainDetailsScreen extends StatefulWidget {
 class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
   final TrackingService _tracking = TrackingService();
   late BrainyMood _selectedMood;
+
+  int get _effectiveRequiredLevel =>
+      widget.requiredLevel ??
+      GamificationEngine.unlockLevelForSkin(widget.initialSkin);
 
   @override
   void initState() {
@@ -40,13 +44,14 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
   Widget build(BuildContext context) {
     final skinName = widget.initialSkin.name[0].toUpperCase() +
         widget.initialSkin.name.substring(1);
+    final reqLevel = _effectiveRequiredLevel;
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
       body: ListenableBuilder(
         listenable: _tracking,
         builder: (context, _) {
-          final isOwned = _tracking.currentLevel >= widget.requiredLevel;
+          final isOwned = _tracking.currentLevel >= reqLevel;
           final isEquipped = _tracking.equippedSkin == widget.initialSkin;
 
           return SafeArea(
@@ -113,9 +118,9 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  widget.requiredLevel <= 1
+                                  reqLevel <= 1
                                       ? 'Starter'
-                                      : 'Level ${widget.requiredLevel}',
+                                      : 'Level $reqLevel',
                                   style: AppTypography.caption(
                                     color: AppColors.secondaryText,
                                   ),
@@ -177,6 +182,7 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                                       skin: widget.initialSkin,
                                       size: 42,
                                       animate: false,
+                                      silhouette: !isOwned,
                                     ),
                                     const SizedBox(height: 6),
                                     FittedBox(
@@ -233,13 +239,15 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                         ? 'Equipped'
                         : isOwned
                             ? 'Equip $skinName'
-                            : 'Unlock at Level ${widget.requiredLevel}',
+                            : 'Unlock at Level $reqLevel',
                     onPressed: !isOwned || isEquipped
                         ? null
-                        : () {
-                            HapticService.celebratory();
-                            _tracking.equipSkin(widget.initialSkin);
-                            Navigator.of(context).pop();
+                        : () async {
+                            await HapticService.celebratory();
+                            await _tracking.equipSkin(widget.initialSkin);
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
                           },
                   ),
                 ],

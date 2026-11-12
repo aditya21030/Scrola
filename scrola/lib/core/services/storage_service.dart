@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'haptic_service.dart';
 import 'gamification_engine.dart';
@@ -7,6 +8,12 @@ class StorageService {
   static SharedPreferences? _prefs;
 
   StorageService._();
+
+  @visibleForTesting
+  static void resetForTest() {
+    _instance = null;
+    _prefs = null;
+  }
 
   static Future<StorageService> getInstance() async {
     if (_instance == null) {
@@ -77,6 +84,16 @@ class StorageService {
 
   static const String _keyHapticsEnabled = 'scrola_haptics_enabled';
   static const String _keyHapticIntensity = 'scrola_haptic_intensity';
+
+  static const String _keyDailyXpCollectedDate = 'scrola_daily_xp_collected_date';
+  static const String _keyClaimedRewards = 'scrola_claimed_rewards';
+
+  static const String _keyFocusActive = 'scrola_focus_active';
+  static const String _keyFocusPaused = 'scrola_focus_paused';
+  static const String _keyFocusDurationMinutes = 'scrola_focus_duration_minutes';
+  static const String _keyFocusEndEpochMs = 'scrola_focus_end_epoch_ms';
+  static const String _keyFocusRemainingSec = 'scrola_focus_remaining_sec';
+  static const String _keyFocusBlockedAttempts = 'scrola_focus_blocked_attempts';
 
   static const String _keyDisplayName = 'scrola_display_name';
   static const String _keyUsername = 'scrola_username';
@@ -209,6 +226,18 @@ class StorageService {
     await _prefs?.setInt(_keySessionReels, 0);
   }
 
+  Future<void> resetDailyStats() async {
+    await _prefs?.setString(_keyLastDate, _getTodayString());
+    await _prefs?.setInt(_keyTotalToday, 0);
+    for (final platformId in supportedPlatformIds) {
+      await _prefs?.setInt(_countKey(platformId), 0);
+    }
+    await _prefs?.setInt(_keySessionReels, 0);
+    await _prefs?.setInt(_keyScreenTimeSec, 0);
+    await _prefs?.setInt(_keyFocusMinsToday, 0);
+    await _prefs?.setInt(_keyFocusSessionsToday, 0);
+  }
+
   // Limits
   int get totalLimit => _prefs?.getInt(_keyTotalLimit) ?? 40;
   int limitForPlatform(String platformId) {
@@ -220,6 +249,18 @@ class StorageService {
     if (!platformLimitsEnabled) {
       return allocated[normalized] ?? 0;
     }
+    return savedLimitForPlatform(normalized);
+  }
+
+  /// Returns the persisted per-app limit (falling back to the current equal
+  /// allocation if never customized), regardless of whether per-app caps are
+  /// currently enforced.
+  int savedLimitForPlatform(String platformId) {
+    final normalized = platformId.trim().toLowerCase();
+    final allocated = allocateLimitsForPlatforms(
+      totalLimit: totalLimit,
+      selectedIds: selectedPlatforms,
+    );
     return _prefs?.getInt(_limitKey(normalized)) ??
         allocated[normalized] ??
         defaultPlatformLimits[normalized] ??
@@ -256,8 +297,15 @@ class StorageService {
     if (snapchat != null) await _prefs?.setInt(_limitKey('snapchat'), snapchat);
     if (platformLimits != null) {
       for (final entry in platformLimits.entries) {
-        await _prefs?.setInt(_limitKey(entry.key), entry.value);
+        final normalized = entry.key.trim().toLowerCase();
+        await _prefs?.setInt(_limitKey(normalized), entry.value);
       }
+    }
+  }
+
+  Future<void> clearCustomPlatformLimits() async {
+    for (final id in supportedPlatformIds) {
+      await _prefs?.remove(_limitKey(id));
     }
   }
 
@@ -277,14 +325,71 @@ class StorageService {
   }
 
   Future<void> addXP(int xp) async {
-    final newXP = xpTotal + xp;
+    final newXP = (xpTotal + xp).clamp(0, 1 << 30);
     await _prefs?.setInt(_keyXPTotal, newXP);
     await _prefs?.setInt(_keyCurrentLevel, GamificationEngine.getLevelForXP(newXP).level);
+  }
+
+  bool get isDailyXpCollectedToday =>
+      _prefs?.getString(_keyDailyXpCollectedDate) == _getTodayString();
+
+  Future<bool> markDailyXpCollectedToday() async {
+    if (isDailyXpCollectedToday) return false;
+    await _prefs?.setString(_keyDailyXpCollectedDate, _getTodayString());
+    return true;
+  }
+
+  List<String> get claimedRewards =>
+      List<String>.unmodifiable(_prefs?.getStringList(_keyClaimedRewards) ?? const []);
+
+  bool isRewardClaimed(String rewardId) =>
+      (_prefs?.getStringList(_keyClaimedRewards) ?? const []).contains(rewardId);
+
+  Future<bool> markRewardClaimed(String rewardId) async {
+    final existing = List<String>.from(
+      _prefs?.getStringList(_keyClaimedRewards) ?? const [],
+    );
+    if (existing.contains(rewardId)) return false;
+    existing.add(rewardId);
+    await _prefs?.setStringList(_keyClaimedRewards, existing);
+    return true;
   }
 
   Future<void> updateStreak(int days) async {
     await _prefs?.setInt(_keyStreakDays, days);
     await _prefs?.setString(_keyLastStreakDate, _getTodayString());
+  }
+
+  // Focus Session State
+  bool get focusIsActive => _prefs?.getBool(_keyFocusActive) ?? false;
+  bool get focusIsPaused => _prefs?.getBool(_keyFocusPaused) ?? false;
+  int get focusDurationMinutes => _prefs?.getInt(_keyFocusDurationMinutes) ?? 25;
+  int get focusEndEpochMs => _prefs?.getInt(_keyFocusEndEpochMs) ?? 0;
+  int get focusRemainingSeconds => _prefs?.getInt(_keyFocusRemainingSec) ?? 0;
+  int get focusBlockedAttempts => _prefs?.getInt(_keyFocusBlockedAttempts) ?? 0;
+
+  Future<void> saveFocusSessionState({
+    required bool isActive,
+    required bool isPaused,
+    required int durationMinutes,
+    required int endEpochMs,
+    required int remainingSeconds,
+    required int blockedAttempts,
+  }) async {
+    await _prefs?.setBool(_keyFocusActive, isActive);
+    await _prefs?.setBool(_keyFocusPaused, isPaused);
+    await _prefs?.setInt(_keyFocusDurationMinutes, durationMinutes);
+    await _prefs?.setInt(_keyFocusEndEpochMs, endEpochMs);
+    await _prefs?.setInt(_keyFocusRemainingSec, remainingSeconds);
+    await _prefs?.setInt(_keyFocusBlockedAttempts, blockedAttempts);
+  }
+
+  Future<void> clearFocusSessionState() async {
+    await _prefs?.setBool(_keyFocusActive, false);
+    await _prefs?.setBool(_keyFocusPaused, false);
+    await _prefs?.setInt(_keyFocusEndEpochMs, 0);
+    await _prefs?.setInt(_keyFocusRemainingSec, 0);
+    await _prefs?.setInt(_keyFocusBlockedAttempts, 0);
   }
 
   // Toggles & Overlay Settings

@@ -17,152 +17,191 @@ class RewardsScreen extends StatefulWidget {
 
 class _RewardsScreenState extends State<RewardsScreen> {
   final TrackingService _tracking = TrackingService();
-  bool _chestOpened = false;
-  bool _xpBoostClaimed = false;
-  bool _emberClaimed = false;
 
-  int get _readyCount =>
-      (_chestOpened ? 0 : 1) +
-      (_xpBoostClaimed ? 0 : 1) +
-      (_emberClaimed ? 0 : 1);
+  static const String _chestRewardId = 'streak_chest_7d';
+  static const String _boostRewardId = 'xp_boost_streak';
+  static const String _emberRewardId = 'skin_ember';
 
   @override
   Widget build(BuildContext context) {
+    final emberLevel = GamificationEngine.unlockLevelForSkin(BrainySkin.ember);
+    final goldenLevel = GamificationEngine.unlockLevelForSkin(BrainySkin.golden);
+    final frostLevel = GamificationEngine.unlockLevelForSkin(BrainySkin.frost);
+
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ScrolaAppBar(
-                title: 'Rewards',
-                trailing: Text(
-                  '$_readyCount ready',
-                  style: AppTypography.caption(color: AppColors.primaryAccent)
-                      .copyWith(fontWeight: FontWeight.w700, fontSize: 14),
-                ),
-              ),
-              const SizedBox(height: 18),
-              ScrolaCard(
-                padding: const EdgeInsets.all(20),
-                borderColor: _chestOpened
-                    ? AppColors.borderSubtle
-                    : AppColors.primaryAccent.withValues(alpha: 0.5),
-                gradient: _chestOpened
-                    ? null
-                    : LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.primaryAccent.withValues(alpha: 0.22),
-                          AppColors.surfaceSolid,
-                        ],
-                      ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 68,
-                      height: 68,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: (_chestOpened
+      body: ListenableBuilder(
+        listenable: _tracking,
+        builder: (context, _) {
+          final chestClaimed = _tracking.isRewardClaimed(_chestRewardId);
+          final boostClaimed = _tracking.isRewardClaimed(_boostRewardId);
+          final emberClaimed = _tracking.isRewardClaimed(_emberRewardId);
+
+          final chestUnlocked = _tracking.streakDays >= 7;
+          final boostUnlocked = _tracking.streakDays >= 7;
+          final emberUnlocked = _tracking.currentLevel >= emberLevel;
+
+          final readyCount = (!chestClaimed && chestUnlocked ? 1 : 0) +
+              (!boostClaimed && boostUnlocked ? 1 : 0) +
+              (!emberClaimed && emberUnlocked ? 1 : 0);
+
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ScrolaAppBar(
+                    title: 'Rewards',
+                    trailing: Text(
+                      '$readyCount ready',
+                      style: AppTypography.caption(color: AppColors.primaryAccent)
+                          .copyWith(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  ScrolaCard(
+                    padding: const EdgeInsets.all(20),
+                    borderColor: chestClaimed || !chestUnlocked
+                        ? AppColors.borderSubtle
+                        : AppColors.primaryAccent.withValues(alpha: 0.5),
+                    gradient: chestClaimed || !chestUnlocked
+                        ? null
+                        : LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primaryAccent.withValues(alpha: 0.22),
+                              AppColors.surfaceSolid,
+                            ],
+                          ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: (chestClaimed
+                                    ? AppColors.success
+                                    : AppColors.primaryAccent)
+                                .withValues(alpha: 0.16),
+                          ),
+                          child: Icon(
+                            chestClaimed
+                                ? Icons.check_circle_rounded
+                                : Icons.card_giftcard_rounded,
+                            color: chestClaimed
                                 ? AppColors.success
-                                : AppColors.primaryAccent)
-                            .withValues(alpha: 0.16),
-                      ),
-                      child: Icon(
-                        _chestOpened
-                            ? Icons.check_circle_rounded
-                            : Icons.card_giftcard_rounded,
-                        color: _chestOpened
-                            ? AppColors.success
-                            : AppColors.primaryAccent,
-                        size: 34,
-                      ),
+                                : AppColors.primaryAccent,
+                            size: 34,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Streak chest',
+                          style: AppTypography.title().copyWith(fontSize: 22),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          chestClaimed
+                              ? 'Claimed +100 XP!'
+                              : chestUnlocked
+                                  ? '${_tracking.streakDays} days earned · Contains +100 XP.'
+                                  : 'Reach a 7 day streak to unlock (+100 XP).',
+                          style: AppTypography.caption(
+                            color: AppColors.secondaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ScrolaPrimaryButton(
+                          label: chestClaimed
+                              ? 'Opened'
+                              : chestUnlocked
+                                  ? 'Open chest'
+                                  : 'Locked',
+                          onPressed: chestClaimed || !chestUnlocked
+                              ? null
+                              : () async {
+                                  final ok = await _tracking.claimReward(
+                                    _chestRewardId,
+                                    xp: 100,
+                                  );
+                                  if (ok) {
+                                    await HapticService.celebratory();
+                                  }
+                                },
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Streak chest',
-                      style: AppTypography.title().copyWith(fontSize: 22),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _chestOpened
-                          ? 'Claimed +100 XP!'
-                          : '7 days earned · Contains +100 XP.',
-                      style: AppTypography.caption(
-                        color: AppColors.secondaryText,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ScrolaPrimaryButton(
-                      label: _chestOpened ? 'Opened' : 'Open chest',
-                      onPressed: _chestOpened
-                          ? null
-                          : () {
-                              HapticService.celebratory();
-                              _tracking.addXP(100);
-                              setState(() => _chestOpened = true);
-                            },
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    'READY TO CLAIM',
+                    style: AppTypography.label(color: AppColors.secondaryText),
+                  ),
+                  const SizedBox(height: 10),
+                  _RewardRow(
+                    title: '+100 XP boost',
+                    subtitle: 'From your ${_tracking.streakDays} day streak',
+                    claimed: boostClaimed,
+                    locked: !boostUnlocked,
+                    lockLabel: '7d streak',
+                    onClaim: () async {
+                      final ok = await _tracking.claimReward(
+                        _boostRewardId,
+                        xp: 100,
+                      );
+                      if (ok) {
+                        await HapticService.celebratory();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _RewardRow(
+                    title: 'Ember Brainy skin',
+                    subtitle: 'Level $emberLevel reward',
+                    claimed: emberClaimed,
+                    locked: !emberUnlocked,
+                    lockLabel: 'Lv $emberLevel',
+                    onClaim: () async {
+                      final ok = await _tracking.claimReward(
+                        _emberRewardId,
+                        equipSkinOnClaim: BrainySkin.ember,
+                      );
+                      if (ok) {
+                        await HapticService.celebratory();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    'COMING UP',
+                    style: AppTypography.label(color: AppColors.secondaryText),
+                  ),
+                  const SizedBox(height: 10),
+                  _UpcomingRow(
+                    title: 'Golden skin',
+                    subtitle: 'Collection',
+                    level: 'Level $goldenLevel',
+                  ),
+                  const SizedBox(height: 10),
+                  const _UpcomingRow(
+                    title: 'Bright Mind form',
+                    subtitle: 'Brain evolution',
+                    level: 'Level 6',
+                  ),
+                  const SizedBox(height: 10),
+                  _UpcomingRow(
+                    title: 'Frost skin',
+                    subtitle: 'Collection',
+                    level: 'Level $frostLevel',
+                  ),
+                ],
               ),
-              const SizedBox(height: 22),
-              Text(
-                'READY TO CLAIM',
-                style: AppTypography.label(color: AppColors.secondaryText),
-              ),
-              const SizedBox(height: 10),
-              _RewardRow(
-                title: '+100 XP boost',
-                subtitle: 'From your 7 day streak',
-                claimed: _xpBoostClaimed,
-                onClaim: () {
-                  HapticService.celebratory();
-                  _tracking.addXP(100);
-                  setState(() => _xpBoostClaimed = true);
-                },
-              ),
-              const SizedBox(height: 10),
-              _RewardRow(
-                title: 'Ember Brainy skin',
-                subtitle: 'Level 4 reward',
-                claimed: _emberClaimed,
-                onClaim: () {
-                  HapticService.celebratory();
-                  _tracking.equipSkin(BrainySkin.ember);
-                  setState(() => _emberClaimed = true);
-                },
-              ),
-              const SizedBox(height: 22),
-              Text(
-                'COMING UP',
-                style: AppTypography.label(color: AppColors.secondaryText),
-              ),
-              const SizedBox(height: 10),
-              const _UpcomingRow(
-                title: 'Golden glow',
-                subtitle: 'New counter theme',
-                level: 'Level 5',
-              ),
-              const SizedBox(height: 10),
-              const _UpcomingRow(
-                title: 'Bright Mind form',
-                subtitle: 'Brain evolution',
-                level: 'Level 6',
-              ),
-              const SizedBox(height: 10),
-              const _UpcomingRow(
-                title: 'Frost skin',
-                subtitle: 'Collection',
-                level: 'Level 8',
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -172,17 +211,22 @@ class _RewardRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool claimed;
+  final bool locked;
+  final String? lockLabel;
   final VoidCallback onClaim;
 
   const _RewardRow({
     required this.title,
     required this.subtitle,
     required this.claimed,
+    this.locked = false,
+    this.lockLabel,
     required this.onClaim,
   });
 
   @override
   Widget build(BuildContext context) {
+    final disabled = claimed || locked;
     return ScrolaCard(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -191,13 +235,25 @@ class _RewardRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: (claimed ? AppColors.success : AppColors.primaryAccent)
-                  .withValues(alpha: 0.14),
+              color: (claimed
+                      ? AppColors.success
+                      : locked
+                          ? AppColors.elevatedSurface
+                          : AppColors.primaryAccent)
+                  .withValues(alpha: locked ? 1.0 : 0.14),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              claimed ? Icons.check_rounded : Icons.stars_rounded,
-              color: claimed ? AppColors.success : AppColors.primaryAccent,
+              claimed
+                  ? Icons.check_rounded
+                  : locked
+                      ? Icons.lock_outline_rounded
+                      : Icons.stars_rounded,
+              color: claimed
+                  ? AppColors.success
+                  : locked
+                      ? AppColors.secondaryText
+                      : AppColors.primaryAccent,
             ),
           ),
           const SizedBox(width: 12),
@@ -215,19 +271,29 @@ class _RewardRow extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: claimed ? null : onClaim,
+            onTap: disabled ? null : onClaim,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: claimed
                     ? AppColors.successBackground
-                    : AppColors.primaryAccent,
+                    : locked
+                        ? AppColors.elevatedSurface
+                        : AppColors.primaryAccent,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                claimed ? 'Claimed' : 'Claim',
+                claimed
+                    ? 'Claimed'
+                    : locked
+                        ? (lockLabel ?? 'Locked')
+                        : 'Claim',
                 style: AppTypography.caption(
-                  color: claimed ? AppColors.success : AppColors.textOnAccent,
+                  color: claimed
+                      ? AppColors.success
+                      : locked
+                          ? AppColors.secondaryText
+                          : AppColors.textOnAccent,
                 ).copyWith(fontWeight: FontWeight.w700),
               ),
             ),

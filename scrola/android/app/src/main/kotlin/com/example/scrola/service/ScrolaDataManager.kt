@@ -3,6 +3,7 @@ package com.example.scrola.service
 import android.content.Context
 import android.content.SharedPreferences
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -28,6 +29,11 @@ class ScrolaDataManager private constructor(context: Context) {
         private const val KEY_SKIN_INDEX = "skin_index"
         private const val KEY_FREE_X = "overlay_free_x"
         private const val KEY_FREE_Y = "overlay_free_y"
+        private const val KEY_NIGHT_BLOCK = "night_block_enabled"
+        private const val KEY_WORK_BLOCK = "work_block_enabled"
+        private const val KEY_STRICT_BLOCKING = "strict_blocking_enabled"
+        private const val KEY_DETOX_ACTIVE = "detox_active"
+        private const val KEY_LAST_PLATFORM = "last_platform"
 
         @Volatile
         private var instance: ScrolaDataManager? = null
@@ -76,15 +82,20 @@ class ScrolaDataManager private constructor(context: Context) {
         val today = getTodayDateString()
         val lastDate = prefs.getString(KEY_LAST_DATE, "")
         if (today != lastDate) {
-            val editor = prefs.edit()
-                .putString(KEY_LAST_DATE, today)
-                .putInt(KEY_TOTAL_TODAY, 0)
-                .putInt(KEY_SESSION_COUNT, 0)
-            for (platform in SUPPORTED_PLATFORMS) {
-                editor.putInt("reels_$platform", 0)
-            }
-            editor.apply()
+            resetDailyStats(today)
         }
+    }
+
+    fun resetDailyStats(today: String = getTodayDateString()) {
+        val editor = prefs.edit()
+            .putString(KEY_LAST_DATE, today)
+            .putInt(KEY_TOTAL_TODAY, 0)
+            .putInt(KEY_SESSION_COUNT, 0)
+            .putString(KEY_LAST_PLATFORM, "")
+        for (platform in SUPPORTED_PLATFORMS) {
+            editor.putInt("reels_$platform", 0)
+        }
+        editor.apply()
     }
 
     fun incrementReel(platform: String): Int {
@@ -99,9 +110,14 @@ class ScrolaDataManager private constructor(context: Context) {
             .putInt(KEY_TOTAL_TODAY, currentTotal)
             .putInt(platformKey, platformTotal)
             .putInt(KEY_SESSION_COUNT, sessionCount)
+            .putString(KEY_LAST_PLATFORM, platform.lowercase())
             .apply()
 
         return currentTotal
+    }
+
+    fun getLastPlatform(): String {
+        return prefs.getString(KEY_LAST_PLATFORM, "") ?: ""
     }
 
     fun getTotalReelsToday(): Int {
@@ -239,5 +255,59 @@ class ScrolaDataManager private constructor(context: Context) {
             getDefaultPlatformLimit(platform, totalLimit)
         )
         return count >= limit
+    }
+
+    fun isNightBlockEnabled(): Boolean {
+        return prefs.getBoolean(KEY_NIGHT_BLOCK, true)
+    }
+
+    fun setNightBlockEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_NIGHT_BLOCK, enabled).apply()
+    }
+
+    fun isWorkBlockEnabled(): Boolean {
+        return prefs.getBoolean(KEY_WORK_BLOCK, false)
+    }
+
+    fun setWorkBlockEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_WORK_BLOCK, enabled).apply()
+    }
+
+    fun isStrictBlocking(): Boolean {
+        return prefs.getBoolean(KEY_STRICT_BLOCKING, false)
+    }
+
+    fun setStrictBlocking(strict: Boolean) {
+        prefs.edit().putBoolean(KEY_STRICT_BLOCKING, strict).apply()
+    }
+
+    fun isDetoxActive(): Boolean {
+        return prefs.getBoolean(KEY_DETOX_ACTIVE, false)
+    }
+
+    fun setDetoxActive(active: Boolean) {
+        prefs.edit().putBoolean(KEY_DETOX_ACTIVE, active).apply()
+    }
+
+    fun isNightBlockWindowNow(cal: Calendar = Calendar.getInstance()): Boolean {
+        if (!isNightBlockEnabled()) return false
+        val hour = cal.get(Calendar.HOUR_OF_DAY)
+        return hour >= 22 || hour < 7
+    }
+
+    fun isWorkBlockWindowNow(cal: Calendar = Calendar.getInstance()): Boolean {
+        if (!isWorkBlockEnabled()) return false
+        val day = cal.get(Calendar.DAY_OF_WEEK)
+        if (day == Calendar.SATURDAY || day == Calendar.SUNDAY) return false
+        val hour = cal.get(Calendar.HOUR_OF_DAY)
+        return hour in 9 until 17
+    }
+
+    fun isScheduleBlockingActiveNow(cal: Calendar = Calendar.getInstance()): Boolean {
+        return isTrackingEnabled() && (isNightBlockWindowNow(cal) || isWorkBlockWindowNow(cal))
+    }
+
+    fun isBlockingActiveNow(cal: Calendar = Calendar.getInstance()): Boolean {
+        return isFocusModeActive() || isDetoxActive() || isScheduleBlockingActiveNow(cal)
     }
 }

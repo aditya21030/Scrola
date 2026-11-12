@@ -2,31 +2,83 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/gamification_engine.dart';
-import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
+import '../../../../shared/widgets/platform_icon.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
+import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 
-class ActiveFocusSessionScreen extends StatelessWidget {
+class ActiveFocusSessionScreen extends StatefulWidget {
   const ActiveFocusSessionScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final focus = FocusModeService();
-    final tracking = TrackingService();
+  State<ActiveFocusSessionScreen> createState() =>
+      _ActiveFocusSessionScreenState();
+}
 
+class _ActiveFocusSessionScreenState extends State<ActiveFocusSessionScreen>
+    with WidgetsBindingObserver {
+  final FocusModeService _focus = FocusModeService();
+  final TrackingService _tracking = TrackingService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _focus.syncTimerOnResume();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _focus.syncTimerOnResume();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
       body: ListenableBuilder(
-        listenable: Listenable.merge([focus, tracking]),
+        listenable: Listenable.merge([_focus, _tracking]),
         builder: (context, _) {
-          final totalMin = math.max(1, (focus.totalDurationSeconds / 60).round());
-          final doneMin = ((focus.totalDurationSeconds - focus.remainingSeconds) /
-                  60)
-              .floor();
+          final isCompleted = !_focus.isActive && _focus.isJustCompleted;
+          final isEnded = !_focus.isActive && !_focus.isJustCompleted;
+          final totalMin =
+              math.max(1, (_focus.totalDurationSeconds / 60).round());
+          final doneMin = isCompleted
+              ? totalMin
+              : ((_focus.totalDurationSeconds - _focus.remainingSeconds) / 60)
+                  .floor()
+                  .clamp(0, totalMin);
+          final blockedAppsLabel = _tracking.activePlatforms.isEmpty
+              ? 'Selected apps'
+              : _tracking.activePlatforms.map((p) => p.shortName).join(', ');
+
+          final String badgeLabel;
+          final Color badgeColor;
+          if (isCompleted) {
+            badgeLabel = 'Completed';
+            badgeColor = AppColors.success;
+          } else if (isEnded) {
+            badgeLabel = 'Ended';
+            badgeColor = AppColors.secondaryText;
+          } else if (_focus.isPaused) {
+            badgeLabel = 'Paused';
+            badgeColor = AppColors.warning;
+          } else {
+            badgeLabel = 'Blocking on';
+            badgeColor = AppColors.success;
+          }
 
           return SafeArea(
             child: Padding(
@@ -46,11 +98,9 @@ class ActiveFocusSessionScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        focus.isPaused ? 'Paused' : 'Blocking on',
+                        badgeLabel,
                         style: AppTypography.caption(
-                          color: focus.isPaused
-                              ? AppColors.warning
-                              : AppColors.success,
+                          color: badgeColor,
                         ).copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -62,22 +112,26 @@ class ActiveFocusSessionScreen extends StatelessWidget {
                       height: 248,
                       child: CustomPaint(
                         painter: _ActiveFocusRingPainter(
-                          progress: focus.progress,
+                          progress: isCompleted ? 1.0 : _focus.progress,
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             BrainyMascot(
-                              mood: BrainyMood.focused,
-                              skin: tracking.equippedSkin,
+                              mood: isCompleted
+                                  ? BrainyMood.celebrating
+                                  : BrainyMood.focused,
+                              skin: _tracking.equippedSkin,
                               size: 88,
                             ),
                             Text(
-                              focus.formattedRemainingTime,
+                              isCompleted
+                                  ? '00:00'
+                                  : _focus.formattedRemainingTime,
                               style: AppTypography.display(),
                             ),
                             Text(
-                              'remaining',
+                              isCompleted ? 'completed' : 'remaining',
                               style: AppTypography.caption(
                                 color: AppColors.secondaryText,
                               ),
@@ -90,16 +144,24 @@ class ActiveFocusSessionScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Center(
                     child: Text(
-                      '$doneMin of $totalMin minutes done',
+                      isCompleted
+                          ? 'Focus session complete!'
+                          : '$doneMin of $totalMin minutes done',
                       style: AppTypography.caption(
-                        color: AppColors.primaryAccent,
+                        color: isCompleted
+                            ? AppColors.success
+                            : AppColors.primaryAccent,
                       ).copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Center(
                     child: Text(
-                      'Reels stay blocked until the timer ends',
+                      isCompleted
+                          ? 'Earned +30 XP · ${_focus.blockedAttempts} distraction${_focus.blockedAttempts == 1 ? '' : 's'} blocked'
+                          : isEnded
+                              ? 'Start a focus session to block short-video feeds'
+                              : 'Reels stay blocked until the timer ends',
                       style: AppTypography.caption(
                         color: AppColors.secondaryText,
                       ),
@@ -128,12 +190,16 @@ class ActiveFocusSessionScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Reels are blocked',
+                                isCompleted
+                                    ? 'Distractions stayed blocked'
+                                    : 'Reels are blocked',
                                 style: AppTypography.subheading()
                                     .copyWith(fontSize: 15),
                               ),
                               Text(
-                                'Instagram, YouTube',
+                                blockedAppsLabel,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: AppTypography.caption(
                                   color: AppColors.secondaryText,
                                 ),
@@ -141,6 +207,7 @@ class ActiveFocusSessionScreen extends StatelessWidget {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -151,7 +218,7 @@ class ActiveFocusSessionScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${focus.blockedAttempts} attempts',
+                            '${_focus.blockedAttempts} attempts',
                             style: AppTypography.numeric(
                               color: AppColors.secondaryText,
                               fontSize: 12,
@@ -163,48 +230,52 @@ class ActiveFocusSessionScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ActionTileBtn(
-                          icon: Icons.add_rounded,
-                          label: 'Add time',
-                          subtitle: '+5 min',
-                          onTap: () {
-                            HapticService.light();
-                            focus.addFiveMinutes();
-                          },
+                  if (_focus.isActive)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionTileBtn(
+                            icon: Icons.add_rounded,
+                            label: 'Add time',
+                            subtitle: '+5 min',
+                            onTap: _focus.addFiveMinutes,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ActionTileBtn(
-                          icon: focus.isPaused
-                              ? Icons.play_arrow_rounded
-                              : Icons.pause_rounded,
-                          label: focus.isPaused ? 'Resume' : 'Pause',
-                          isPrimary: true,
-                          onTap: () {
-                            HapticService.light();
-                            focus.togglePause();
-                          },
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _ActionTileBtn(
+                            icon: _focus.isPaused
+                                ? Icons.play_arrow_rounded
+                                : Icons.pause_rounded,
+                            label: _focus.isPaused ? 'Resume' : 'Pause',
+                            isPrimary: true,
+                            onTap: _focus.togglePause,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ActionTileBtn(
-                          icon: Icons.stop_rounded,
-                          label: 'End',
-                          isDanger: true,
-                          onTap: () {
-                            HapticService.warning();
-                            focus.cancelSession();
-                            Navigator.of(context).pop();
-                          },
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _ActionTileBtn(
+                            icon: Icons.stop_rounded,
+                            label: 'End',
+                            isDanger: true,
+                            onTap: () async {
+                              await _focus.cancelSession();
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    )
+                  else
+                    ScrolaPrimaryButton(
+                      label: 'Done',
+                      onPressed: () {
+                        _focus.dismissCompletion();
+                        Navigator.of(context).pop();
+                      },
+                    ),
                 ],
               ),
             ),

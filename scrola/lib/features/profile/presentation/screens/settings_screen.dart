@@ -277,9 +277,11 @@ class SettingsScreen extends StatelessWidget {
                                           child: const Text('Cancel'),
                                         ),
                                         TextButton(
-                                          onPressed: () {
-                                            tracking.resetSession();
-                                            Navigator.of(ctx).pop();
+                                          onPressed: () async {
+                                            await tracking.resetDailyStats();
+                                            if (ctx.mounted) {
+                                              Navigator.of(ctx).pop();
+                                            }
                                           },
                                           child: const Text(
                                             'Reset',

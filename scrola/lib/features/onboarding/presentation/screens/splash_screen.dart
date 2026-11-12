@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -44,7 +45,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   Future<void> _bootApp() async {
     final tracking = TrackingService();
-    await tracking.initialize();
+    try {
+      await tracking.initialize();
+      await FocusModeService().initialize();
+    } catch (e) {
+      debugPrint('Splash boot initialization warning: $e');
+    }
     await Future.delayed(const Duration(milliseconds: 1900));
 
     if (!mounted) return;

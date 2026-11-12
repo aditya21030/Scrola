@@ -172,9 +172,11 @@ class _ReelLimitSetupScreenState extends State<ReelLimitSetupScreen> {
               ScrolaPrimaryButton(
                 label: 'Save limit',
                 useMediumHaptic: true,
-                onPressed: () {
-                  _tracking.updateLimits(total: _limit);
-                  Navigator.of(context).pop();
+                onPressed: () async {
+                  await _tracking.updateLimits(total: _limit);
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],

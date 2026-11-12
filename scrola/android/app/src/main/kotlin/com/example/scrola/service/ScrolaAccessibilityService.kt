@@ -43,14 +43,17 @@ class ScrolaAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         val packageName = event.packageName?.toString() ?: return
-        if (!dataManager.isTrackingEnabled() && !dataManager.isFocusModeActive()) {
+        if (!dataManager.isTrackingEnabled() &&
+            !dataManager.isFocusModeActive() &&
+            !dataManager.isDetoxActive()
+        ) {
             isInShortsFeed = false
             return
         }
         val platform = resolvePlatform(packageName)
 
-        if (platform == null) {
-            // User navigated away from tracked platforms
+        if (platform == null || !dataManager.isPlatformSelected(platform)) {
+            // User navigated away from selected platforms
             if (isInShortsFeed) {
                 isInShortsFeed = false
                 currentPlatform = null
@@ -92,7 +95,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
     }
 
     private fun checkIfInShortsFeed(platform: String, event: AccessibilityEvent) {
-        if (!dataManager.isPlatformSelected(platform) && !dataManager.isFocusModeActive()) {
+        if (!dataManager.isPlatformSelected(platform)) {
             isInShortsFeed = false
             return
         }
@@ -264,13 +267,13 @@ class ScrolaAccessibilityService : AccessibilityService() {
                 dataManager.getTotalLimit(),
                 dataManager.getSessionCount(),
                 platform,
-                dataManager.isFocusModeActive()
+                dataManager.isBlockingActiveNow()
             )
         }
     }
 
     private fun handleScrollEvent(platform: String, event: AccessibilityEvent) {
-        if (!dataManager.isPlatformSelected(platform) && !dataManager.isFocusModeActive()) {
+        if (!dataManager.isPlatformSelected(platform)) {
             return
         }
         val now = System.currentTimeMillis()
@@ -307,7 +310,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
                 dataManager.getTotalLimit(),
                 dataManager.getSessionCount(),
                 platform,
-                dataManager.isFocusModeActive()
+                dataManager.isBlockingActiveNow()
             )
         }
 
@@ -322,11 +325,12 @@ class ScrolaAccessibilityService : AccessibilityService() {
     }
 
     private fun checkAndEnforceLimits(platform: String): Boolean {
-        val isFocus = dataManager.isFocusModeActive()
-        val isLimitReached = dataManager.isPlatformLimitReached(platform)
+        val isBlockingMode = dataManager.isBlockingActiveNow()
+        val isLimitReached = dataManager.isTrackingEnabled() &&
+            dataManager.isPlatformLimitReached(platform)
 
-        if (isFocus || isLimitReached) {
-            triggerBlockAction(platform, isFocus)
+        if (isBlockingMode || isLimitReached) {
+            triggerBlockAction(platform, isBlockingMode)
             return true
         }
         return false
@@ -334,8 +338,9 @@ class ScrolaAccessibilityService : AccessibilityService() {
 
     private fun triggerBlockAction(platform: String, isFocus: Boolean) {
         val now = System.currentTimeMillis()
-        // Cooldown protection: Prevent multi-back press spam within 2 seconds
-        if (now - lastBlockTimestamp < 2000) {
+        val cooldownMs = if (dataManager.isStrictBlocking()) 800L else 2000L
+        // Cooldown protection: Prevent multi-back press spam within cooldown window
+        if (now - lastBlockTimestamp < cooldownMs) {
             return
         }
         lastBlockTimestamp = now

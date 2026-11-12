@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 
 enum HapticIntensity {
@@ -15,11 +16,15 @@ class HapticService {
   static bool isEnabled = true;
   static HapticIntensity intensity = HapticIntensity.medium;
 
+  static void _fire(Future<void> Function() action) {
+    unawaited(action().catchError((_) {}));
+  }
+
   /// 1 · Subtle: Selection click
   /// Used for: Bottom nav, tabs, segmented controls, slider ticks, pull to refresh
   static Future<void> subtle() async {
     if (!isEnabled) return;
-    await HapticFeedback.selectionClick();
+    _fire(HapticFeedback.selectionClick);
   }
 
   /// 2 · Light: Light impact
@@ -28,13 +33,13 @@ class HapticService {
     if (!isEnabled) return;
     switch (intensity) {
       case HapticIntensity.light:
-        await HapticFeedback.selectionClick();
+        _fire(HapticFeedback.selectionClick);
         break;
       case HapticIntensity.medium:
-        await HapticFeedback.lightImpact();
+        _fire(HapticFeedback.lightImpact);
         break;
       case HapticIntensity.strong:
-        await HapticFeedback.mediumImpact();
+        _fire(HapticFeedback.mediumImpact);
         break;
     }
   }
@@ -45,13 +50,13 @@ class HapticService {
     if (!isEnabled) return;
     switch (intensity) {
       case HapticIntensity.light:
-        await HapticFeedback.lightImpact();
+        _fire(HapticFeedback.lightImpact);
         break;
       case HapticIntensity.medium:
-        await HapticFeedback.mediumImpact();
+        _fire(HapticFeedback.mediumImpact);
         break;
       case HapticIntensity.strong:
-        await HapticFeedback.heavyImpact();
+        _fire(HapticFeedback.heavyImpact);
         break;
     }
   }
@@ -60,30 +65,34 @@ class HapticService {
   /// Used for: Achievement unlocked, level up, evolution, setup complete, chest open
   static Future<void> celebratory() async {
     if (!isEnabled) return;
-    await HapticFeedback.lightImpact();
-    await Future.delayed(const Duration(milliseconds: 80));
-    await HapticFeedback.mediumImpact();
-    await Future.delayed(const Duration(milliseconds: 110));
+    _fire(HapticFeedback.lightImpact);
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (!isEnabled) return;
+    _fire(HapticFeedback.mediumImpact);
+    await Future<void>.delayed(const Duration(milliseconds: 110));
+    if (!isEnabled) return;
     if (intensity == HapticIntensity.light) {
-      await HapticFeedback.mediumImpact();
+      _fire(HapticFeedback.mediumImpact);
     } else {
-      await HapticFeedback.heavyImpact();
+      _fire(HapticFeedback.heavyImpact);
     }
   }
 
   /// Warning notification at daily limit or approaching threshold
   static Future<void> warning() async {
     if (!isEnabled) return;
-    await HapticFeedback.mediumImpact();
-    await Future.delayed(const Duration(milliseconds: 70));
-    await HapticFeedback.lightImpact();
+    _fire(HapticFeedback.mediumImpact);
+    await Future<void>.delayed(const Duration(milliseconds: 70));
+    if (!isEnabled) return;
+    _fire(HapticFeedback.lightImpact);
   }
 
   /// Error / failure / strict block notification
   static Future<void> error() async {
     if (!isEnabled) return;
-    await HapticFeedback.heavyImpact();
-    await Future.delayed(const Duration(milliseconds: 90));
-    await HapticFeedback.heavyImpact();
+    _fire(HapticFeedback.heavyImpact);
+    await Future<void>.delayed(const Duration(milliseconds: 90));
+    if (!isEnabled) return;
+    _fire(HapticFeedback.heavyImpact);
   }
 }

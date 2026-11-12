@@ -105,7 +105,37 @@ class GamificationEngine {
     LevelInfo(level: 5, title: 'Curious Cortex', minXP: 500, maxXP: 750, stageNumber: 2),
     LevelInfo(level: 6, title: 'Bright Mind', minXP: 750, maxXP: 1050, stageNumber: 3),
     LevelInfo(level: 7, title: 'Bright Mind', minXP: 1050, maxXP: 1400, stageNumber: 3),
+    LevelInfo(level: 8, title: 'Bright Mind', minXP: 1400, maxXP: 1800, stageNumber: 3),
+    LevelInfo(level: 9, title: 'Bright Mind', minXP: 1800, maxXP: 2250, stageNumber: 3),
+    LevelInfo(level: 10, title: 'Sharp Genius', minXP: 2250, maxXP: 2750, stageNumber: 4),
+    LevelInfo(level: 11, title: 'Sharp Genius', minXP: 2750, maxXP: 3300, stageNumber: 4),
+    LevelInfo(level: 12, title: 'Sharp Genius', minXP: 3300, maxXP: 3900, stageNumber: 4),
+    LevelInfo(level: 13, title: 'Sharp Genius', minXP: 3900, maxXP: 4550, stageNumber: 4),
+    LevelInfo(level: 14, title: 'Sharp Genius', minXP: 4550, maxXP: 5250, stageNumber: 4),
+    LevelInfo(level: 15, title: 'Zen Master', minXP: 5250, maxXP: 6000, stageNumber: 5),
+    LevelInfo(level: 16, title: 'Zen Master', minXP: 6000, maxXP: 6800, stageNumber: 5),
+    LevelInfo(level: 17, title: 'Zen Master', minXP: 6800, maxXP: 7650, stageNumber: 5),
+    LevelInfo(level: 18, title: 'Zen Master', minXP: 7650, maxXP: 8550, stageNumber: 5),
+    LevelInfo(level: 19, title: 'Zen Master', minXP: 8550, maxXP: 9500, stageNumber: 5),
+    LevelInfo(level: 20, title: 'Zen Master', minXP: 9500, maxXP: 10500, stageNumber: 5),
   ];
+
+  static int unlockLevelForSkin(BrainySkin skin) {
+    switch (skin) {
+      case BrainySkin.classic:
+        return 1;
+      case BrainySkin.ember:
+        return 2;
+      case BrainySkin.golden:
+        return 4;
+      case BrainySkin.frost:
+        return 8;
+      case BrainySkin.mint:
+        return 12;
+      case BrainySkin.midnight:
+        return 20;
+    }
+  }
 
   /// Determine Brainy's emotional reaction based on habit metrics (design.md Section 7)
   static BrainyMood evaluateMood({
@@ -179,30 +209,39 @@ class GamificationEngine {
   }
 
   static LevelInfo getLevelForXP(int totalXP) {
+    final int safeXP = totalXP < 0 ? 0 : totalXP;
     for (final level in levels) {
-      if (totalXP >= level.minXP && totalXP < level.maxXP) {
+      if (safeXP >= level.minXP && safeXP < level.maxXP) {
         return LevelInfo(
           level: level.level,
           title: level.title,
           minXP: level.minXP,
           maxXP: level.maxXP,
           stageNumber: level.stageNumber,
-          currentXP: totalXP,
+          currentXP: safeXP,
         );
       }
     }
+    const int postCapStep = 1000;
     final last = levels.last;
+    final int extraXP = (safeXP - last.maxXP).clamp(0, 1 << 30);
+    final int extraLevels = (extraXP ~/ postCapStep) + 1;
+    final int computedLevel = last.level + extraLevels;
+    final int minXP = last.maxXP + (extraLevels - 1) * postCapStep;
+    final int maxXP = minXP + postCapStep;
+    final stage = getStageForLevel(computedLevel);
     return LevelInfo(
-      level: last.level,
-      title: last.title,
-      minXP: last.minXP,
-      maxXP: last.maxXP,
-      stageNumber: last.stageNumber,
-      currentXP: totalXP,
+      level: computedLevel,
+      title: stage.title,
+      minXP: minXP,
+      maxXP: maxXP,
+      stageNumber: stage.stageNumber,
+      currentXP: safeXP,
     );
   }
 
   static EvolutionStage getStageForLevel(int level) {
+    if (level <= 1) return evolutionStages.first;
     for (final stage in evolutionStages) {
       if (level >= stage.minLevel && level <= stage.maxLevel) {
         return stage;

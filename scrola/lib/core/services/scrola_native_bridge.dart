@@ -34,103 +34,65 @@ class ScrolaNativeBridge {
 
   static Stream<ReelEvent>? _eventStream;
 
+  static Future<T?> _invoke<T>(String method, [dynamic arguments]) async {
+    try {
+      return await _methodChannel.invokeMethod<T>(method, arguments);
+    } on PlatformException catch (e) {
+      debugPrint('Error invoking $method: $e');
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   /// Check if the Android Accessibility Service is enabled by the user
   static Future<bool> isAccessibilityServiceEnabled() async {
-    try {
-      final bool? enabled = await _methodChannel.invokeMethod<bool>('isAccessibilityServiceEnabled');
-      return enabled ?? false;
-    } on PlatformException catch (e) {
-      debugPrint('Error checking accessibility service: $e');
-      return false;
-    }
+    return (await _invoke<bool>('isAccessibilityServiceEnabled')) ?? false;
   }
 
   /// Open Android Accessibility Settings so the user can enable Scrola
   static Future<void> openAccessibilitySettings() async {
-    try {
-      await _methodChannel.invokeMethod('openAccessibilitySettings');
-    } on PlatformException catch (e) {
-      debugPrint('Error opening accessibility settings: $e');
-    }
+    await _invoke<void>('openAccessibilitySettings');
   }
 
   /// Check if System Alert Window (Overlay) permission is granted
   static Future<bool> isOverlayPermissionGranted() async {
-    try {
-      final bool? granted = await _methodChannel.invokeMethod<bool>('isOverlayPermissionGranted');
-      return granted ?? false;
-    } on PlatformException catch (e) {
-      debugPrint('Error checking overlay permission: $e');
-      return false;
-    }
+    return (await _invoke<bool>('isOverlayPermissionGranted')) ?? false;
   }
 
   /// Launch Android Settings to grant draw over other apps permission
   static Future<void> requestOverlayPermission() async {
-    try {
-      await _methodChannel.invokeMethod('requestOverlayPermission');
-    } on PlatformException catch (e) {
-      debugPrint('Error requesting overlay permission: $e');
-    }
+    await _invoke<void>('requestOverlayPermission');
   }
 
   /// Start the floating tracker overlay. Returns true if the native service
   /// started or updated cleanly.
   static Future<bool> startOverlayService({bool animateEntrance = true}) async {
-    try {
-      final bool? started = await _methodChannel.invokeMethod<bool>(
-        'startOverlayService',
-        {'animateEntrance': animateEntrance},
-      );
-      return started ?? false;
-    } on PlatformException catch (e) {
-      debugPrint('Error starting overlay: $e');
-      return false;
-    } on MissingPluginException {
-      return false;
-    }
+    return (await _invoke<bool>(
+          'startOverlayService',
+          {'animateEntrance': animateEntrance},
+        )) ??
+        false;
   }
 
   /// Stop the floating tracker overlay
   static Future<void> stopOverlayService() async {
-    try {
-      await _methodChannel.invokeMethod('stopOverlayService');
-    } on PlatformException catch (e) {
-      debugPrint('Error stopping overlay: $e');
-    }
+    await _invoke<void>('stopOverlayService');
   }
 
   /// Refresh live overlay layout/position/style config without restarting
   static Future<void> refreshOverlayConfig() async {
-    try {
-      await _methodChannel.invokeMethod('refreshOverlayConfig');
-    } on PlatformException catch (e) {
-      debugPrint('Error refreshing overlay config: $e');
-    }
+    await _invoke<void>('refreshOverlayConfig');
   }
 
   /// Check if Android 13+ notification permission is granted
   static Future<bool> isNotificationPermissionGranted() async {
-    try {
-      final bool? granted =
-          await _methodChannel.invokeMethod<bool>('isNotificationPermissionGranted');
-      return granted ?? true;
-    } on PlatformException catch (e) {
-      debugPrint('Error checking notification permission: $e');
-      return true;
-    }
+    return (await _invoke<bool>('isNotificationPermissionGranted')) ?? true;
   }
 
   /// Prompt Android 13+ runtime notification permission dialog
   static Future<bool> requestNotificationPermission() async {
-    try {
-      final bool? granted =
-          await _methodChannel.invokeMethod<bool>('requestNotificationPermission');
-      return granted ?? true;
-    } on PlatformException catch (e) {
-      debugPrint('Error requesting notification permission: $e');
-      return false;
-    }
+    return (await _invoke<bool>('requestNotificationPermission')) ?? false;
   }
 
   /// Synchronize configured limits and focus status to Native Android services
@@ -150,28 +112,32 @@ class ScrolaNativeBridge {
     bool? overlayExpanded,
     String? overlaySize,
     int? skinIndex,
+    bool? nightBlockEnabled,
+    bool? workBlockEnabled,
+    bool? strictBlocking,
+    bool? detoxActive,
   }) async {
-    try {
-      await _methodChannel.invokeMethod('syncLimits', {
-        'totalLimit': totalLimit,
-        'instagramLimit': instagramLimit,
-        'youtubeLimit': youtubeLimit,
-        'facebookLimit': facebookLimit,
-        'snapchatLimit': snapchatLimit,
-        'platformLimits': ?platformLimits,
-        'isFocusActive': isFocusActive,
-        'isOverlayEnabled': isOverlayEnabled,
-        'isTrackingEnabled': ?isTrackingEnabled,
-        'platformLimitsEnabled': ?platformLimitsEnabled,
-        'selectedPlatforms': ?selectedPlatforms,
-        'stickToNotch': ?stickToNotch,
-        'overlayExpanded': ?overlayExpanded,
-        'overlaySize': ?overlaySize,
-        'skinIndex': ?skinIndex,
-      });
-    } on PlatformException catch (e) {
-      debugPrint('Error syncing limits: $e');
-    }
+    await _invoke<void>('syncLimits', {
+      'totalLimit': totalLimit,
+      'instagramLimit': instagramLimit,
+      'youtubeLimit': youtubeLimit,
+      'facebookLimit': facebookLimit,
+      'snapchatLimit': snapchatLimit,
+      'platformLimits': ?platformLimits,
+      'isFocusActive': isFocusActive,
+      'isOverlayEnabled': isOverlayEnabled,
+      'isTrackingEnabled': ?isTrackingEnabled,
+      'platformLimitsEnabled': ?platformLimitsEnabled,
+      'selectedPlatforms': ?selectedPlatforms,
+      'stickToNotch': ?stickToNotch,
+      'overlayExpanded': ?overlayExpanded,
+      'overlaySize': ?overlaySize,
+      'skinIndex': ?skinIndex,
+      'nightBlockEnabled': ?nightBlockEnabled,
+      'workBlockEnabled': ?workBlockEnabled,
+      'strictBlocking': ?strictBlocking,
+      'detoxActive': ?detoxActive,
+    });
   }
 
   /// Update the floating overlay display metrics
@@ -182,37 +148,37 @@ class ScrolaNativeBridge {
     String platform = '',
     bool isFocus = false,
   }) async {
-    try {
-      await _methodChannel.invokeMethod('updateOverlayStats', {
-        'today': today,
-        'limit': limit,
-        'session': session,
-        'platform': platform,
-        'isFocus': isFocus,
-      });
-    } on PlatformException catch (e) {
-      debugPrint('Error updating overlay stats: $e');
-    }
+    await _invoke<void>('updateOverlayStats', {
+      'today': today,
+      'limit': limit,
+      'session': session,
+      'platform': platform,
+      'isFocus': isFocus,
+    });
   }
 
   /// Read current stats recorded by Native services
   static Future<Map<String, dynamic>> getNativeStats() async {
     try {
-      final result = await _methodChannel.invokeMapMethod<String, dynamic>('getNativeStats');
+      final result =
+          await _methodChannel.invokeMapMethod<String, dynamic>('getNativeStats');
       return result ?? {};
     } on PlatformException catch (e) {
       debugPrint('Error getting native stats: $e');
+      return {};
+    } on MissingPluginException {
       return {};
     }
   }
 
   /// Reset session reel counter
   static Future<void> resetSession() async {
-    try {
-      await _methodChannel.invokeMethod('resetSession');
-    } on PlatformException catch (e) {
-      debugPrint('Error resetting session: $e');
-    }
+    await _invoke<void>('resetSession');
+  }
+
+  /// Reset today's reel and focus statistics in native prefs
+  static Future<void> resetDailyStats() async {
+    await _invoke<void>('resetDailyStats');
   }
 
   /// Stream of real-time reel tracking and blocking events from native Android

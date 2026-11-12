@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:scrola/core/services/focus_mode_service.dart';
 import 'package:scrola/core/services/gamification_engine.dart';
 import 'package:scrola/core/services/haptic_service.dart';
 import 'package:scrola/core/services/storage_service.dart';
 import 'package:scrola/core/services/tracking_service.dart';
+import 'package:scrola/features/brain/presentation/screens/brain_collection_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/brain_details_screen.dart';
+import 'package:scrola/features/brain/presentation/screens/rewards_screen.dart';
+import 'package:scrola/features/brain/presentation/screens/xp_progress_screen.dart';
+import 'package:scrola/features/focus/presentation/screens/active_focus_session_screen.dart';
 import 'package:scrola/features/home/presentation/screens/home_screen.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
 import 'package:scrola/features/home/presentation/widgets/scrola_bottom_nav.dart';
@@ -309,7 +314,7 @@ void main() {
     final tracking = TrackingService();
     await tracking.initialize();
 
-    // 1. EditProfileScreen: skin cards equal height, 1-line labels, aligned rails
+    // 1. EditProfileScreen: 6 skin cards equal height, 1-line labels, aligned rails
     await tester.pumpWidget(const MaterialApp(home: EditProfileScreen()));
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -332,12 +337,23 @@ void main() {
         matching: find.byType(ScrolaSelectableCard),
       ),
     );
+    final midnightCardRect = tester.getRect(
+      find.ancestor(
+        of: find.text('Midnight'),
+        matching: find.byType(ScrolaSelectableCard),
+      ),
+    );
     final saveButtonRect = tester.getRect(find.text('Save changes'));
 
+    expect(find.text('Mint'), findsOneWidget);
+    expect(find.text('Midnight'), findsOneWidget);
     expect(classicCardRect.left, closeTo(20.0, 0.5));
-    expect(frostCardRect.right, closeTo(340.0, 0.5));
+    expect(goldenCardRect.right, closeTo(340.0, 0.5));
+    expect(frostCardRect.left, closeTo(20.0, 0.5));
+    expect(midnightCardRect.right, closeTo(340.0, 0.5));
     expect(classicCardRect.height, closeTo(goldenCardRect.height, 0.5));
     expect(classicCardRect.height, closeTo(frostCardRect.height, 0.5));
+    expect(classicCardRect.height, closeTo(midnightCardRect.height, 0.5));
     expect(backRect.left, greaterThanOrEqualTo(20.0));
     expect(backRect.left, lessThan(40.0)); // Aligned with 20px circle left edge
     expect(saveButtonRect.width, greaterThan(0));
@@ -496,5 +512,307 @@ void main() {
     );
     expect(tracking.limitForId('facebook'), 32);
     expect(tracking.limitForId('reddit'), 18);
+  });
+
+  test('GamificationEngine scales through Lv 20+ and clamps negative XP', () {
+    final neg = GamificationEngine.getLevelForXP(-250);
+    expect(neg.level, 1);
+    expect(neg.xpInCurrentLevel, 0);
+
+    final lv8 = GamificationEngine.getLevelForXP(1400);
+    expect(lv8.level, 8);
+    expect(lv8.stageNumber, 3);
+    expect(lv8.title, 'Bright Mind');
+
+    final lv12 = GamificationEngine.getLevelForXP(3300);
+    expect(lv12.level, 12);
+    expect(lv12.stageNumber, 4);
+    expect(lv12.title, 'Sharp Genius');
+
+    final lv15 = GamificationEngine.getLevelForXP(5250);
+    expect(lv15.level, 15);
+    expect(lv15.stageNumber, 5);
+    expect(lv15.title, 'Zen Master');
+
+    final lv20 = GamificationEngine.getLevelForXP(9500);
+    expect(lv20.level, 20);
+    expect(lv20.stageNumber, 5);
+
+    final lv21 = GamificationEngine.getLevelForXP(10500);
+    expect(lv21.level, 21);
+    expect(lv21.stageNumber, 5);
+
+    final lv23 = GamificationEngine.getLevelForXP(12500);
+    expect(lv23.level, 23);
+
+    expect(GamificationEngine.unlockLevelForSkin(BrainySkin.classic), 1);
+    expect(GamificationEngine.unlockLevelForSkin(BrainySkin.ember), 2);
+    expect(GamificationEngine.unlockLevelForSkin(BrainySkin.golden), 4);
+    expect(GamificationEngine.unlockLevelForSkin(BrainySkin.frost), 8);
+    expect(GamificationEngine.unlockLevelForSkin(BrainySkin.mint), 12);
+    expect(GamificationEngine.unlockLevelForSkin(BrainySkin.midnight), 20);
+  });
+
+  testWidgets(
+      'RewardsScreen and XpProgressScreen persist claims/daily XP and fix Lv 1 nodes',
+      (WidgetTester tester) async {
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({
+      'scrola_xp_total': 320, // Level 4
+      'scrola_streak_days': 7,
+    });
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+
+    await tester.pumpWidget(const MaterialApp(home: RewardsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('3 ready'), findsOneWidget);
+    expect(find.text('Level 2 reward'), findsOneWidget);
+
+    await tester.tap(find.text('Open chest'));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tracking.xpTotal, 420);
+
+    await tester.tap(find.text('Claim').first);
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tracking.xpTotal, 520);
+
+    await tester.tap(find.text('Claim').first);
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tracking.equippedSkin, BrainySkin.ember);
+    expect(find.text('0 ready'), findsOneWidget);
+
+    // Re-mounting RewardsScreen must NOT allow re-claiming XP or rewards
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(const MaterialApp(home: RewardsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('0 ready'), findsOneWidget);
+    expect(find.text('Opened'), findsOneWidget);
+    expect(find.text('Claimed'), findsNWidgets(2));
+    expect(tracking.xpTotal, 520);
+
+    // At Level 1, XpProgressScreen shows 1..4 unique milestone nodes and collects once/day
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({
+      'scrola_xp_total': 0, // Level 1
+      'scrola_streak_days': 7,
+    });
+    await tracking.resetForTest();
+
+    await tester.pumpWidget(const MaterialApp(home: XpProgressScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Big level ring "1" + single milestone node "1" (no duplicate Lv 1 node)
+    expect(find.text('1'), findsNWidgets(2));
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
+    expect(find.text('Done'), findsNothing);
+    expect(find.text('You'), findsOneWidget);
+    expect(find.text('Collect +30 XP'), findsOneWidget);
+
+    await tester.tap(find.text('Collect +30 XP'));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tracking.xpTotal, 30);
+
+    // Re-mount XpProgressScreen: stays collected for today
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(const MaterialApp(home: XpProgressScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Collected today'), findsOneWidget);
+    expect(tracking.xpTotal, 30);
+  });
+
+  testWidgets(
+      'BrainDetailsScreen enforces skin unlock level, Collection handles empty filter, EditProfile validates fields & locks',
+      (WidgetTester tester) async {
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({
+      'scrola_xp_total': 320, // Level 4
+    });
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    // BrainDetailsScreen with default requiredLevel resolves Midnight -> Level 20
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: BrainDetailsScreen(initialSkin: BrainySkin.midnight),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Level 20'), findsOneWidget);
+    expect(find.text('Unlock at Level 20'), findsOneWidget);
+
+    // EditProfileScreen: locked Midnight skin cannot be equipped, empty name fails validation
+    await tester.pumpWidget(const MaterialApp(home: EditProfileScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Midnight'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Unlock Midnight Brainy at Level 20.'), findsOneWidget);
+    expect(tracking.equippedSkin, BrainySkin.classic);
+
+    await tester.enterText(find.byType(TextField).first, '   ');
+    await tester.tap(find.text('Save changes'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Display name cannot be empty'), findsOneWidget);
+    expect(tracking.displayName, 'Alex');
+
+    // BrainCollectionScreen: empty 'Locked' filter when Lv 20+ shows friendly state
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({
+      'scrola_xp_total': 9500, // Level 20
+    });
+    await tracking.resetForTest();
+
+    await tester.pumpWidget(const MaterialApp(home: BrainCollectionScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.text('Locked'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('All Brainy skins unlocked!'), findsOneWidget);
+  });
+
+  testWidgets(
+      'FocusModeService syncs pause/Detox, recovers expired timers, Settings resets daily stats, and PlatformLimits preserves caps',
+      (WidgetTester tester) async {
+    const channel = MethodChannel('com.scrola.app/native');
+    final recordedCalls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      recordedCalls.add(call);
+      switch (call.method) {
+        case 'isAccessibilityServiceEnabled':
+        case 'isOverlayPermissionGranted':
+        case 'isNotificationPermissionGranted':
+        case 'startOverlayService':
+        case 'stopOverlayService':
+        case 'syncLimits':
+        case 'refreshOverlayConfig':
+        case 'resetDailyStats':
+          return true;
+        case 'getNativeStats':
+          return <String, dynamic>{'totalToday': 0, 'sessionCount': 0};
+        default:
+          return null;
+      }
+    });
+    addTearDown(() async {
+      await FocusModeService().cancelSession();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({
+      'scrola_selected_platforms': ['instagram', 'tiktok'],
+      'scrola_xp_total': 320,
+      'scrola_detox_active': true,
+    });
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+
+    // updateBlockingConfig syncs native flags including detoxActive
+    recordedCalls.clear();
+    await tracking.updateBlockingConfig(nightBlock: true, workBlock: true, strict: true);
+    final syncAfterConfig = recordedCalls
+        .where((c) => c.method == 'syncLimits')
+        .last
+        .arguments as Map;
+    expect(syncAfterConfig['nightBlockEnabled'], isTrue);
+    expect(syncAfterConfig['workBlockEnabled'], isTrue);
+    expect(syncAfterConfig['strictBlocking'], isTrue);
+    expect(syncAfterConfig['detoxActive'], isTrue);
+
+    // Start focus session -> active apps match onboarding selection, pause turns isFocusActive false while keeping detoxActive true
+    final focus = FocusModeService();
+    await focus.startSession(minutes: 25);
+
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: ActiveFocusSessionScreen()));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Instagram, TikTok'), findsOneWidget);
+
+    recordedCalls.clear();
+    await focus.togglePause();
+    final pauseSync = recordedCalls
+        .where((c) => c.method == 'syncLimits')
+        .last
+        .arguments as Map;
+    expect(pauseSync['isFocusActive'], isFalse);
+    expect(pauseSync['detoxActive'], isTrue);
+
+    // Canceling focus preserves Detox overlay & Detox flag
+    recordedCalls.clear();
+    await focus.cancelSession();
+    expect(recordedCalls.where((c) => c.method == 'stopOverlayService'), isEmpty);
+    expect(tracking.isDetoxActive, isTrue);
+
+    // Expired persisted focus timer completes cleanly on initialize() and shows Done state
+    final storage = await StorageService.getInstance();
+    await storage.saveFocusSessionState(
+      isActive: true,
+      isPaused: false,
+      durationMinutes: 25,
+      endEpochMs: DateTime.now().millisecondsSinceEpoch - 5000,
+      remainingSeconds: 10,
+      blockedAttempts: 2,
+    );
+    await focus.initialize();
+    expect(focus.isActive, isFalse);
+    expect(focus.isJustCompleted, isTrue);
+    expect(tracking.xpTotal, 350);
+    expect(tracking.focusMinutesToday, 25);
+
+    await tester.pumpWidget(const MaterialApp(home: ActiveFocusSessionScreen()));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Focus session complete!'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
+    expect(find.text('Add time'), findsNothing);
+
+    // PlatformLimitsScreen preserves custom limits when toggled off and clamps minimum to 1
+    await tracking.updateLimits(
+      total: 40,
+      platformLimits: {'instagram': 1, 'tiktok': 39},
+      platformLimitsEnabled: true,
+    );
+    await tracking.updateLimits(total: 50, platformLimitsEnabled: false);
+    expect(tracking.savedLimitForId('instagram'), 1);
+    expect(tracking.limitForId('instagram'), 25);
+
+    await tester.pumpWidget(const MaterialApp(home: PlatformLimitsScreen()));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.text('1 reels'), findsOneWidget);
+    // Tap '-' button on Instagram (limit 1 -> stays clamped at 1, enabling per-app limits)
+    await tester.tap(find.byIcon(Icons.remove_rounded).first);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('1 reels'), findsOneWidget);
+
+    // SettingsScreen 'Delete local data' -> 'Reset' resets today's counts + native daily stats
+    await storage.recordReel('instagram');
+    expect(tracking.totalReelsToday, 1);
+
+    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -400));
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.tap(find.text('Delete local data'));
+    await tester.pump(const Duration(milliseconds: 150));
+    recordedCalls.clear();
+    await tester.tap(find.text('Reset'));
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(tracking.totalReelsToday, 0);
+    expect(tracking.instagramReels, 0);
+    expect(recordedCalls.where((c) => c.method == 'resetDailyStats'), isNotEmpty);
   });
 }

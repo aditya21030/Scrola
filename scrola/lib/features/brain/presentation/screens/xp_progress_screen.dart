@@ -18,7 +18,6 @@ class XpProgressScreen extends StatefulWidget {
 
 class _XpProgressScreenState extends State<XpProgressScreen> {
   final TrackingService _tracking = TrackingService();
-  bool _collectedToday = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +28,31 @@ class _XpProgressScreenState extends State<XpProgressScreen> {
         builder: (context, _) {
           final info = GamificationEngine.getLevelForXP(_tracking.xpTotal);
           final toNext = math.max(0, info.xpForNextLevel - info.xpInCurrentLevel);
+          final collectedToday = _tracking.isDailyXpCollectedToday;
+
+          final underLimitXP = _tracking.isLimitReached ? 0 : 20;
+          final focusXP = _tracking.focusMinutesToday > 0 ? 30 : 0;
+          final streakXP = _tracking.streakDays > 0 ? 10 : 0;
+          final readyXP = underLimitXP + focusXP + streakXP;
+
+          final startLevel = info.level <= 1 ? 1 : info.level - 1;
+          final milestoneLevels = [
+            startLevel,
+            startLevel + 1,
+            startLevel + 2,
+            startLevel + 3,
+          ];
+
+          String milestoneStatus(int lvl) {
+            if (lvl == info.level) return 'You';
+            if (lvl < info.level) return 'Done';
+            final curStage =
+                GamificationEngine.getStageForLevel(lvl).stageNumber;
+            final prevStage =
+                GamificationEngine.getStageForLevel(lvl - 1).stageNumber;
+            if (curStage != prevStage) return 'Evolve';
+            return 'Reward';
+          }
 
           return SafeArea(
             child: Padding(
@@ -101,9 +125,13 @@ class _XpProgressScreenState extends State<XpProgressScreen> {
                                 ),
                               ),
                               Text(
-                                _collectedToday ? 'Collected' : '+60 XP ready',
+                                collectedToday
+                                    ? 'Collected'
+                                    : readyXP > 0
+                                        ? '+$readyXP XP ready'
+                                        : '0 XP ready',
                                 style: AppTypography.caption(
-                                  color: _collectedToday
+                                  color: collectedToday
                                       ? AppColors.success
                                       : AppColors.primaryAccent,
                                 ).copyWith(fontWeight: FontWeight.w700),
@@ -114,23 +142,29 @@ class _XpProgressScreenState extends State<XpProgressScreen> {
                           ScrolaCard(
                             padding: const EdgeInsets.all(16),
                             child: Column(
-                              children: const [
+                              children: [
                                 _XpSourceRow(
                                   title: 'Stayed under limit',
-                                  subtitle: 'So far today',
-                                  xp: '+20',
+                                  subtitle: _tracking.isLimitReached
+                                      ? 'Exceeded daily limit'
+                                      : '${_tracking.totalReelsToday} / ${_tracking.totalLimit} reels today',
+                                  xp: '+$underLimitXP',
                                 ),
-                                Divider(color: AppColors.borderSubtle, height: 22),
+                                const Divider(
+                                    color: AppColors.borderSubtle, height: 22),
                                 _XpSourceRow(
                                   title: 'Focus session',
-                                  subtitle: '25 minutes',
-                                  xp: '+30',
+                                  subtitle: _tracking.focusMinutesToday > 0
+                                      ? '${_tracking.focusMinutesToday} minutes today'
+                                      : 'Complete a focus session',
+                                  xp: '+$focusXP',
                                 ),
-                                Divider(color: AppColors.borderSubtle, height: 22),
+                                const Divider(
+                                    color: AppColors.borderSubtle, height: 22),
                                 _XpSourceRow(
                                   title: 'Streak bonus',
-                                  subtitle: '7 day streak',
-                                  xp: '+10',
+                                  subtitle: '${_tracking.streakDays} day streak',
+                                  xp: '+$streakXP',
                                 ),
                               ],
                             ),
@@ -138,38 +172,15 @@ class _XpProgressScreenState extends State<XpProgressScreen> {
                           const SizedBox(height: 20),
                           Row(
                             children: [
-                              Expanded(
-                                child: _MilestoneNode(
-                                  level: math.max(1, info.level - 1),
-                                  status: 'Done',
-                                  done: true,
-                                  current: false,
+                              for (final lvl in milestoneLevels)
+                                Expanded(
+                                  child: _MilestoneNode(
+                                    level: lvl,
+                                    status: milestoneStatus(lvl),
+                                    done: lvl < info.level,
+                                    current: lvl == info.level,
+                                  ),
                                 ),
-                              ),
-                              Expanded(
-                                child: _MilestoneNode(
-                                  level: info.level,
-                                  status: 'You',
-                                  done: false,
-                                  current: true,
-                                ),
-                              ),
-                              Expanded(
-                                child: _MilestoneNode(
-                                  level: info.level + 1,
-                                  status: 'Reward',
-                                  done: false,
-                                  current: false,
-                                ),
-                              ),
-                              Expanded(
-                                child: _MilestoneNode(
-                                  level: info.level + 2,
-                                  status: 'Evolve',
-                                  done: false,
-                                  current: false,
-                                ),
-                              ),
                             ],
                           ),
                         ],
@@ -178,13 +189,18 @@ class _XpProgressScreenState extends State<XpProgressScreen> {
                   ),
                   const SizedBox(height: 12),
                   ScrolaPrimaryButton(
-                    label: _collectedToday ? 'Collected +60 XP' : 'Collect +60 XP',
-                    onPressed: _collectedToday
+                    label: collectedToday
+                        ? 'Collected today'
+                        : readyXP > 0
+                            ? 'Collect +$readyXP XP'
+                            : 'Nothing to collect yet',
+                    onPressed: collectedToday || readyXP <= 0
                         ? null
-                        : () {
-                            HapticService.celebratory();
-                            _tracking.addXP(60);
-                            setState(() => _collectedToday = true);
+                        : () async {
+                            final ok = await _tracking.collectDailyXP(readyXP);
+                            if (ok) {
+                              await HapticService.celebratory();
+                            }
                           },
                   ),
                 ],
