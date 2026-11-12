@@ -191,7 +191,7 @@ class BrainOverviewScreen extends StatelessWidget {
                         ),
                         Expanded(
                           child: _BrainMetricTap(
-                            value: '12',
+                            value: '${tracking.unlockedBadgeCount}',
                             label: 'Badges',
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
@@ -225,7 +225,8 @@ class BrainOverviewScreen extends StatelessWidget {
                         child: _BrainNavCard(
                           icon: Icons.grid_view_rounded,
                           title: 'Collection',
-                          subtitle: '3 of 6 unlocked',
+                          subtitle:
+                              '${GamificationEngine.unlockedSkinCount(tracking.currentLevel)} of ${BrainySkin.values.length} unlocked',
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => const BrainCollectionScreen(),
@@ -239,15 +240,28 @@ class BrainOverviewScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _BrainNavCard(
-                          icon: Icons.card_giftcard_rounded,
-                          title: 'Rewards',
-                          subtitle: '2 ready to claim',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const RewardsScreen(),
-                            ),
-                          ),
+                        child: Builder(
+                          builder: (context) {
+                            final readyCount = [
+                              !tracking.isDailyXpCollectedToday,
+                              tracking.streakDays >= 7 &&
+                                  !tracking.isRewardClaimed('streak_7_xp'),
+                              tracking.currentLevel >= 2 &&
+                                  !tracking.isRewardClaimed('ember_skin'),
+                            ].where((e) => e).length;
+                            return _BrainNavCard(
+                              icon: Icons.card_giftcard_rounded,
+                              title: 'Rewards',
+                              subtitle: readyCount == 0
+                                  ? 'All caught up'
+                                  : '$readyCount ready to claim',
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const RewardsScreen(),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -260,6 +274,10 @@ class BrainOverviewScreen extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (_) => BrainDetailsScreen(
                                 initialSkin: tracking.equippedSkin,
+                                requiredLevel:
+                                    GamificationEngine.unlockLevelForSkin(
+                                  tracking.equippedSkin,
+                                ),
                               ),
                             ),
                           ),

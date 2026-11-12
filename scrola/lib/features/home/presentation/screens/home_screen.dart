@@ -12,7 +12,7 @@ import '../../../brain/presentation/screens/brain_overview_screen.dart';
 import '../../../brain/presentation/screens/rewards_screen.dart';
 import '../../../brain/presentation/screens/streak_calendar_screen.dart';
 import '../../../focus/presentation/screens/active_focus_session_screen.dart';
-import '../../../focus/presentation/screens/focus_dashboard_screen.dart';
+import '../../../focus/presentation/screens/focus_session_setup_screen.dart';
 import '../../../insights/presentation/screens/live_tracking_screen.dart';
 import '../../../insights/presentation/screens/platform_breakdown_screen.dart';
 import '../../../insights/presentation/screens/reel_limit_setup_screen.dart';
@@ -63,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleToggleScrola(TrackingService tracking) async {
+    if (_isLaunchingToNotch) return;
     if (!tracking.isAccessibilityGranted) {
       await tracking.checkPermissions();
     }
@@ -108,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (_isLaunchingToNotch) return;
     setState(() => _isLaunchingToNotch = true);
 
     try {
@@ -132,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleToggleOverlay(TrackingService tracking) async {
+    if (_isLaunchingToNotch) return;
     if (!tracking.isOverlayGranted) {
       await tracking.checkPermissions();
     }
@@ -155,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (_isLaunchingToNotch) return;
     setState(() => _isLaunchingToNotch = true);
     try {
       await playNotchFlightAnimation(
@@ -189,8 +189,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 : levelInfo.level;
 
         final permissionsReady = tracking.isAccessibilityGranted;
-        final isScrolaOn = permissionsReady && tracking.isTrackingEnabled;
+        final isScrolaOn = permissionsReady &&
+            (tracking.isTrackingEnabled ||
+                focus.isEnforcing ||
+                tracking.isDetoxActive);
         final greeting = _greetingForHour(DateTime.now().hour);
+
+        final now = DateTime.now();
+        final monday = now.subtract(Duration(days: now.weekday - 1));
+        final history = tracking.dailyHistory;
+        final weekCompleted = List<bool>.generate(7, (i) {
+          final dayDate = DateTime(monday.year, monday.month, monday.day + i);
+          if (dayDate.isAfter(DateTime(now.year, now.month, now.day))) {
+            return false;
+          }
+          final key =
+              '${dayDate.year}-${dayDate.month.toString().padLeft(2, '0')}-${dayDate.day.toString().padLeft(2, '0')}';
+          final entry = history[key];
+          if (entry != null &&
+              (entry['reels'] ?? 0) <=
+                  (entry['limit'] ?? tracking.totalLimit)) {
+            return (entry['reels'] ?? 0) > 0 || tracking.streakDays > i;
+          }
+          final daysAgo = DateTime(now.year, now.month, now.day)
+              .difference(dayDate)
+              .inDays;
+          return daysAgo > 0 && daysAgo <= tracking.streakDays;
+        });
 
         final visiblePlatforms = tracking.visiblePlatforms;
         final countsByPlatform = <SocialPlatform, int>{
@@ -272,6 +297,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             BrainDetailsScreen(
                               initialSkin: tracking.equippedSkin,
+                              requiredLevel:
+                                  GamificationEngine.unlockLevelForSkin(
+                                tracking.equippedSkin,
+                              ),
                             ),
                           ),
                           onCounterTap: () =>
@@ -319,6 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 24),
                               StreakWeekCard(
                                 streakDays: tracking.streakDays,
+                                daysCompleted: weekCompleted,
                                 onCalendarTap: () =>
                                     _push(context, const StreakCalendarScreen()),
                               ),
@@ -331,11 +361,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (focus.isActive) {
                                     _push(context,
                                         const ActiveFocusSessionScreen());
-                                  } else if (widget.onSwitchTab != null) {
-                                    widget.onSwitchTab!(2);
                                   } else {
-                                    _push(
-                                        context, const FocusDashboardScreen());
+                                    _push(context,
+                                        const FocusSessionSetupScreen());
                                   }
                                 },
                               ),

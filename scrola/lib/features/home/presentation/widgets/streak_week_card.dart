@@ -13,7 +13,7 @@ class StreakWeekCard extends StatefulWidget {
   const StreakWeekCard({
     super.key,
     required this.streakDays,
-    this.daysCompleted = const [true, true, true, true, true, true, false],
+    this.daysCompleted = const [false, false, false, false, false, false, false],
     this.onCalendarTap,
   });
 

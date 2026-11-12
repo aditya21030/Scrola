@@ -60,28 +60,40 @@ class _ScrolaToggleState extends State<ScrolaToggle> with SingleTickerProviderSt
         HapticService.light();
         widget.onChanged(!widget.value);
       },
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (widget.showPulseRing)
-            AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, _) {
-                final val = _pulseController.value;
-                return Container(
-                  width: 52 + (val * 14),
-                  height: 32 + (val * 14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: AppColors.primaryAccent.withValues(alpha: (1 - val) * 0.8),
-                      width: 2,
-                    ),
+      child: SizedBox(
+        width: 52,
+        height: 32,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            if (widget.showPulseRing)
+              Positioned.fromRect(
+                rect: const Rect.fromLTWH(-7, -7, 66, 46),
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, _) {
+                      final val = _pulseController.value;
+                      return Center(
+                        child: Container(
+                          width: 52 + (val * 14),
+                          height: 32 + (val * 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: AppColors.primaryAccent
+                                  .withValues(alpha: (1 - val) * 0.8),
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          AnimatedContainer(
+                ),
+              ),
+            AnimatedContainer(
             duration: AppMotion.standard,
             curve: AppMotion.easeOut,
             width: 52,
@@ -110,6 +122,7 @@ class _ScrolaToggleState extends State<ScrolaToggle> with SingleTickerProviderSt
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -159,7 +159,6 @@ class _NotchFlightStageState extends State<_NotchFlightStage>
 
   @override
   void dispose() {
-    _fireArrivalIfNeeded();
     _notifyCompleteOnce();
     _controller.dispose();
     super.dispose();

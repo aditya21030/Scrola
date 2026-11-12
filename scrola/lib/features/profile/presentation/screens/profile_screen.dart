@@ -125,7 +125,7 @@ class ProfileScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '@${tracking.username} · joined Sep 2026',
+                                '@${tracking.username} · joined ${tracking.joinedMonthYear}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.center,
@@ -182,9 +182,9 @@ class ProfileScreen extends StatelessWidget {
                                   color: AppColors.borderSubtle,
                                   width: 1,
                                 ),
-                                const Expanded(
+                                Expanded(
                                   child: _ProfileMetric(
-                                    value: '12',
+                                    value: '${tracking.unlockedBadgeCount}',
                                     label: 'Badges',
                                   ),
                                 ),
@@ -233,13 +233,17 @@ class ProfileScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Scrola Pro',
+                                      tracking.isProSubscribed
+                                          ? 'Scrola Pro Active'
+                                          : 'Scrola Pro',
                                       style: AppTypography.subheading()
                                           .copyWith(fontSize: 16),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      'Monthly reports and more skins',
+                                      tracking.isProSubscribed
+                                          ? '${tracking.proPlan == 'yearly' ? 'Yearly' : 'Monthly'} preview active'
+                                          : 'Monthly reports and cloud backup',
                                       style: AppTypography.caption(
                                         color: AppColors.secondaryText,
                                       ),
@@ -258,7 +262,9 @@ class ProfileScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
-                                  'See plans',
+                                  tracking.isProSubscribed
+                                      ? 'Manage'
+                                      : 'See plans',
                                   style: AppTypography.caption(
                                     color: AppColors.textOnAccent,
                                   ).copyWith(fontWeight: FontWeight.w700),
@@ -278,7 +284,11 @@ class ProfileScreen extends StatelessWidget {
                               _MenuRow(
                                 icon: Icons.notifications_none_rounded,
                                 title: 'Notifications',
-                                trailing: 'On',
+                                trailing: !tracking.isNotificationGranted
+                                    ? 'Blocked'
+                                    : (tracking.anyNotificationsEnabled
+                                        ? 'On'
+                                        : 'Off'),
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) =>

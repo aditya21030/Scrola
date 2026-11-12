@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/focus_mode_service.dart';
+import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -161,8 +162,9 @@ class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
                                     expandedPill: false,
                                     watched: tracking.totalReelsToday,
                                     remaining: tracking.remainingReels,
+                                    mood: tracking.currentMood,
+                                    skin: tracking.equippedSkin,
                                     onTap: () {
-                                      HapticService.subtle();
                                       tracking.updateOverlayConfig(
                                           expanded: false);
                                     },
@@ -177,8 +179,9 @@ class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
                                     expandedPill: true,
                                     watched: tracking.totalReelsToday,
                                     remaining: tracking.remainingReels,
+                                    mood: tracking.currentMood,
+                                    skin: tracking.equippedSkin,
                                     onTap: () {
-                                      HapticService.subtle();
                                       tracking.updateOverlayConfig(
                                           expanded: true);
                                     },
@@ -198,7 +201,6 @@ class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
                           ScrolaSelectableCard(
                             isSelected: stickToNotch,
                             onTap: () {
-                              HapticService.subtle();
                               tracking.updateOverlayConfig(stickToNotch: true);
                             },
                             padding: const EdgeInsets.all(16),
@@ -235,7 +237,6 @@ class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
                           ScrolaSelectableCard(
                             isSelected: !stickToNotch,
                             onTap: () {
-                              HapticService.subtle();
                               tracking.updateOverlayConfig(stickToNotch: false);
                             },
                             padding: const EdgeInsets.all(16),
@@ -296,7 +297,45 @@ class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
                                 const SizedBox(width: 12),
                                 ScrolaToggle(
                                   value: tracking.isOverlayEnabled,
-                                  onChanged: (v) => tracking.toggleOverlay(v),
+                                  onChanged: (v) async {
+                                    final messenger =
+                                        ScaffoldMessenger.of(context);
+                                    final ok = await tracking.toggleOverlay(v);
+                                    if (!mounted || !v) return;
+                                    if (!ok && !tracking.isOverlayGranted) {
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          backgroundColor:
+                                              AppColors.surfaceSolid,
+                                          content: Text(
+                                            'Tap "Open Overlay Settings" above to allow displaying over other apps.',
+                                            style: AppTypography.caption(
+                                              color: AppColors.primaryText,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    } else if (ok) {
+                                      final isActiveOnScreen =
+                                          tracking.isTrackingEnabled ||
+                                              tracking.isDetoxActive ||
+                                              FocusModeService().isEnforcing;
+                                      if (!isActiveOnScreen) {
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            backgroundColor:
+                                                AppColors.surfaceSolid,
+                                            content: Text(
+                                              'Auto-show enabled! Turn Scrola ON from Home to display it.',
+                                              style: AppTypography.caption(
+                                                color: AppColors.primaryText,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                                 ),
                               ],
                             ),
@@ -341,6 +380,8 @@ class _StyleChoiceCard extends StatelessWidget {
   final bool expandedPill;
   final int watched;
   final int remaining;
+  final BrainyMood mood;
+  final BrainySkin skin;
   final VoidCallback onTap;
 
   const _StyleChoiceCard({
@@ -350,6 +391,8 @@ class _StyleChoiceCard extends StatelessWidget {
     required this.expandedPill,
     required this.watched,
     required this.remaining,
+    required this.mood,
+    required this.skin,
     required this.onTap,
   });
 
@@ -403,6 +446,8 @@ class _StyleChoiceCard extends StatelessWidget {
                     watched: watched,
                     remaining: remaining,
                     expanded: expandedPill,
+                    mood: mood,
+                    skin: skin,
                     scale: 0.64,
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -78,12 +79,16 @@ class SettingsScreen extends StatelessWidget {
                                   color: AppColors.borderSubtle, height: 1),
                               _SettingLinkRow(
                                 title: 'Tracking status',
-                                value: tracking.isAccessibilityGranted
-                                    ? 'Active'
-                                    : 'Setup needed',
-                                valueColor: tracking.isAccessibilityGranted
-                                    ? AppColors.success
-                                    : AppColors.warning,
+                                value: !tracking.isTrackingEnabled
+                                    ? 'Off'
+                                    : (tracking.isAccessibilityGranted
+                                        ? 'Active'
+                                        : 'Setup needed'),
+                                valueColor: !tracking.isTrackingEnabled
+                                    ? AppColors.secondaryText
+                                    : (tracking.isAccessibilityGranted
+                                        ? AppColors.success
+                                        : AppColors.warning),
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) =>
@@ -122,7 +127,15 @@ class SettingsScreen extends StatelessWidget {
                                   color: AppColors.borderSubtle, height: 1),
                               _SettingLinkRow(
                                 title: 'Blocking',
-                                value: 'Rules',
+                                value: tracking.isDetoxActive
+                                    ? 'Detox on'
+                                    : ((tracking.nightBlockEnabled ||
+                                            tracking.workBlockEnabled ||
+                                            tracking.strictBlocking)
+                                        ? 'Scheduled'
+                                        : (tracking.blockAtLimitEnabled
+                                            ? 'At limit'
+                                            : 'Off')),
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) =>
@@ -223,7 +236,8 @@ class SettingsScreen extends StatelessWidget {
                             children: [
                               _SettingLinkRow(
                                 title: 'Subscription',
-                                value: 'Free',
+                                value:
+                                    tracking.isProSubscribed ? 'Pro' : 'Free',
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) =>
@@ -238,7 +252,8 @@ class SettingsScreen extends StatelessWidget {
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) =>
-                                        const OnboardingWizardScreen(),
+                                        const OnboardingWizardScreen(
+                                            isReplay: true),
                                   ),
                                 ),
                               ),
@@ -249,10 +264,16 @@ class SettingsScreen extends StatelessWidget {
                                 onTap: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content:
-                                          Text('Data export ready as JSON.'),
+                                      content: Text(
+                                        'Daily history CSV copied to clipboard.',
+                                      ),
                                     ),
                                   );
+                                  Clipboard.setData(
+                                    ClipboardData(
+                                      text: tracking.buildCsvExport(),
+                                    ),
+                                  ).catchError((_) {});
                                 },
                               ),
                               const Divider(

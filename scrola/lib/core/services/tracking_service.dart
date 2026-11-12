@@ -29,10 +29,13 @@ class TrackingService extends ChangeNotifier {
   bool get isNotificationGranted => _isNotificationGranted;
   bool get isInitialized => _isInitialized;
 
-  // Profile
+  // Profile & Subscription
   String get displayName => _storage?.displayName ?? 'Alex';
   String get username => _storage?.username ?? 'alex';
   String get email => _storage?.email ?? 'alex@scrola.app';
+  String get joinedMonthYear => _storage?.joinedMonthYear ?? 'Nov 2026';
+  bool get isProSubscribed => _storage?.isProSubscribed ?? false;
+  String get proPlan => _storage?.proPlan ?? 'yearly';
 
   // Onboarding & Goal
   bool get isOnboardingComplete => _storage?.isOnboardingComplete ?? false;
@@ -115,17 +118,36 @@ class TrackingService extends ChangeNotifier {
 
   int get sessionReels => _storage?.sessionReels ?? 0;
   int get screenTimeMinutes => (_storage?.screenTimeSeconds ?? 0) ~/ 60;
-  int get focusMinutesToday => _storage?.focusMinutesToday ?? 50;
-  int get focusSessionsToday => _storage?.focusSessionsToday ?? 2;
+  int get focusMinutesToday => _storage?.focusMinutesToday ?? 0;
+  int get focusSessionsToday => _storage?.focusSessionsToday ?? 0;
 
   // Gamification
-  int get streakDays => _storage?.streakDays ?? 7;
+  int get streakDays => _storage?.streakDays ?? 0;
   int get xpTotal => _storage?.xpTotal ?? 320;
-  int get currentLevel => _storage?.currentLevel ?? 4;
+  int get currentLevel =>
+      _storage?.currentLevel ?? GamificationEngine.getLevelForXP(xpTotal).level;
   BrainySkin get equippedSkin => _storage?.equippedSkin ?? BrainySkin.classic;
   bool get isDailyXpCollectedToday => _storage?.isDailyXpCollectedToday ?? false;
   bool isRewardClaimed(String rewardId) =>
       _storage?.isRewardClaimed(rewardId) ?? false;
+
+  List<AchievementBadge> get badges => GamificationEngine.evaluateBadges(
+        streakDays: streakDays,
+        totalReelsToday: totalReelsToday,
+        totalLimit: totalLimit,
+        isTrackingEnabled: isTrackingEnabled,
+        focusMinutesToday: focusMinutesToday,
+        focusSessionsToday: focusSessionsToday,
+        nightBlockEnabled: nightBlockEnabled,
+        isDetoxActive: isDetoxActive,
+        isDetoxCompleted: isRewardClaimed('detox_complete'),
+        currentLevel: currentLevel,
+      );
+
+  int get unlockedBadgeCount => badges.where((b) => b.unlocked).length;
+
+  Map<String, Map<String, int>> get dailyHistory =>
+      _storage?.dailyHistory ?? const {};
 
   // Settings
   bool get isTrackingEnabled => _storage?.isTrackingEnabled ?? false;
@@ -134,12 +156,37 @@ class TrackingService extends ChangeNotifier {
   bool get overlayStickToNotch => _storage?.overlayStickToNotch ?? true;
   bool get overlayExpanded => _storage?.overlayExpanded ?? false;
   String get overlaySize => _storage?.overlaySize ?? 'Medium';
+  bool get overlayReactToPace => _storage?.overlayReactToPace ?? true;
+  bool get blockAtLimitEnabled => _storage?.blockAtLimitEnabled ?? true;
   bool get nightBlockEnabled => _storage?.nightBlockEnabled ?? true;
   bool get workBlockEnabled => _storage?.workBlockEnabled ?? false;
+  List<String> get nightBlockDays =>
+      _storage?.nightBlockDays ??
+      const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  List<String> get workBlockDays =>
+      _storage?.workBlockDays ?? const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
   bool get strictBlocking => _storage?.strictBlocking ?? false;
+  bool get waitBeforeUnlock => _storage?.waitBeforeUnlock ?? true;
+  bool get showBrainyOnBlock => _storage?.showBrainyOnBlock ?? true;
+  int get dailyBlocksCount => _storage?.dailyBlocksCount ?? 0;
+  int get emergencyUnlocksUsedToday => _storage?.emergencyUnlocksUsedToday ?? 0;
+  int get emergencyUnlocksLeft => (3 - emergencyUnlocksUsedToday).clamp(0, 3);
+  int get detoxDays => _storage?.detoxDays ?? 1;
   bool get isDetoxActive => _storage?.isDetoxActive ?? false;
   bool get hapticsEnabled => _storage?.hapticsEnabled ?? true;
   HapticIntensity get hapticIntensity => _storage?.hapticIntensity ?? HapticIntensity.medium;
+
+  // Notifications
+  bool get notifWarnNearLimit => _storage?.notifWarnNearLimit ?? true;
+  List<String> get notifThresholds =>
+      _storage?.notifThresholds ?? const ['80%', '100%'];
+  bool get notifStreakReminder => _storage?.notifStreakReminder ?? true;
+  bool get notifFocusEnd => _storage?.notifFocusEnd ?? true;
+  bool get notifLevelUps => _storage?.notifLevelUps ?? true;
+  bool get notifWeeklyReport => _storage?.notifWeeklyReport ?? false;
+  bool get notifQuietHours => _storage?.notifQuietHours ?? true;
+  bool get anyNotificationsEnabled =>
+      _storage?.anyNotificationsEnabled ?? true;
 
   String get screenTimeFormatted {
     final mins = screenTimeMinutes;
@@ -335,6 +382,7 @@ class TrackingService extends ChangeNotifier {
     required String goal,
     required int dailyLimit,
     required List<String> platforms,
+    bool preserveExistingSettings = false,
   }) async {
     final storage = await _ensureStorage();
     final normalizedPlatforms =
@@ -342,10 +390,13 @@ class TrackingService extends ChangeNotifier {
     await storage.setSelectedGoal(goal);
     await storage.setSelectedPlatforms(normalizedPlatforms);
     await storage.setLimits(total: dailyLimit);
-    await storage.clearCustomPlatformLimits();
-    await storage.setPlatformLimitsEnabled(false);
-    // Do not auto-enable Scrola when onboarding finishes; user explicitly turns ON.
-    await storage.setTrackingEnabled(false);
+    if (!preserveExistingSettings) {
+      await storage.clearCustomPlatformLimits();
+      await storage.setPlatformLimitsEnabled(false);
+      await storage.setBlockAtLimitEnabled(goal != 'Just track for now');
+      // Do not auto-enable Scrola when onboarding finishes; user explicitly turns ON.
+      await storage.setTrackingEnabled(false);
+    }
     await storage.setOnboardingComplete(true);
     await syncLimitsWithNative();
     notifyListeners();
@@ -456,31 +507,62 @@ class TrackingService extends ChangeNotifier {
     return overlayStarted;
   }
 
+  Future<void> updateSelectedPlatforms(List<String> platforms) async {
+    final storage = await _ensureStorage();
+    await storage.setSelectedPlatforms(platforms);
+    notifyListeners();
+    await syncLimitsWithNative();
+  }
+
   Future<void> updateOverlayConfig({
     bool? stickToNotch,
     bool? expanded,
     String? size,
+    bool? reactToPace,
   }) async {
     final storage = await _ensureStorage();
     if (stickToNotch != null) await storage.setOverlayStickToNotch(stickToNotch);
     if (expanded != null) await storage.setOverlayExpanded(expanded);
     if (size != null) await storage.setOverlaySize(size);
+    if (reactToPace != null) await storage.setOverlayReactToPace(reactToPace);
+    notifyListeners();
     await syncLimitsWithNative();
     await ScrolaNativeBridge.refreshOverlayConfig();
-    notifyListeners();
   }
 
   Future<void> updateBlockingConfig({
+    bool? blockAtLimit,
     bool? nightBlock,
     bool? workBlock,
+    List<String>? nightBlockDays,
+    List<String>? workBlockDays,
     bool? strict,
+    bool? waitBeforeUnlock,
+    bool? showBrainyOnBlock,
     bool? detox,
+    int? detoxDays,
   }) async {
     final storage = await _ensureStorage();
+    if (blockAtLimit != null) await storage.setBlockAtLimitEnabled(blockAtLimit);
     if (nightBlock != null) await storage.setNightBlockEnabled(nightBlock);
     if (workBlock != null) await storage.setWorkBlockEnabled(workBlock);
+    if (nightBlockDays != null) {
+      await storage.setNightBlockDays(nightBlockDays);
+    }
+    if (workBlockDays != null) await storage.setWorkBlockDays(workBlockDays);
     if (strict != null) await storage.setStrictBlocking(strict);
-    if (detox != null) await storage.setDetoxActive(detox);
+    if (waitBeforeUnlock != null) {
+      await storage.setWaitBeforeUnlock(waitBeforeUnlock);
+    }
+    if (showBrainyOnBlock != null) {
+      await storage.setShowBrainyOnBlock(showBrainyOnBlock);
+    }
+    if (detox != null) {
+      await storage.setDetoxActive(detox, days: detoxDays);
+    } else if (detoxDays != null) {
+      await storage.setDetoxActive(storage.isDetoxActive, days: detoxDays);
+    }
+    notifyListeners();
     await syncLimitsWithNative();
     if (detox != null) {
       if (detox) {
@@ -489,7 +571,59 @@ class TrackingService extends ChangeNotifier {
         await ScrolaNativeBridge.stopOverlayService();
       }
     }
+  }
+
+  Future<bool> useEmergencyUnlock() async {
+    final storage = await _ensureStorage();
+    if (storage.emergencyUnlocksUsedToday >= 3) return false;
+    await storage.incrementEmergencyUnlocksUsed();
     notifyListeners();
+    return true;
+  }
+
+  Future<void> updateNotificationConfig({
+    bool? warnNearLimit,
+    List<String>? thresholds,
+    bool? streakReminder,
+    bool? focusEnd,
+    bool? levelUps,
+    bool? weeklyReport,
+    bool? quietHours,
+  }) async {
+    final storage = await _ensureStorage();
+    await storage.setNotificationConfig(
+      warnNearLimit: warnNearLimit,
+      thresholds: thresholds,
+      streakReminder: streakReminder,
+      focusEnd: focusEnd,
+      levelUps: levelUps,
+      weeklyReport: weeklyReport,
+      quietHours: quietHours,
+    );
+    notifyListeners();
+  }
+
+  Future<void> updateProSubscription({
+    bool? subscribed,
+    String? plan,
+  }) async {
+    final storage = await _ensureStorage();
+    await storage.setProSubscription(subscribed: subscribed, plan: plan);
+    notifyListeners();
+  }
+
+  String buildCsvExport() {
+    final buffer = StringBuffer()
+      ..writeln('date,reels,limit,focus_minutes,blocks');
+    final entries = dailyHistory.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    for (final entry in entries) {
+      final d = entry.value;
+      buffer.writeln(
+        '${entry.key},${d['reels'] ?? 0},${d['limit'] ?? totalLimit},${d['focusMinutes'] ?? 0},${d['blocks'] ?? 0}',
+      );
+    }
+    return buffer.toString();
   }
 
   Future<void> updateHapticsConfig({
@@ -614,7 +748,10 @@ class TrackingService extends ChangeNotifier {
       }
 
       notifyListeners();
-    } else if (event.eventType == 'limit_block_enforced' || event.eventType == 'focus_block_enforced') {
+    } else if (event.eventType == 'limit_block_enforced' ||
+        event.eventType == 'focus_block_enforced') {
+      final storage = await _ensureStorage();
+      await storage.incrementDailyBlocksCount();
       FocusModeService().incrementBlockedAttempt();
       await HapticService.error();
       notifyListeners();

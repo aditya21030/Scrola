@@ -73,8 +73,8 @@ class BrainLevelCard extends StatelessWidget {
           child: Row(
             children: [
               SizedBox(
-                width: 64,
-                height: 64,
+                width: 56,
+                height: 56,
                 child: CustomPaint(
                   painter: _LevelRingPainter(progress: fraction),
                   child: Center(
@@ -82,14 +82,14 @@ class BrainLevelCard extends StatelessWidget {
                       '$level',
                       style: AppTypography.numeric(
                         color: AppColors.primaryText,
-                        fontSize: 26,
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,14 +128,14 @@ class BrainLevelCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               SizedBox(
-                width: 64,
+                width: 56,
                 child: Column(
                   children: [
                     const BrainyMascot(
                       mood: BrainyMood.happy,
-                      size: 42,
+                      size: 38,
                       animate: false,
                       silhouette: true,
                     ),

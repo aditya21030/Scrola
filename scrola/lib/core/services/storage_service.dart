@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'haptic_service.dart';
@@ -19,6 +20,7 @@ class StorageService {
     if (_instance == null) {
       _prefs = await SharedPreferences.getInstance();
       _instance = StorageService._();
+      _instance!._ensureJoinedDate();
       _instance!._checkDailyReset();
       _instance!._applySavedHaptics();
     }
@@ -76,17 +78,29 @@ class StorageService {
   static const String _keyOverlayStickToNotch = 'scrola_overlay_notch';
   static const String _keyOverlayExpanded = 'scrola_overlay_expanded';
   static const String _keyOverlaySize = 'scrola_overlay_size';
+  static const String _keyOverlayReactToPace = 'scrola_overlay_react_to_pace';
 
+  static const String _keyBlockAtLimit = 'scrola_block_at_limit';
   static const String _keyNightBlock = 'scrola_night_block';
   static const String _keyWorkBlock = 'scrola_work_block';
+  static const String _keyNightBlockDays = 'scrola_night_block_days';
+  static const String _keyWorkBlockDays = 'scrola_work_block_days';
   static const String _keyStrictBlocking = 'scrola_strict_blocking';
+  static const String _keyWaitBeforeUnlock = 'scrola_wait_before_unlock';
+  static const String _keyShowBrainyOnBlock = 'scrola_show_brainy_on_block';
   static const String _keyDetoxActive = 'scrola_detox_active';
+  static const String _keyDetoxDays = 'scrola_detox_days';
+  static const String _keyDetoxEndEpochMs = 'scrola_detox_end_epoch_ms';
+  static const String _keyDailyBlocksCount = 'scrola_daily_blocks_count';
+  static const String _keyEmergencyUnlocksUsedToday =
+      'scrola_emergency_unlocks_today';
 
   static const String _keyHapticsEnabled = 'scrola_haptics_enabled';
   static const String _keyHapticIntensity = 'scrola_haptic_intensity';
 
   static const String _keyDailyXpCollectedDate = 'scrola_daily_xp_collected_date';
   static const String _keyClaimedRewards = 'scrola_claimed_rewards';
+  static const String _keyDailyHistory = 'scrola_daily_history';
 
   static const String _keyFocusActive = 'scrola_focus_active';
   static const String _keyFocusPaused = 'scrola_focus_paused';
@@ -98,6 +112,17 @@ class StorageService {
   static const String _keyDisplayName = 'scrola_display_name';
   static const String _keyUsername = 'scrola_username';
   static const String _keyEmail = 'scrola_email';
+  static const String _keyJoinedDate = 'scrola_joined_date';
+  static const String _keyIsProSubscribed = 'scrola_pro_subscribed';
+  static const String _keyProPlan = 'scrola_pro_plan';
+
+  static const String _keyNotifWarnNearLimit = 'scrola_notif_warn_near_limit';
+  static const String _keyNotifThresholds = 'scrola_notif_thresholds';
+  static const String _keyNotifStreakReminder = 'scrola_notif_streak_reminder';
+  static const String _keyNotifFocusEnd = 'scrola_notif_focus_end';
+  static const String _keyNotifLevelUps = 'scrola_notif_level_ups';
+  static const String _keyNotifWeeklyReport = 'scrola_notif_weekly_report';
+  static const String _keyNotifQuietHours = 'scrola_notif_quiet_hours';
 
   void _applySavedHaptics() {
     HapticService.isEnabled = hapticsEnabled;
@@ -105,15 +130,46 @@ class StorageService {
     HapticService.intensity = HapticIntensity.values[idx.clamp(0, 2)];
   }
 
-  String _getTodayString() {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  void _ensureJoinedDate() {
+    final existing = _prefs?.getString(_keyJoinedDate);
+    if (existing == null || existing.isEmpty) {
+      _prefs?.setString(_keyJoinedDate, _getTodayString());
+    }
   }
+
+  static String formatDateKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  String _getTodayString() => formatDateKey(DateTime.now());
 
   void _checkDailyReset() {
     final today = _getTodayString();
     final lastDate = _prefs?.getString(_keyLastDate) ?? '';
     if (today != lastDate) {
+      if (lastDate.isNotEmpty) {
+        final prevTotal = _prefs?.getInt(_keyTotalToday) ?? 0;
+        final prevFocus = _prefs?.getInt(_keyFocusMinsToday) ?? 0;
+        final prevBlocks = _prefs?.getInt(_keyDailyBlocksCount) ?? 0;
+        _saveHistoryEntrySync(
+          lastDate,
+          reels: prevTotal,
+          limit: totalLimit,
+          focusMinutes: prevFocus,
+          blocks: prevBlocks,
+        );
+        final lastDt = DateTime.tryParse(lastDate);
+        final todayDt = DateTime.tryParse(today);
+        if (lastDt != null && todayDt != null) {
+          final gapDays = todayDt.difference(lastDt).inDays;
+          if (gapDays == 1 && prevTotal <= totalLimit) {
+            final nextStreak = (_prefs?.getInt(_keyStreakDays) ?? 0) + 1;
+            _prefs?.setInt(_keyStreakDays, nextStreak);
+            _prefs?.setString(_keyLastStreakDate, lastDate);
+          } else if (prevTotal > totalLimit || gapDays > 1) {
+            _prefs?.setInt(_keyStreakDays, 0);
+          }
+        }
+      }
       _prefs?.setString(_keyLastDate, today);
       _prefs?.setInt(_keyTotalToday, 0);
       for (final platformId in supportedPlatformIds) {
@@ -123,6 +179,8 @@ class StorageService {
       _prefs?.setInt(_keyScreenTimeSec, 0);
       _prefs?.setInt(_keyFocusMinsToday, 0);
       _prefs?.setInt(_keyFocusSessionsToday, 0);
+      _prefs?.setInt(_keyDailyBlocksCount, 0);
+      _prefs?.setInt(_keyEmergencyUnlocksUsedToday, 0);
     }
   }
 
@@ -188,6 +246,75 @@ class StorageService {
   int get focusMinutesToday => _prefs?.getInt(_keyFocusMinsToday) ?? 0;
   int get focusSessionsToday => _prefs?.getInt(_keyFocusSessionsToday) ?? 0;
 
+  Map<String, Map<String, int>> _readHistoryMap() {
+    final raw = _prefs?.getString(_keyDailyHistory);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return {};
+      final result = <String, Map<String, int>>{};
+      for (final entry in decoded.entries) {
+        final key = entry.key.toString();
+        final value = entry.value;
+        if (value is Map) {
+          result[key] = {
+            'reels': (value['reels'] as num?)?.toInt() ?? 0,
+            'limit': (value['limit'] as num?)?.toInt() ?? totalLimit,
+            'focusMinutes': (value['focusMinutes'] as num?)?.toInt() ?? 0,
+            'blocks': (value['blocks'] as num?)?.toInt() ?? 0,
+          };
+        }
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  void _saveHistoryEntrySync(
+    String dateKey, {
+    required int reels,
+    required int limit,
+    required int focusMinutes,
+    required int blocks,
+  }) {
+    final map = _readHistoryMap();
+    map[dateKey] = {
+      'reels': reels,
+      'limit': limit,
+      'focusMinutes': focusMinutes,
+      'blocks': blocks,
+    };
+    if (map.length > 60) {
+      final sortedKeys = map.keys.toList()..sort();
+      for (final oldKey in sortedKeys.take(map.length - 60)) {
+        map.remove(oldKey);
+      }
+    }
+    _prefs?.setString(_keyDailyHistory, jsonEncode(map));
+  }
+
+  Future<void> _recordTodayHistory() async {
+    _saveHistoryEntrySync(
+      _getTodayString(),
+      reels: totalReelsToday,
+      limit: totalLimit,
+      focusMinutes: focusMinutesToday,
+      blocks: dailyBlocksCount,
+    );
+  }
+
+  Map<String, Map<String, int>> get dailyHistory {
+    final map = _readHistoryMap();
+    map[_getTodayString()] = {
+      'reels': totalReelsToday,
+      'limit': totalLimit,
+      'focusMinutes': focusMinutesToday,
+      'blocks': dailyBlocksCount,
+    };
+    return map;
+  }
+
   Future<void> recordReel(String platform) async {
     _checkDailyReset();
     await _prefs?.setInt(_keyTotalToday, totalReelsToday + 1);
@@ -198,12 +325,14 @@ class StorageService {
     if (normalized.isNotEmpty) {
       await _prefs?.setInt(_countKey(normalized), reelsForPlatform(normalized) + 1);
     }
+    await _recordTodayHistory();
   }
 
   Future<void> recordFocusCompleted(int minutes) async {
     _checkDailyReset();
     await _prefs?.setInt(_keyFocusMinsToday, focusMinutesToday + minutes);
     await _prefs?.setInt(_keyFocusSessionsToday, focusSessionsToday + 1);
+    await _recordTodayHistory();
   }
 
   Future<void> syncCounts({
@@ -220,6 +349,7 @@ class StorageService {
     }
     await _prefs?.setInt(_keySessionReels, session);
     await _prefs?.setInt(_keyScreenTimeSec, total * 30);
+    await _recordTodayHistory();
   }
 
   Future<void> resetSession() async {
@@ -236,6 +366,9 @@ class StorageService {
     await _prefs?.setInt(_keyScreenTimeSec, 0);
     await _prefs?.setInt(_keyFocusMinsToday, 0);
     await _prefs?.setInt(_keyFocusSessionsToday, 0);
+    await _prefs?.setInt(_keyDailyBlocksCount, 0);
+    await _prefs?.setInt(_keyEmergencyUnlocksUsedToday, 0);
+    await _recordTodayHistory();
   }
 
   // Limits
@@ -310,7 +443,7 @@ class StorageService {
   }
 
   // Gamification
-  int get streakDays => _prefs?.getInt(_keyStreakDays) ?? 7;
+  int get streakDays => _prefs?.getInt(_keyStreakDays) ?? 0;
   String get lastStreakDate => _prefs?.getString(_keyLastStreakDate) ?? '';
   int get xpTotal => _prefs?.getInt(_keyXPTotal) ?? 320;
   int get currentLevel => GamificationEngine.getLevelForXP(xpTotal).level;
@@ -425,7 +558,18 @@ class StorageService {
     await _prefs?.setString(_keyOverlaySize, size);
   }
 
+  bool get overlayReactToPace =>
+      _prefs?.getBool(_keyOverlayReactToPace) ?? true;
+  Future<void> setOverlayReactToPace(bool react) async {
+    await _prefs?.setBool(_keyOverlayReactToPace, react);
+  }
+
   // Blocking & Detox
+  bool get blockAtLimitEnabled => _prefs?.getBool(_keyBlockAtLimit) ?? true;
+  Future<void> setBlockAtLimitEnabled(bool enabled) async {
+    await _prefs?.setBool(_keyBlockAtLimit, enabled);
+  }
+
   bool get nightBlockEnabled => _prefs?.getBool(_keyNightBlock) ?? true;
   Future<void> setNightBlockEnabled(bool enabled) async {
     await _prefs?.setBool(_keyNightBlock, enabled);
@@ -436,14 +580,131 @@ class StorageService {
     await _prefs?.setBool(_keyWorkBlock, enabled);
   }
 
+  List<String> get nightBlockDays => List<String>.unmodifiable(
+      _prefs?.getStringList(_keyNightBlockDays) ??
+          const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+  Future<void> setNightBlockDays(List<String> days) async {
+    await _prefs?.setStringList(_keyNightBlockDays, days);
+  }
+
+  List<String> get workBlockDays => List<String>.unmodifiable(
+      _prefs?.getStringList(_keyWorkBlockDays) ??
+          const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+  Future<void> setWorkBlockDays(List<String> days) async {
+    await _prefs?.setStringList(_keyWorkBlockDays, days);
+  }
+
   bool get strictBlocking => _prefs?.getBool(_keyStrictBlocking) ?? false;
   Future<void> setStrictBlocking(bool strict) async {
     await _prefs?.setBool(_keyStrictBlocking, strict);
   }
 
-  bool get isDetoxActive => _prefs?.getBool(_keyDetoxActive) ?? false;
-  Future<void> setDetoxActive(bool active) async {
+  bool get waitBeforeUnlock => _prefs?.getBool(_keyWaitBeforeUnlock) ?? true;
+  Future<void> setWaitBeforeUnlock(bool wait) async {
+    await _prefs?.setBool(_keyWaitBeforeUnlock, wait);
+  }
+
+  bool get showBrainyOnBlock => _prefs?.getBool(_keyShowBrainyOnBlock) ?? true;
+  Future<void> setShowBrainyOnBlock(bool show) async {
+    await _prefs?.setBool(_keyShowBrainyOnBlock, show);
+  }
+
+  int get dailyBlocksCount => _prefs?.getInt(_keyDailyBlocksCount) ?? 0;
+  Future<void> incrementDailyBlocksCount() async {
+    _checkDailyReset();
+    await _prefs?.setInt(_keyDailyBlocksCount, dailyBlocksCount + 1);
+    await _recordTodayHistory();
+  }
+
+  int get emergencyUnlocksUsedToday =>
+      _prefs?.getInt(_keyEmergencyUnlocksUsedToday) ?? 0;
+  Future<void> incrementEmergencyUnlocksUsed() async {
+    _checkDailyReset();
+    await _prefs?.setInt(
+      _keyEmergencyUnlocksUsedToday,
+      emergencyUnlocksUsedToday + 1,
+    );
+  }
+
+  int get detoxDays => _prefs?.getInt(_keyDetoxDays) ?? 1;
+  int get detoxEndEpochMs => _prefs?.getInt(_keyDetoxEndEpochMs) ?? 0;
+
+  bool get isDetoxActive {
+    final active = _prefs?.getBool(_keyDetoxActive) ?? false;
+    if (!active) return false;
+    final endMs = detoxEndEpochMs;
+    if (endMs > 0 && DateTime.now().millisecondsSinceEpoch >= endMs) {
+      _prefs?.setBool(_keyDetoxActive, false);
+      _prefs?.setInt(_keyDetoxEndEpochMs, 0);
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> setDetoxActive(bool active, {int? days}) async {
     await _prefs?.setBool(_keyDetoxActive, active);
+    if (days != null) {
+      await _prefs?.setInt(_keyDetoxDays, days);
+    }
+    if (active) {
+      final durationDays = days ?? detoxDays;
+      final endMs = DateTime.now()
+          .add(Duration(days: durationDays.clamp(1, 30)))
+          .millisecondsSinceEpoch;
+      await _prefs?.setInt(_keyDetoxEndEpochMs, endMs);
+    } else {
+      await _prefs?.setInt(_keyDetoxEndEpochMs, 0);
+    }
+  }
+
+  // Notifications
+  bool get notifWarnNearLimit => _prefs?.getBool(_keyNotifWarnNearLimit) ?? true;
+  List<String> get notifThresholds => List<String>.unmodifiable(
+      _prefs?.getStringList(_keyNotifThresholds) ?? const ['80%', '100%']);
+  bool get notifStreakReminder =>
+      _prefs?.getBool(_keyNotifStreakReminder) ?? true;
+  bool get notifFocusEnd => _prefs?.getBool(_keyNotifFocusEnd) ?? true;
+  bool get notifLevelUps => _prefs?.getBool(_keyNotifLevelUps) ?? true;
+  bool get notifWeeklyReport => _prefs?.getBool(_keyNotifWeeklyReport) ?? false;
+  bool get notifQuietHours => _prefs?.getBool(_keyNotifQuietHours) ?? true;
+
+  bool get anyNotificationsEnabled =>
+      notifWarnNearLimit ||
+      notifStreakReminder ||
+      notifFocusEnd ||
+      notifLevelUps ||
+      notifWeeklyReport;
+
+  Future<void> setNotificationConfig({
+    bool? warnNearLimit,
+    List<String>? thresholds,
+    bool? streakReminder,
+    bool? focusEnd,
+    bool? levelUps,
+    bool? weeklyReport,
+    bool? quietHours,
+  }) async {
+    if (warnNearLimit != null) {
+      await _prefs?.setBool(_keyNotifWarnNearLimit, warnNearLimit);
+    }
+    if (thresholds != null) {
+      await _prefs?.setStringList(_keyNotifThresholds, thresholds);
+    }
+    if (streakReminder != null) {
+      await _prefs?.setBool(_keyNotifStreakReminder, streakReminder);
+    }
+    if (focusEnd != null) {
+      await _prefs?.setBool(_keyNotifFocusEnd, focusEnd);
+    }
+    if (levelUps != null) {
+      await _prefs?.setBool(_keyNotifLevelUps, levelUps);
+    }
+    if (weeklyReport != null) {
+      await _prefs?.setBool(_keyNotifWeeklyReport, weeklyReport);
+    }
+    if (quietHours != null) {
+      await _prefs?.setBool(_keyNotifQuietHours, quietHours);
+    }
   }
 
   // Haptics
@@ -463,10 +724,36 @@ class StorageService {
     await _prefs?.setInt(_keyHapticIntensity, intensity.index);
   }
 
-  // Profile
+  // Profile & Subscription
   String get displayName => _prefs?.getString(_keyDisplayName) ?? 'Alex';
   String get username => _prefs?.getString(_keyUsername) ?? 'alex';
   String get email => _prefs?.getString(_keyEmail) ?? 'alex@scrola.app';
+  String get joinedDateIso =>
+      _prefs?.getString(_keyJoinedDate) ?? _getTodayString();
+
+  String get joinedMonthYear {
+    final dt = DateTime.tryParse(joinedDateIso) ?? DateTime.now();
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[(dt.month - 1).clamp(0, 11)]} ${dt.year}';
+  }
+
+  bool get isProSubscribed => _prefs?.getBool(_keyIsProSubscribed) ?? false;
+  String get proPlan => _prefs?.getString(_keyProPlan) ?? 'yearly';
+
+  Future<void> setProSubscription({
+    bool? subscribed,
+    String? plan,
+  }) async {
+    if (subscribed != null) {
+      await _prefs?.setBool(_keyIsProSubscribed, subscribed);
+    }
+    if (plan != null) {
+      await _prefs?.setString(_keyProPlan, plan);
+    }
+  }
 
   Future<void> setProfile({
     String? displayName,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/storage_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -21,7 +22,21 @@ class BlockingDashboardScreen extends StatefulWidget {
 
 class _BlockingDashboardScreenState extends State<BlockingDashboardScreen> {
   final TrackingService _tracking = TrackingService();
-  bool _blockAtLimit = true;
+
+  int _blocksThisWeek() {
+    final now = DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final history = _tracking.dailyHistory;
+    int sum = 0;
+    for (int i = 0; i < 7; i++) {
+      final d = todayDate.subtract(Duration(days: i));
+      final key = StorageService.formatDateKey(d);
+      sum += i == 0
+          ? _tracking.dailyBlocksCount
+          : (history[key]?['blocks'] ?? 0);
+    }
+    return sum;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +48,8 @@ class _BlockingDashboardScreenState extends State<BlockingDashboardScreen> {
           final isAnyActive = _tracking.nightBlockEnabled ||
               _tracking.workBlockEnabled ||
               _tracking.isDetoxActive ||
-              _blockAtLimit;
+              _tracking.blockAtLimitEnabled;
+          final weeklyBlocks = _blocksThisWeek();
 
           return SafeArea(
             child: SingleChildScrollView(
@@ -98,9 +114,9 @@ class _BlockingDashboardScreenState extends State<BlockingDashboardScreen> {
                     child: IntrinsicHeight(
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: _BlockingStat(
-                              value: '14',
+                              value: '$weeklyBlocks',
                               label: 'Blocks this week',
                             ),
                           ),
@@ -118,9 +134,9 @@ class _BlockingDashboardScreenState extends State<BlockingDashboardScreen> {
                             color: AppColors.borderSubtle,
                             width: 1,
                           ),
-                          const Expanded(
+                          Expanded(
                             child: _BlockingStat(
-                              value: '3',
+                              value: '${_tracking.emergencyUnlocksLeft}',
                               label: 'Unlocks left',
                             ),
                           ),
@@ -153,8 +169,9 @@ class _BlockingDashboardScreenState extends State<BlockingDashboardScreen> {
                   _RuleToggleTile(
                     title: 'When daily limit is reached',
                     subtitle: 'Blocks until midnight',
-                    value: _blockAtLimit,
-                    onChanged: (v) => setState(() => _blockAtLimit = v),
+                    value: _tracking.blockAtLimitEnabled,
+                    onChanged: (v) =>
+                        _tracking.updateBlockingConfig(blockAtLimit: v),
                   ),
                   const SizedBox(height: 10),
                   ScrolaCard(

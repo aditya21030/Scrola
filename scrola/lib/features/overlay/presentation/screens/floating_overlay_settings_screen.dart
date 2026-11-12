@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -23,10 +24,6 @@ class FloatingOverlaySettingsScreen extends StatefulWidget {
 class _FloatingOverlaySettingsScreenState
     extends State<FloatingOverlaySettingsScreen> {
   final TrackingService _tracking = TrackingService();
-  bool _reactToPace = true;
-  final Map<SocialPlatform, bool> _showOverApps = {
-    for (final platform in SocialPlatform.values) platform: true,
-  };
 
   double _scaleForSize(String size) {
     switch (size) {
@@ -41,7 +38,27 @@ class _FloatingOverlaySettingsScreenState
 
   Future<void> _setOverlayEnabled(bool enabled) async {
     final started = await _tracking.toggleOverlay(enabled);
-    if (!mounted || !enabled || started || _tracking.isOverlayGranted) {
+    if (!mounted || !enabled) {
+      return;
+    }
+    if (started) {
+      final isActiveOnScreen = _tracking.isTrackingEnabled ||
+          _tracking.isDetoxActive ||
+          FocusModeService().isEnforcing;
+      if (!isActiveOnScreen) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.surfaceSolid,
+            content: Text(
+              'Floating mascot enabled! Turn Scrola ON from Home to show it.',
+              style: AppTypography.caption(color: AppColors.primaryText),
+            ),
+          ),
+        );
+      }
+      return;
+    }
+    if (_tracking.isOverlayGranted) {
       return;
     }
     final navigator = Navigator.of(context);
@@ -65,6 +82,30 @@ class _FloatingOverlaySettingsScreenState
         ),
       ),
     );
+  }
+
+  void _togglePlatform(SocialPlatform platform, bool enabled) {
+    final next = List<String>.from(_tracking.selectedPlatforms);
+    if (enabled) {
+      if (!next.contains(platform.id)) {
+        next.add(platform.id);
+      }
+    } else {
+      if (next.length <= 1 && next.contains(platform.id)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.surfaceSolid,
+            content: Text(
+              'Keep at least one platform selected.',
+              style: AppTypography.caption(color: AppColors.primaryText),
+            ),
+          ),
+        );
+        return;
+      }
+      next.remove(platform.id);
+    }
+    _tracking.updateSelectedPlatforms(next);
   }
 
   @override
@@ -244,17 +285,21 @@ class _FloatingOverlaySettingsScreenState
                                             : AppColors.primaryAccent,
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        _tracking.isOverlayEnabled
-                                            ? 'Remove floating mascot'
-                                            : 'Show floating mascot',
-                                        style: AppTypography.caption(
-                                          color: _tracking.isOverlayEnabled
-                                              ? AppColors.error
-                                              : AppColors.primaryAccent,
-                                        ).copyWith(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
+                                      Flexible(
+                                        child: Text(
+                                          _tracking.isOverlayEnabled
+                                              ? 'Remove floating mascot'
+                                              : 'Show floating mascot',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.caption(
+                                            color: _tracking.isOverlayEnabled
+                                                ? AppColors.error
+                                                : AppColors.primaryAccent,
+                                          ).copyWith(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -331,9 +376,9 @@ class _FloatingOverlaySettingsScreenState
                                   ),
                                   const SizedBox(width: 12),
                                   ScrolaToggle(
-                                    value: _reactToPace,
-                                    onChanged: (v) =>
-                                        setState(() => _reactToPace = v),
+                                    value: _tracking.overlayReactToPace,
+                                    onChanged: (v) => _tracking
+                                        .updateOverlayConfig(reactToPace: v),
                                   ),
                                 ],
                               ),
@@ -402,12 +447,11 @@ class _FloatingOverlaySettingsScreenState
                                 _AppToggleRow(
                                   platform: SocialPlatform.values[i],
                                   name: SocialPlatform.values[i].shortName,
-                                  value: _showOverApps[
-                                          SocialPlatform.values[i]] ??
-                                      true,
-                                  onChanged: (v) => setState(
-                                    () => _showOverApps[
-                                        SocialPlatform.values[i]] = v,
+                                  value: _tracking.selectedPlatforms
+                                      .contains(SocialPlatform.values[i].id),
+                                  onChanged: (v) => _togglePlatform(
+                                    SocialPlatform.values[i],
+                                    v,
                                   ),
                                 ),
                               ],

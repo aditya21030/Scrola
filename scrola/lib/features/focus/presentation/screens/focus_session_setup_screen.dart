@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/platform_icon.dart';
@@ -20,15 +21,63 @@ class FocusSessionSetupScreen extends StatefulWidget {
 
 class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
   final FocusModeService _focus = FocusModeService();
+  final TrackingService _tracking = TrackingService();
   int _minutes = 25;
-  bool _strictMode = false;
-  final Map<SocialPlatform, bool> _blockedApps = {
-    for (final platform in SocialPlatform.values)
-      platform:
-          platform == SocialPlatform.instagram ||
-          platform == SocialPlatform.youtube ||
-          platform == SocialPlatform.tiktok,
-  };
+  late bool _strictMode;
+  late final Map<SocialPlatform, bool> _blockedApps;
+
+  @override
+  void initState() {
+    super.initState();
+    _strictMode = _tracking.strictBlocking;
+    final activeSet = _tracking.activePlatforms.toSet();
+    _blockedApps = {
+      for (final platform in SocialPlatform.values)
+        platform: activeSet.contains(platform),
+    };
+  }
+
+  Future<void> _startSession() async {
+    if (_focus.isActive) {
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.cardSurface,
+          title: const Text('Replace active session?'),
+          content: const Text(
+            'Starting a new Focus session will end the current timer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Keep current'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Start new'),
+            ),
+          ],
+        ),
+      );
+      if (replace != true || !mounted) return;
+    }
+
+    final selectedIds = [
+      for (final entry in _blockedApps.entries)
+        if (entry.value) entry.key.id,
+    ];
+    if (selectedIds.isNotEmpty) {
+      await _tracking.updateSelectedPlatforms(selectedIds);
+    }
+    await _tracking.updateBlockingConfig(strict: _strictMode);
+    await _focus.startSession(minutes: _minutes);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const ActiveFocusSessionScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,26 +118,38 @@ class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
                                         (_minutes - 5).clamp(5, 120));
                                   },
                                 ),
-                                SizedBox(
-                                  width: 130,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Text(
-                                        '$_minutes',
-                                        style: AppTypography.display(),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'min',
-                                        style: AppTypography.subheading(
-                                          color: AppColors.secondaryText,
+                                Flexible(
+                                  child: ConstrainedBox(
+                                    constraints:
+                                        const BoxConstraints(minWidth: 112),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.baseline,
+                                          textBaseline:
+                                              TextBaseline.alphabetic,
+                                          children: [
+                                            Text(
+                                              '$_minutes',
+                                              style: AppTypography.display(),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'min',
+                                              style: AppTypography.subheading(
+                                                color: AppColors.secondaryText,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                                 _StepCircle(
@@ -115,7 +176,12 @@ class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
                                         setState(() => _minutes = m);
                                       },
                                       child: Container(
-                                        height: 36,
+                                        constraints:
+                                            const BoxConstraints(minHeight: 36),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 8,
+                                          horizontal: 4,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: selected
                                               ? AppColors.primaryAccent
@@ -124,15 +190,18 @@ class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
                                               BorderRadius.circular(14),
                                         ),
                                         child: Center(
-                                          child: Text(
-                                            '$m min',
-                                            style: AppTypography.caption(
-                                              color: selected
-                                                  ? AppColors.textOnAccent
-                                                  : AppColors.primaryText,
-                                            ).copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 12,
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              '$m min',
+                                              style: AppTypography.caption(
+                                                color: selected
+                                                    ? AppColors.textOnAccent
+                                                    : AppColors.primaryText,
+                                              ).copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -171,10 +240,16 @@ class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
                                 name: SocialPlatform.values[i].reelsName,
                                 value: _blockedApps[SocialPlatform.values[i]] ??
                                     false,
-                                onChanged: (v) => setState(
-                                  () =>
-                                      _blockedApps[SocialPlatform.values[i]] = v,
-                                ),
+                                onChanged: (v) {
+                                  final selectedCount = _blockedApps.values
+                                      .where((isOn) => isOn)
+                                      .length;
+                                  if (!v && selectedCount <= 1) return;
+                                  setState(
+                                    () => _blockedApps[
+                                        SocialPlatform.values[i]] = v,
+                                  );
+                                },
                               ),
                             ],
                           ],
@@ -219,14 +294,7 @@ class _FocusSessionSetupScreenState extends State<FocusSessionSetupScreen> {
               ScrolaPrimaryButton(
                 label: 'Start $_minutes min session',
                 useMediumHaptic: true,
-                onPressed: () {
-                  _focus.startSession(minutes: _minutes);
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const ActiveFocusSessionScreen(),
-                    ),
-                  );
-                },
+                onPressed: _startSession,
               ),
             ],
           ),

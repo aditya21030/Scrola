@@ -24,15 +24,21 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
   final TrackingService _tracking = TrackingService();
   _BreakdownPeriod _period = _BreakdownPeriod.today;
 
-  int _multiplier(_BreakdownPeriod period) {
-    switch (period) {
-      case _BreakdownPeriod.today:
-        return 1;
-      case _BreakdownPeriod.week:
-        return 7;
-      case _BreakdownPeriod.month:
-        return 30;
+  int _periodHistoryTotal(_BreakdownPeriod period) {
+    final todayTotal = _tracking.totalReelsToday;
+    if (period == _BreakdownPeriod.today) return todayTotal;
+    final days = period == _BreakdownPeriod.week ? 7 : 30;
+    final now = DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final history = _tracking.dailyHistory;
+    int sum = 0;
+    for (int i = 0; i < days; i++) {
+      final d = todayDate.subtract(Duration(days: i));
+      final key =
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      sum += i == 0 ? todayTotal : (history[key]?['reels'] ?? 0);
     }
+    return sum;
   }
 
   String _periodSuffix(_BreakdownPeriod period) {
@@ -40,10 +46,88 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
       case _BreakdownPeriod.today:
         return 'reels today';
       case _BreakdownPeriod.week:
-        return 'reels this week';
+        return 'reels past 7d';
       case _BreakdownPeriod.month:
-        return 'reels this month';
+        return 'reels past 30d';
     }
+  }
+
+  Future<void> _showManageAppsSheet() async {
+    final selected = Set<String>.from(_tracking.selectedPlatforms);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.cardSurface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Tracked apps', style: AppTypography.heading()),
+                const SizedBox(height: 6),
+                Text(
+                  'Choose which short-video feeds Scrola counts.',
+                  style: AppTypography.caption(color: AppColors.secondaryText),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final platform in SocialPlatform.values)
+                      FilterChip(
+                        selected: selected.contains(platform.id),
+                        label: Text(platform.shortName),
+                        selectedColor:
+                            AppColors.primaryAccent.withValues(alpha: 0.24),
+                        checkmarkColor: AppColors.primaryAccent,
+                        backgroundColor: AppColors.elevatedSurface,
+                        labelStyle: AppTypography.caption(
+                          color: selected.contains(platform.id)
+                              ? AppColors.primaryAccent
+                              : AppColors.primaryText,
+                        ),
+                        onSelected: (isOn) {
+                          HapticService.subtle();
+                          setModalState(() {
+                            if (isOn) {
+                              selected.add(platform.id);
+                            } else if (selected.length > 1) {
+                              selected.remove(platform.id);
+                            }
+                          });
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryAccent,
+                    foregroundColor: AppColors.textOnAccent,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  onPressed: () async {
+                    await _tracking.updateSelectedPlatforms(selected.toList());
+                    if (ctx.mounted) Navigator.of(ctx).pop();
+                  },
+                  child: const Text('Save apps'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -53,18 +137,19 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
       body: ListenableBuilder(
         listenable: _tracking,
         builder: (context, _) {
-          final m = _multiplier(_period);
           final visiblePlatforms = _tracking.visiblePlatforms;
           final items = visiblePlatforms.map((platform) {
             return _PlatformItem(
               platform: platform,
               name: platform.reelsName,
-              count: _tracking.reelsForId(platform.id) * m,
-              limit: _tracking.limitForId(platform.id) * m,
+              count: _tracking.reelsForId(platform.id),
+              limit: _tracking.limitForId(platform.id),
               color: platform.brandColor,
             );
           }).toList();
-          final total = items.fold<int>(0, (sum, item) => sum + item.count);
+          final todayTotal =
+              items.fold<int>(0, (sum, item) => sum + item.count);
+          final periodTotal = _periodHistoryTotal(_period);
 
           return SafeArea(
             child: SingleChildScrollView(
@@ -74,21 +159,51 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
                 children: [
                   ScrolaAppBar(
                     title: 'Platforms',
-                    trailing: GestureDetector(
-                      onTap: () {
-                        HapticService.subtle();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const PlatformLimitsScreen(),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            HapticService.subtle();
+                            _showManageAppsSheet();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            child: Text(
+                              'Apps',
+                              style: AppTypography.caption(
+                                color: AppColors.secondaryText,
+                              ).copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                      child: Text(
-                        'Limits',
-                        style: AppTypography.caption(
-                          color: AppColors.primaryAccent,
-                        ).copyWith(fontWeight: FontWeight.w700, fontSize: 14),
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            HapticService.subtle();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const PlatformLimitsScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Limits',
+                            style: AppTypography.caption(
+                              color: AppColors.primaryAccent,
+                            ).copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -131,25 +246,31 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
                                   .toList(),
                             ),
                             child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '$total',
-                                    style: AppTypography.numeric(
-                                      fontSize: 40,
-                                      fontWeight: FontWeight.w800,
-                                      height: 1.05,
-                                    ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '$periodTotal',
+                                        style: AppTypography.numeric(
+                                          fontSize: 40,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.05,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _periodSuffix(_period),
+                                        style: AppTypography.caption(
+                                          color: AppColors.secondaryText,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    _periodSuffix(_period),
-                                    style: AppTypography.caption(
-                                      color: AppColors.secondaryText,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
@@ -157,11 +278,21 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
                       ],
                     ),
                   ),
+                  if (_period != _BreakdownPeriod.today) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'App shares below reflect today\'s per-app tracking.',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.caption(
+                        color: AppColors.secondaryText,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   ...items.map((item) {
-                    final share = total == 0
+                    final share = todayTotal == 0
                         ? 0
-                        : ((item.count / total) * 100).round();
+                        : ((item.count / todayTotal) * 100).round();
                     final limitProgress = item.limit == 0
                         ? 0.0
                         : (item.count / item.limit).clamp(0.0, 1.0);
@@ -295,18 +426,30 @@ class _DonutBreakdownPainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    final total = slices.fold<double>(0, (s, e) => s + e.value);
+    final activeSlices = slices.where((s) => s.value > 0).toList();
+    final total = activeSlices.fold<double>(0, (s, e) => s + e.value);
     if (total <= 0) return;
 
+    if (activeSlices.length == 1) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = activeSlices.first.color
+          ..strokeWidth = stroke
+          ..style = PaintingStyle.stroke,
+      );
+      return;
+    }
+
     double startAngle = -math.pi / 2;
-    const gap = 0.06;
-    for (final slice in slices) {
-      if (slice.value <= 0) continue;
+    const gap = 0.22;
+    for (final slice in activeSlices) {
       final fullSweep = (slice.value / total) * 2 * math.pi;
-      final sweep = math.max(0.04, fullSweep - gap);
+      final sweep = math.max(0.02, fullSweep - gap);
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
-        startAngle,
+        startAngle + gap / 2,
         sweep,
         false,
         Paint()

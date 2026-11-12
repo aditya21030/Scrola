@@ -18,7 +18,13 @@ class ScrollDetoxScreen extends StatefulWidget {
 
 class _ScrollDetoxScreenState extends State<ScrollDetoxScreen> {
   final TrackingService _tracking = TrackingService();
-  int _days = 3;
+  late int _days;
+
+  @override
+  void initState() {
+    super.initState();
+    _days = _tracking.detoxDays;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +45,7 @@ class _ScrollDetoxScreenState extends State<ScrollDetoxScreen> {
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const SizedBox(height: 8),
                           BrainyMascot(
@@ -62,61 +69,58 @@ class _ScrollDetoxScreenState extends State<ScrollDetoxScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                for (int i = 0; i < 3; i++) ...[
-                                  if (i > 0) const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Builder(
-                                      builder: (context) {
-                                        const durations = [1, 3, 7];
-                                        final d = durations[i];
-                                        final selected = _days == d;
-                                        return ScrolaSelectableCard(
-                                          isSelected: selected,
-                                          checkPosition:
-                                              ScrolaCheckPosition.topRight,
-                                          checkBadgeSize: 16,
-                                          onTap: () {
-                                            HapticService.subtle();
-                                            setState(() => _days = d);
-                                          },
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 16,
-                                            horizontal: 8,
-                                          ),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                '$d',
-                                                style: AppTypography.numeric(
-                                                  fontSize: 28,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: selected
-                                                      ? AppColors.primaryAccent
-                                                      : AppColors.primaryText,
-                                                ),
+                          Row(
+                            children: [
+                              for (int i = 0; i < 3; i++) ...[
+                                if (i > 0) const SizedBox(width: 8),
+                                Expanded(
+                                  child: Builder(
+                                    builder: (context) {
+                                      const durations = [1, 3, 7];
+                                      final d = durations[i];
+                                      final selected = _days == d;
+                                      return ScrolaSelectableCard(
+                                        isSelected: selected,
+                                        checkPosition:
+                                            ScrolaCheckPosition.topRight,
+                                        checkBadgeSize: 16,
+                                        onTap: () {
+                                          HapticService.subtle();
+                                          setState(() => _days = d);
+                                        },
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                          horizontal: 8,
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              '$d',
+                                              style: AppTypography.numeric(
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.w800,
+                                                color: selected
+                                                    ? AppColors.primaryAccent
+                                                    : AppColors.primaryText,
                                               ),
-                                              Text(
-                                                d == 1 ? 'day' : 'days',
-                                                style: AppTypography.caption(
-                                                  color:
-                                                      AppColors.secondaryText,
-                                                ),
+                                            ),
+                                            Text(
+                                              d == 1 ? 'day' : 'days',
+                                              style: AppTypography.caption(
+                                                color:
+                                                    AppColors.secondaryText,
                                               ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
-                                ],
+                                ),
                               ],
-                            ),
+                            ],
                           ),
                           const SizedBox(height: 18),
                           ScrolaCard(
@@ -148,28 +152,32 @@ class _ScrollDetoxScreenState extends State<ScrollDetoxScreen> {
                             ),
                             borderColor:
                                 AppColors.primaryAccent.withValues(alpha: 0.35),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Finish for ',
-                                  style: AppTypography.caption(
-                                    color: AppColors.secondaryText,
-                                  ),
+                            child: Center(
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: 'Complete $_days ${_days == 1 ? 'day' : 'days'} for ',
+                                      style: AppTypography.caption(
+                                        color: AppColors.secondaryText,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: '+200 XP ',
+                                      style: AppTypography.caption(
+                                        color: AppColors.primaryAccent,
+                                      ).copyWith(fontWeight: FontWeight.w800),
+                                    ),
+                                    TextSpan(
+                                      text: 'and Detox Day badge',
+                                      style: AppTypography.caption(
+                                        color: AppColors.secondaryText,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  '+200 XP ',
-                                  style: AppTypography.caption(
-                                    color: AppColors.primaryAccent,
-                                  ).copyWith(fontWeight: FontWeight.w800),
-                                ),
-                                Text(
-                                  'and the Zen badge',
-                                  style: AppTypography.caption(
-                                    color: AppColors.secondaryText,
-                                  ),
-                                ),
-                              ],
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
                         ],
@@ -181,15 +189,20 @@ class _ScrollDetoxScreenState extends State<ScrollDetoxScreen> {
                     label: isActive
                         ? 'End detox early'
                         : 'Start $_days day detox',
-                    onPressed: () {
+                    onPressed: () async {
                       if (isActive) {
                         HapticService.warning();
-                        _tracking.updateBlockingConfig(detox: false);
+                        await _tracking.updateBlockingConfig(detox: false);
                       } else {
                         HapticService.celebratory();
-                        _tracking.updateBlockingConfig(detox: true);
+                        await _tracking.updateBlockingConfig(
+                          detox: true,
+                          detoxDays: _days,
+                        );
                       }
-                      Navigator.of(context).pop();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
                     },
                   ),
                 ],

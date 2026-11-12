@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/storage_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/platform_icon.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import 'live_tracking_screen.dart';
@@ -31,29 +34,74 @@ class DailyScrollHistoryScreen extends StatelessWidget {
         builder: (context, _) {
           final today = tracking.totalReelsToday;
           final limit = math.max(1, tracking.totalLimit);
-          final bars = [
-            _DayBar('M', (limit * 0.72).round()),
-            _DayBar('T', (limit * 0.65).round()),
-            _DayBar('W', (limit * 0.85).round()),
-            _DayBar('T', limit + 4),
-            _DayBar('F', (limit * 0.78).round()),
-            _DayBar('S', (limit * 0.70).round()),
-            _DayBar('S', today),
-          ];
-          final avg = (bars.fold<int>(0, (s, b) => s + b.count) / 7).round();
+          final history = tracking.dailyHistory;
+          final now = DateTime.now();
+          final todayDate = DateTime(now.year, now.month, now.day);
+          final monday = todayDate.subtract(Duration(days: now.weekday - 1));
+          const dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+          final bars = List<_DayBar>.generate(7, (i) {
+            final d = DateTime(monday.year, monday.month, monday.day + i);
+            final key = StorageService.formatDateKey(d);
+            final count = d == todayDate
+                ? today
+                : (history[key]?['reels'] ?? 0);
+            return _DayBar(dayLetters[i], count);
+          });
+
+          final daysWithData = bars.take(now.weekday).toList();
+          final avg = daysWithData.isEmpty
+              ? today
+              : (daysWithData.fold<int>(0, (s, b) => s + b.count) /
+                      daysWithData.length)
+                  .round();
           final maxBar = math.max(
             limit + 8,
             bars.map((b) => b.count).reduce(math.max),
           );
 
-          final logEntries = [
-            _LogEntry('Today', 'Instagram, YouTube', today, limit),
-            _LogEntry('Yesterday', 'Instagram, Facebook', (limit * 0.72).round(),
-                limit),
-            _LogEntry('Thursday', 'Instagram, YouTube', limit + 4, limit),
-            _LogEntry('Wednesday', 'YouTube, Snapchat', (limit * 0.65).round(),
-                limit),
-          ];
+          final activeAppNames = tracking.activePlatforms
+              .map((p) => p.shortName)
+              .join(', ');
+          final platformSummary =
+              activeAppNames.isEmpty ? 'No apps selected' : activeAppNames;
+
+          final sortedKeys = history.keys.toList()
+            ..sort((a, b) => b.compareTo(a));
+          final logEntries = sortedKeys.take(7).map((key) {
+            final entry = history[key]!;
+            final dt = DateTime.tryParse(key);
+            String label = key;
+            if (dt != null) {
+              final diff = todayDate
+                  .difference(DateTime(dt.year, dt.month, dt.day))
+                  .inDays;
+              if (diff == 0) {
+                label = 'Today';
+              } else if (diff == 1) {
+                label = 'Yesterday';
+              } else {
+                const weekdays = [
+                  'Monday',
+                  'Tuesday',
+                  'Wednesday',
+                  'Thursday',
+                  'Friday',
+                  'Saturday',
+                  'Sunday',
+                ];
+                label = weekdays[dt.weekday - 1];
+              }
+            }
+            return _LogEntry(
+              label,
+              platformSummary,
+              key == StorageService.formatDateKey(todayDate)
+                  ? today
+                  : (entry['reels'] ?? 0),
+              entry['limit'] ?? limit,
+            );
+          }).toList();
 
           return SafeArea(
             bottom: false,
@@ -119,53 +167,70 @@ class DailyScrollHistoryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'DAILY AVERAGE',
-                            style: AppTypography.label(
-                              color: AppColors.secondaryText,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'DAILY AVERAGE',
+                              style: AppTypography.label(
+                                color: AppColors.secondaryText,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                '$avg',
-                                style: AppTypography.numeric(
-                                  fontSize: 44,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.05,
+                            const SizedBox(height: 2),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '$avg',
+                                  style: AppTypography.numeric(
+                                    fontSize: 44,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.05,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'reels',
-                                style: AppTypography.subheading(
-                                  color: AppColors.secondaryText,
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    'reels',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.subheading(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.successBackground,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                          '12% less than last week',
-                          style: AppTypography.caption(
-                            color: AppColors.success,
-                          ).copyWith(fontWeight: FontWeight.w700),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: today <= limit
+                                ? AppColors.successBackground
+                                : AppColors.warningBackground,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Text(
+                            today <= limit
+                                ? '${tracking.remainingReels} left today'
+                                : '${today - limit} over today',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.caption(
+                              color: today <= limit
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ).copyWith(fontWeight: FontWeight.w700),
+                          ),
                         ),
                       ),
                     ],
@@ -332,10 +397,22 @@ class DailyScrollHistoryScreen extends StatelessWidget {
                         onTap: () {
                           HapticService.light();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Weekly CSV report copied to clipboard.'),
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              margin: EdgeInsets.fromLTRB(
+                                16,
+                                0,
+                                16,
+                                showBack ? 16 : 96,
+                              ),
+                              content: const Text(
+                                'Daily history CSV copied to clipboard.',
+                              ),
                             ),
                           );
+                          Clipboard.setData(
+                            ClipboardData(text: tracking.buildCsvExport()),
+                          ).catchError((_) {});
                         },
                         child: Text(
                           'Export',

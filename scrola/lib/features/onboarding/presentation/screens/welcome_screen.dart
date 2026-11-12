@@ -20,6 +20,7 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _floatController;
+  bool _completingQuickStart = false;
 
   @override
   void initState() {
@@ -189,21 +190,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                             ),
                             const SizedBox(height: 10),
                             ScrolaLinkButton(
-                              label: 'I already have an account',
+                              label: 'Skip setup & use defaults',
                               onPressed: () async {
-                                await TrackingService().completeOnboarding(
-                                  goal: 'Stay under a daily limit',
-                                  dailyLimit: 40,
-                                  platforms: ['instagram', 'youtube'],
-                                );
-                                await HapticService.medium();
-                                if (!context.mounted) return;
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                    builder: (_) => const MainShell(),
-                                  ),
-                                  (_) => false,
-                                );
+                                if (_completingQuickStart) return;
+                                _completingQuickStart = true;
+                                try {
+                                  await TrackingService().completeOnboarding(
+                                    goal: 'Stay under a daily limit',
+                                    dailyLimit: 40,
+                                    platforms: const ['instagram', 'youtube'],
+                                  );
+                                  await HapticService.medium();
+                                  if (!context.mounted) return;
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (_) => const MainShell(),
+                                    ),
+                                    (_) => false,
+                                  );
+                                } finally {
+                                  if (mounted) _completingQuickStart = false;
+                                }
                               },
                             ),
                           ],

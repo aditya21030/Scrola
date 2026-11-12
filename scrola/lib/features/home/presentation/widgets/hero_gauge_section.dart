@@ -197,25 +197,31 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                 style: AppTypography.label(color: AppColors.secondaryText),
               ),
               const SizedBox(height: 2),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    '${widget.reelsToday}',
-                    style: AppTypography.heroDisplay(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${widget.reelsToday}',
+                        style: AppTypography.heroDisplay(),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '/ $safeLimit',
+                        style: AppTypography.numeric(
+                          color: AppColors.secondaryText,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '/ $safeLimit',
-                    style: AppTypography.numeric(
-                      color: AppColors.secondaryText,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -284,6 +290,7 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                     isOverlayEnabled: widget.isOverlayEnabled,
                     isOverlayGranted: widget.isOverlayGranted,
                     isTracking: widget.isTracking,
+                    isEnabled: !widget.isLaunchingToNotch,
                     onTap: widget.onToggleOverlay!,
                   ),
                 ],
@@ -300,12 +307,14 @@ class _FloatingMascotQuickChip extends StatelessWidget {
   final bool isOverlayEnabled;
   final bool isOverlayGranted;
   final bool isTracking;
+  final bool isEnabled;
   final VoidCallback onTap;
 
   const _FloatingMascotQuickChip({
     required this.isOverlayEnabled,
     required this.isOverlayGranted,
     required this.isTracking,
+    this.isEnabled = true,
     required this.onTap,
   });
 
@@ -334,10 +343,12 @@ class _FloatingMascotQuickChip extends StatelessWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        HapticService.subtle();
-        onTap();
-      },
+      onTap: isEnabled
+          ? () {
+              HapticService.subtle();
+              onTap();
+            }
+          : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(

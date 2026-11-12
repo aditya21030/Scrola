@@ -35,7 +35,9 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                     HapticService.light();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Checked Google Play for previous purchases.'),
+                        content: Text(
+                          'Google Play Billing is not connected in this preview build.',
+                        ),
                       ),
                     );
                   },
@@ -134,27 +136,27 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                               proVal: '✓',
                             ),
                             const _CompareRow(
-                              feature: 'Floating counter',
+                              feature: 'Floating counter & skins',
                               freeVal: '✓',
                               proVal: '✓',
                             ),
                             const _CompareRow(
-                              feature: 'Weekly report',
+                              feature: 'Night & Work schedules',
                               freeVal: '✓',
                               proVal: '✓',
                             ),
                             const _CompareRow(
-                              feature: 'Monthly trends',
+                              feature: 'Monthly trends & CSV',
                               freeVal: '–',
                               proVal: '✓',
                             ),
                             const _CompareRow(
-                              feature: 'Block schedules',
-                              freeVal: '1',
-                              proVal: 'Unlimited',
+                              feature: 'Custom schedules',
+                              freeVal: '–',
+                              proVal: '✓',
                             ),
                             const _CompareRow(
-                              feature: 'Extra Brainy skins',
+                              feature: 'Cloud backup & sync',
                               freeVal: '–',
                               proVal: '✓',
                             ),
@@ -214,36 +216,41 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Yearly',
-                                          style: AppTypography.subheading()
-                                              .copyWith(fontSize: 15),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 26),
+                                      child: Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Yearly',
+                                            style: AppTypography.subheading()
+                                                .copyWith(fontSize: 15),
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primaryAccent,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            'Save 48%',
-                                            style: AppTypography.caption(
-                                              color: AppColors.textOnAccent,
-                                            ).copyWith(
-                                              fontSize: 9.5,
-                                              fontWeight: FontWeight.w800,
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryAccent,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              'Save 48%',
+                                              style: AppTypography.caption(
+                                                color: AppColors.textOnAccent,
+                                              ).copyWith(
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.w800,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
@@ -276,11 +283,11 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                     ? 'Continue with Yearly'
                     : 'Continue with Monthly',
                 onPressed: () {
-                  HapticService.celebratory();
+                  HapticService.light();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'Play Billing is ready when published to Google Play.',
+                        'Subscriptions require a Google Play release build.',
                       ),
                     ),
                   );

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
@@ -34,152 +35,170 @@ class _ReelLimitSetupScreenState extends State<ReelLimitSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final minutes = (_limit * 1.35).round();
+    final minutes = (_limit * 30 / 60).round();
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const ScrolaAppBar(title: 'Daily limit'),
-              const Spacer(),
-              Center(
-                child: Column(
-                  children: [
-                    Text(
-                      'REELS PER DAY',
-                      style: AppTypography.label(color: AppColors.secondaryText),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _CircleStepBtn(
-                          icon: Icons.remove_rounded,
-                          onTap: () => _step(-5),
-                        ),
-                        SizedBox(
-                          width: 140,
-                          child: Center(
-                            child: Text(
-                              '$_limit',
-                              style: AppTypography.heroDisplay(),
-                            ),
-                          ),
-                        ),
-                        _CircleStepBtn(
-                          icon: Icons.add_rounded,
-                          onTap: () => _step(5),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'about $minutes min a day',
-                      style: AppTypography.body(color: AppColors.secondaryText),
-                    ),
-                  ],
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: math.max(0, constraints.maxHeight - 32),
               ),
-              const SizedBox(height: 28),
-              Row(
-                children: [20, 30, 40, 60].map((preset) {
-                  final selected = _limit == preset;
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticService.subtle();
-                          setState(() => _limit = preset);
-                        },
-                        child: Container(
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? AppColors.primaryAccent
-                                : AppColors.surfaceSolid,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: selected
-                                  ? AppColors.primaryAccent
-                                  : AppColors.borderSubtle,
-                            ),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const ScrolaAppBar(title: 'Daily limit'),
+                    const Spacer(),
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            'REELS PER DAY',
+                            style: AppTypography.label(
+                                color: AppColors.secondaryText),
                           ),
-                          child: Center(
-                            child: Text(
-                              '$preset',
-                              style: AppTypography.numeric(
-                                color: selected
-                                    ? AppColors.textOnAccent
-                                    : AppColors.primaryText,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _CircleStepBtn(
+                                icon: Icons.remove_rounded,
+                                onTap: () => _step(-5),
+                              ),
+                              SizedBox(
+                                width: 140,
+                                child: Center(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      '$_limit',
+                                      style: AppTypography.heroDisplay(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              _CircleStepBtn(
+                                icon: Icons.add_rounded,
+                                onTap: () => _step(5),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'about $minutes min a day',
+                            style: AppTypography.body(
+                                color: AppColors.secondaryText),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [20, 30, 40, 60].map((preset) {
+                        final selected = _limit == preset;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: GestureDetector(
+                              onTap: () {
+                                HapticService.subtle();
+                                setState(() => _limit = preset);
+                              },
+                              child: Container(
+                                constraints: const BoxConstraints(minHeight: 46),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? AppColors.primaryAccent
+                                      : AppColors.surfaceSolid,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: selected
+                                        ? AppColors.primaryAccent
+                                        : AppColors.borderSubtle,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '$preset',
+                                    style: AppTypography.numeric(
+                                      color: selected
+                                          ? AppColors.textOnAccent
+                                          : AppColors.primaryText,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-              ScrolaCard(
-                padding: const EdgeInsets.all(18),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryAccent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.trending_down_rounded,
-                        color: AppColors.primaryAccent,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 24),
+                    ScrolaCard(
+                      padding: const EdgeInsets.all(18),
+                      child: Row(
                         children: [
-                          Text(
-                            'Lower it gradually',
-                            style: AppTypography.subheading()
-                                .copyWith(fontSize: 15),
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryAccent
+                                  .withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.trending_down_rounded,
+                              color: AppColors.primaryAccent,
+                              size: 22,
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Drop the limit by 5 reels each week.',
-                            style: AppTypography.caption(
-                              color: AppColors.secondaryText,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Lower it gradually',
+                                  style: AppTypography.subheading()
+                                      .copyWith(fontSize: 15),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Drop the limit by 5 reels each week.',
+                                  style: AppTypography.caption(
+                                    color: AppColors.secondaryText,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const Spacer(),
+                    const SizedBox(height: 16),
+                    ScrolaPrimaryButton(
+                      label: 'Save limit',
+                      useMediumHaptic: true,
+                      onPressed: () async {
+                        await _tracking.updateLimits(total: _limit);
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                    ),
                   ],
                 ),
               ),
-              const Spacer(),
-              ScrolaPrimaryButton(
-                label: 'Save limit',
-                useMediumHaptic: true,
-                onPressed: () async {
-                  await _tracking.updateLimits(total: _limit);
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-            ],
+            ),
           ),
         ),
       ),

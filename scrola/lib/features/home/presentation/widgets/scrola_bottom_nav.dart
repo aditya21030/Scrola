@@ -30,12 +30,13 @@ class ScrolaBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16,
         0,
         16,
-        MediaQuery.of(context).padding.bottom > 0 ? 12 : 22,
+        bottomInset + 12,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(34),

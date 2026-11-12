@@ -249,4 +249,148 @@ class GamificationEngine {
     }
     return evolutionStages.last;
   }
+
+  /// Progress within the current evolution stage (`0.0`..`1.0`), spanning
+  /// multiple levels so evolution progress does not reset mid-stage.
+  static double getStageProgress(int totalXP) {
+    final safeXP = totalXP < 0 ? 0 : totalXP;
+    final info = getLevelForXP(safeXP);
+    final currentStage = getStageForLevel(info.level);
+    final stageIdx = evolutionStages.indexWhere(
+      (s) => s.stageNumber == currentStage.stageNumber,
+    );
+    if (stageIdx < 0 || stageIdx >= evolutionStages.length - 1) {
+      return 1.0;
+    }
+    final nextStage = evolutionStages[stageIdx + 1];
+    final stageStartXP = levels
+        .firstWhere(
+          (l) => l.level == currentStage.minLevel,
+          orElse: () => levels.first,
+        )
+        .minXP;
+    final nextStageStartXP = levels
+        .firstWhere(
+          (l) => l.level == nextStage.minLevel,
+          orElse: () => levels.last,
+        )
+        .minXP;
+    final span = (nextStageStartXP - stageStartXP).clamp(1, 1 << 30);
+    return ((safeXP - stageStartXP) / span).clamp(0.0, 1.0);
+  }
+
+  /// Counts how many Brainy skins are unlocked at [level].
+  static int unlockedSkinCount(int level) {
+    return BrainySkin.values
+        .where((skin) => level >= unlockLevelForSkin(skin))
+        .length;
+  }
+
+  /// Evaluates real badge unlock status from current user metrics.
+  static List<AchievementBadge> evaluateBadges({
+    required int streakDays,
+    required int totalReelsToday,
+    required int totalLimit,
+    required bool isTrackingEnabled,
+    required int focusMinutesToday,
+    required int focusSessionsToday,
+    required bool nightBlockEnabled,
+    required bool isDetoxActive,
+    required bool isDetoxCompleted,
+    required int currentLevel,
+  }) {
+    final underLimit = totalLimit > 0 && totalReelsToday <= totalLimit;
+    return [
+      AchievementBadge(
+        id: 'streak_7',
+        title: '7 Day Streak',
+        category: 'Streaks',
+        xpLabel: '+50 XP',
+        description: 'Stay under your daily limit for 7 days.',
+        unlocked: streakDays >= 7,
+      ),
+      AchievementBadge(
+        id: 'under_limit',
+        title: 'Under Limit',
+        category: 'Limits',
+        xpLabel: '+25 XP',
+        description: 'Keep tracking active while under today\'s limit.',
+        unlocked: isTrackingEnabled && underLimit,
+      ),
+      AchievementBadge(
+        id: 'first_count',
+        title: 'First Count',
+        category: 'Limits',
+        xpLabel: '+15 XP',
+        description: 'Log your first counted short-form video.',
+        unlocked: totalReelsToday > 0 || streakDays > 0,
+      ),
+      AchievementBadge(
+        id: 'focus_starter',
+        title: 'Focus Starter',
+        category: 'Focus',
+        xpLabel: '+30 XP',
+        description: 'Complete at least one Focus session.',
+        unlocked: focusSessionsToday >= 1 || focusMinutesToday >= 5,
+      ),
+      AchievementBadge(
+        id: 'deep_focus_60',
+        title: 'Deep Focus',
+        category: 'Focus',
+        xpLabel: '+40 XP',
+        description: 'Reach 60 minutes of Focus time in a day.',
+        unlocked: focusMinutesToday >= 60,
+      ),
+      AchievementBadge(
+        id: 'streak_14',
+        title: '14 Day Streak',
+        category: 'Streaks',
+        xpLabel: '+100 XP',
+        description: 'Maintain an under-limit streak for two weeks.',
+        unlocked: streakDays >= 14,
+      ),
+      AchievementBadge(
+        id: 'night_owl',
+        title: 'Night Owl',
+        category: 'Limits',
+        xpLabel: '+40 XP',
+        description: 'Enable Night Block while tracking is active.',
+        unlocked: isTrackingEnabled && nightBlockEnabled,
+      ),
+      AchievementBadge(
+        id: 'detox_day',
+        title: 'Detox Day',
+        category: 'Focus',
+        xpLabel: '+75 XP',
+        description: 'Start or complete a Scroll Detox pause.',
+        unlocked: isDetoxActive || isDetoxCompleted,
+      ),
+      AchievementBadge(
+        id: 'level_5',
+        title: 'Bright Brain',
+        category: 'Streaks',
+        xpLabel: '+50 XP',
+        description: 'Reach Level 5 with Brainy.',
+        unlocked: currentLevel >= 5,
+      ),
+    ];
+  }
+}
+
+class AchievementBadge {
+  final String id;
+  final String title;
+  final String category;
+  final String xpLabel;
+  final String description;
+  final bool unlocked;
+
+  const AchievementBadge({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.xpLabel,
+    required this.description,
+    required this.unlocked,
+  });
 }

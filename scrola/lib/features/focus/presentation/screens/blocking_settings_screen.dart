@@ -17,15 +17,6 @@ class BlockingSettingsScreen extends StatefulWidget {
 
 class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
   final TrackingService _tracking = TrackingService();
-  bool _waitBeforeUnlock = true;
-  bool _showBrainy = true;
-  final Map<SocialPlatform, bool> _apps = {
-    for (final platform in SocialPlatform.values)
-      platform:
-          platform == SocialPlatform.instagram ||
-          platform == SocialPlatform.youtube ||
-          platform == SocialPlatform.tiktok,
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +137,7 @@ class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    '5 minutes, 3 per day',
+                                    '5 min pass · ${_tracking.emergencyUnlocksLeft} left today',
                                     style: AppTypography.caption(
                                       color: AppColors.secondaryText,
                                     ),
@@ -179,9 +170,10 @@ class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   ScrolaToggle(
-                                    value: _waitBeforeUnlock,
+                                    value: _tracking.waitBeforeUnlock,
                                     onChanged: (v) =>
-                                        setState(() => _waitBeforeUnlock = v),
+                                        _tracking.updateBlockingConfig(
+                                            waitBeforeUnlock: v),
                                   ),
                                 ],
                               ),
@@ -211,9 +203,10 @@ class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   ScrolaToggle(
-                                    value: _showBrainy,
+                                    value: _tracking.showBrainyOnBlock,
                                     onChanged: (v) =>
-                                        setState(() => _showBrainy = v),
+                                        _tracking.updateBlockingConfig(
+                                            showBrainyOnBlock: v),
                                   ),
                                 ],
                               ),
@@ -245,12 +238,20 @@ class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
                                 _BlockAppToggle(
                                   platform: SocialPlatform.values[i],
                                   name: SocialPlatform.values[i].shortName,
-                                  value:
-                                      _apps[SocialPlatform.values[i]] ?? false,
-                                  onChanged: (v) => setState(
-                                    () =>
-                                        _apps[SocialPlatform.values[i]] = v,
-                                  ),
+                                  value: _tracking.selectedPlatforms
+                                      .contains(SocialPlatform.values[i].id),
+                                  onChanged: (v) {
+                                    final next = Set<String>.from(
+                                        _tracking.selectedPlatforms);
+                                    final id = SocialPlatform.values[i].id;
+                                    if (v) {
+                                      next.add(id);
+                                    } else if (next.length > 1) {
+                                      next.remove(id);
+                                    }
+                                    _tracking.updateSelectedPlatforms(
+                                        next.toList());
+                                  },
                                 ),
                               ],
                             ],

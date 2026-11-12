@@ -20,7 +20,6 @@ class TrackingStatusScreen extends StatefulWidget {
 class _TrackingStatusScreenState extends State<TrackingStatusScreen>
     with WidgetsBindingObserver {
   final TrackingService _tracking = TrackingService();
-  bool _batteryOptimized = false;
 
   @override
   void initState() {
@@ -51,7 +50,7 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen>
         builder: (context, _) {
           final accessOn = _tracking.isAccessibilityGranted;
           final overlayOn = _tracking.isOverlayGranted;
-          final active = accessOn && _tracking.isTrackingEnabled && !_batteryOptimized;
+          final active = accessOn && _tracking.isTrackingEnabled;
 
           return SafeArea(
             child: Padding(
@@ -118,13 +117,17 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen>
                       children: [
                         _StatusCheckRow(
                           title: 'Scrola master switch',
-                          subtitle: _tracking.isTrackingEnabled
-                              ? 'Monitoring active feeds'
-                              : 'Paused until you turn Scrola on',
+                          subtitle: !accessOn
+                              ? 'Accessibility permission needed first'
+                              : (_tracking.isTrackingEnabled
+                                  ? 'Monitoring active feeds'
+                                  : 'Paused until you turn Scrola on'),
                           isOk: _tracking.isTrackingEnabled && accessOn,
-                          actionLabel: _tracking.isTrackingEnabled
-                              ? 'Turn Off'
-                              : 'Turn On',
+                          actionLabel: !accessOn
+                              ? 'Enable'
+                              : (_tracking.isTrackingEnabled
+                                  ? 'Turn Off'
+                                  : 'Turn On'),
                           onTap: () async {
                             if (!accessOn) {
                               _tracking.requestAccessibilityPermission();
@@ -175,9 +178,15 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen>
                         const SizedBox(height: 10),
                         _StatusCheckRow(
                           title: 'Floating counter',
-                          subtitle: 'Shows over supported apps',
-                          isOk: overlayOn,
-                          actionLabel: overlayOn ? 'On' : 'Enable',
+                          subtitle: !overlayOn
+                              ? 'Requires Display over other apps'
+                              : (_tracking.isOverlayEnabled
+                                  ? 'Shown over supported apps'
+                                  : 'Hidden in overlay settings'),
+                          isOk: overlayOn && _tracking.isOverlayEnabled,
+                          actionLabel: !overlayOn
+                              ? 'Enable'
+                              : (_tracking.isOverlayEnabled ? 'On' : 'Hidden'),
                           onTap: () {
                             if (!overlayOn) {
                               _tracking.requestOverlayPermission();
@@ -195,8 +204,13 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen>
                         _StatusCheckRow(
                           title: 'Notifications',
                           subtitle: 'Limit and streak nudges',
-                          isOk: true,
-                          actionLabel: 'On',
+                          isOk: _tracking.isNotificationGranted &&
+                              _tracking.anyNotificationsEnabled,
+                          actionLabel: !_tracking.isNotificationGranted
+                              ? 'Blocked'
+                              : (_tracking.anyNotificationsEnabled
+                                  ? 'On'
+                                  : 'Off'),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) =>
@@ -208,12 +222,26 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen>
                         _StatusCheckRow(
                           title: 'Battery optimisation',
                           subtitle:
-                              'May pause tracking in the background',
-                          isOk: !_batteryOptimized,
-                          actionLabel: _batteryOptimized ? 'Fix' : 'Unrestricted',
+                              'Set Android Battery to Unrestricted to prevent pauses',
+                          isOk: true,
+                          actionLabel: 'How to',
                           onTap: () {
-                            HapticService.light();
-                            setState(() => _batteryOptimized = false);
+                            showDialog<void>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: AppColors.cardSurface,
+                                title: const Text('Battery optimisation'),
+                                content: const Text(
+                                  'If tracking pauses after idle time, open Android Settings > Apps > Scrola > Battery and choose Unrestricted.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: const Text('Got it'),
+                                  ),
+                                ],
+                              ),
+                            );
                           },
                         ),
                       ],
@@ -225,16 +253,18 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen>
                         ? 'Refresh permissions'
                         : 'Grant Accessibility permission',
                     useMediumHaptic: true,
-                    onPressed: () {
+                    onPressed: () async {
                       if (accessOn) {
-                        _tracking.checkPermissions();
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        final messenger = ScaffoldMessenger.of(context);
+                        await _tracking.checkPermissions();
+                        if (!context.mounted) return;
+                        messenger.showSnackBar(
                           const SnackBar(
                             content: Text('Tracking status verified.'),
                           ),
                         );
                       } else {
-                        _tracking.requestAccessibilityPermission();
+                        await _tracking.requestAccessibilityPermission();
                       }
                     },
                   ),

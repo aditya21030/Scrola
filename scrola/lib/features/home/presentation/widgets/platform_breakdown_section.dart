@@ -105,8 +105,8 @@ class _PlatformTileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final safeLimit = math.max(1, limit);
-    final fraction = (count / safeLimit).clamp(0.0, 1.0);
+    final hasLimit = limit > 0;
+    final fraction = hasLimit ? (count / limit).clamp(0.0, 1.0) : 1.0;
 
     return GestureDetector(
       onTap: () {
@@ -114,7 +114,7 @@ class _PlatformTileCard extends StatelessWidget {
         onTap();
       },
       child: Container(
-        height: 152,
+        constraints: const BoxConstraints(minHeight: 152),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surfaceSolid,
@@ -170,7 +170,7 @@ class _PlatformTileCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '/ $safeLimit',
+                        hasLimit ? '/ $limit' : '· 0 limit',
                         style: AppTypography.numeric(
                           color: AppColors.secondaryText,
                           fontSize: 15,

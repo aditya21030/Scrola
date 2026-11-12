@@ -55,32 +55,40 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.primaryBackground,
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: [
-              HomeScreen(
-                onSwitchTab: (idx) => setState(() => _currentIndex = idx),
-              ),
-              const DailyScrollHistoryScreen(showBack: false),
-              const FocusDashboardScreen(showBack: false),
-              const BrainOverviewScreen(showBack: false),
-              const ProfileScreen(showBack: false),
-            ],
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: ScrolaBottomNav(
-              currentIndex: _currentIndex,
-              onTabSelected: (idx) => setState(() => _currentIndex = idx),
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.primaryBackground,
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: _currentIndex,
+              children: [
+                HomeScreen(
+                  onSwitchTab: (idx) => setState(() => _currentIndex = idx),
+                ),
+                const DailyScrollHistoryScreen(showBack: false),
+                const FocusDashboardScreen(showBack: false),
+                const BrainOverviewScreen(showBack: false),
+                const ProfileScreen(showBack: false),
+              ],
             ),
-          ),
-        ],
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ScrolaBottomNav(
+                currentIndex: _currentIndex,
+                onTabSelected: (idx) => setState(() => _currentIndex = idx),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

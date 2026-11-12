@@ -16,24 +16,28 @@ class BlockingScheduleScreen extends StatefulWidget {
 }
 
 class _BlockingScheduleScreenState extends State<BlockingScheduleScreen> {
+  static const _dayKeys = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   final TrackingService _tracking = TrackingService();
   late bool _nightOn;
   late bool _workOn;
-  final List<bool> _nightDays = [true, true, true, true, true, true, true];
-  final List<bool> _workDays = [true, true, true, true, true, false, false];
+  late List<bool> _nightDays;
+  late List<bool> _workDays;
 
   @override
   void initState() {
     super.initState();
     _nightOn = _tracking.nightBlockEnabled;
     _workOn = _tracking.workBlockEnabled;
+    final savedNight = _tracking.nightBlockDays.toSet();
+    final savedWork = _tracking.workBlockDays.toSet();
+    _nightDays = _dayKeys.map(savedNight.contains).toList();
+    _workDays = _dayKeys.map(savedWork.contains).toList();
   }
 
-  int get _blockedHours {
-    int h = 0;
-    if (_nightOn) h += 9;
-    if (_workOn) h += 8;
-    return h;
+  int get _blockedWeeklyHours {
+    final nightDaysCount = _nightOn ? _nightDays.where((d) => d).length : 0;
+    final workDaysCount = _workOn ? _workDays.where((d) => d).length : 0;
+    return nightDaysCount * 9 + workDaysCount * 8;
   }
 
   @override
@@ -46,30 +50,7 @@ class _BlockingScheduleScreenState extends State<BlockingScheduleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ScrolaAppBar(
-                title: 'Schedule',
-                trailing: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.surfaceSolid,
-                    border: Border.all(color: AppColors.borderSubtle),
-                  ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(
-                      Icons.add_rounded,
-                      color: AppColors.accentHighlight,
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      HapticService.subtle();
-                      setState(() => _workOn = true);
-                    },
-                  ),
-                ),
-              ),
+              const ScrolaAppBar(title: 'Schedule'),
               const SizedBox(height: 16),
               ScrolaCard(
                 padding: const EdgeInsets.all(16),
@@ -77,16 +58,18 @@ class _BlockingScheduleScreenState extends State<BlockingScheduleScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'BLOCKED HOURS',
-                          style: AppTypography.label(
-                            color: AppColors.secondaryText,
+                        Expanded(
+                          child: Text(
+                            'BLOCKED HOURS',
+                            style: AppTypography.label(
+                              color: AppColors.secondaryText,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
-                          '$_blockedHours h on weekdays',
+                          '$_blockedWeeklyHours h this week',
                           style: AppTypography.numeric(
                             color: AppColors.primaryAccent,
                             fontSize: 13,
@@ -98,63 +81,74 @@ class _BlockingScheduleScreenState extends State<BlockingScheduleScreen> {
                     const SizedBox(height: 14),
                     SizedBox(
                       height: 16,
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          if (_nightOn) ...[
-                            FractionallySizedBox(
-                              widthFactor: 7 / 24,
-                              child: Container(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final totalWidth = constraints.maxWidth;
+                          return Stack(
+                            children: [
+                              Container(
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryAccent,
+                                  color: Colors.white.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                            ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: FractionallySizedBox(
-                                widthFactor: 2 / 24,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryAccent,
-                                    borderRadius: BorderRadius.circular(8),
+                              if (_nightOn) ...[
+                                Positioned(
+                                  left: 0,
+                                  top: 0,
+                                  bottom: 0,
+                                  width: totalWidth * (7 / 24),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryAccent,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ],
-                          if (_workOn)
-                            Align(
-                              alignment: const Alignment(-0.2, 0),
-                              child: FractionallySizedBox(
-                                widthFactor: 8 / 24,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accentHighlight,
-                                    borderRadius: BorderRadius.circular(8),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  bottom: 0,
+                                  width: totalWidth * (2 / 24),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryAccent,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                        ],
+                              ],
+                              if (_workOn)
+                                Positioned(
+                                  left: totalWidth * (9 / 24),
+                                  top: 0,
+                                  bottom: 0,
+                                  width: totalWidth * (8 / 24),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accentHighlight,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 8),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: ['12 am', '6 am', '12 pm', '6 pm', '12 am']
                           .map(
-                            (t) => Text(
-                              t,
-                              style: AppTypography.caption(
-                                color: AppColors.mutedText,
-                              ).copyWith(fontSize: 10),
+                            (t) => Expanded(
+                              child: Center(
+                                child: Text(
+                                  t,
+                                  style: AppTypography.caption(
+                                    color: AppColors.mutedText,
+                                  ).copyWith(fontSize: 10),
+                                ),
+                              ),
                             ),
                           )
                           .toList(),
@@ -192,12 +186,22 @@ class _BlockingScheduleScreenState extends State<BlockingScheduleScreen> {
               ScrolaPrimaryButton(
                 label: 'Save schedule',
                 useMediumHaptic: true,
-                onPressed: () {
-                  _tracking.updateBlockingConfig(
+                onPressed: () async {
+                  await _tracking.updateBlockingConfig(
                     nightBlock: _nightOn,
                     workBlock: _workOn,
+                    nightBlockDays: [
+                      for (int i = 0; i < _dayKeys.length; i++)
+                        if (_nightDays[i]) _dayKeys[i],
+                    ],
+                    workBlockDays: [
+                      for (int i = 0; i < _dayKeys.length; i++)
+                        if (_workDays[i]) _dayKeys[i],
+                    ],
                   );
-                  Navigator.of(context).pop();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],

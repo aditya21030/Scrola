@@ -7,25 +7,37 @@ import 'package:scrola/core/services/gamification_engine.dart';
 import 'package:scrola/core/services/haptic_service.dart';
 import 'package:scrola/core/services/storage_service.dart';
 import 'package:scrola/core/services/tracking_service.dart';
+import 'package:scrola/features/brain/presentation/screens/achievements_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/brain_collection_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/brain_details_screen.dart';
+import 'package:scrola/features/brain/presentation/screens/brain_evolution_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/rewards_screen.dart';
+import 'package:scrola/features/brain/presentation/screens/streak_calendar_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/xp_progress_screen.dart';
 import 'package:scrola/features/focus/presentation/screens/active_focus_session_screen.dart';
+import 'package:scrola/features/focus/presentation/screens/blocking_dashboard_screen.dart';
+import 'package:scrola/features/focus/presentation/screens/blocking_schedule_screen.dart';
+import 'package:scrola/features/focus/presentation/screens/scroll_detox_screen.dart';
 import 'package:scrola/features/home/presentation/screens/home_screen.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
 import 'package:scrola/features/home/presentation/widgets/scrola_bottom_nav.dart';
+import 'package:scrola/features/insights/presentation/screens/daily_scroll_history_screen.dart';
 import 'package:scrola/features/insights/presentation/screens/platform_breakdown_screen.dart';
 import 'package:scrola/features/insights/presentation/screens/platform_limits_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/welcome_screen.dart';
+import 'package:scrola/features/overlay/presentation/screens/floating_overlay_preview_screen.dart';
+import 'package:scrola/features/overlay/presentation/screens/floating_overlay_settings_screen.dart';
+import 'package:scrola/features/overlay/presentation/widgets/notch_pill_preview.dart';
 import 'package:scrola/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/notifications_settings_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/profile_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/settings_screen.dart';
+import 'package:scrola/features/profile/presentation/screens/subscription_pro_screen.dart';
 import 'package:scrola/main.dart';
 import 'package:scrola/shared/widgets/platform_icon.dart';
 import 'package:scrola/shared/widgets/scrola_card.dart';
+import 'package:scrola/shared/widgets/scrola_toggle.dart';
 
 void main() {
   setUp(() {
@@ -191,7 +203,7 @@ void main() {
 
     await tester.tap(find.text('Maybe later'));
     await advanceStep();
-    expect(find.text('Permissions ready'), findsOneWidget);
+    expect(find.text('Setup complete'), findsOneWidget);
 
     await tester.tap(find.text('Choose my goal'));
     await advanceStep();
@@ -814,5 +826,355 @@ void main() {
     expect(tracking.totalReelsToday, 0);
     expect(tracking.instagramReels, 0);
     expect(recordedCalls.where((c) => c.method == 'resetDailyStats'), isNotEmpty);
+  });
+
+  testWidgets(
+      'Batch 2: Notifications persistence & threshold disabling, Profile badges/join date, and Settings CSV export',
+      (WidgetTester tester) async {
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({});
+    const channel = MethodChannel('com.scrola.app/native');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      switch (call.method) {
+        case 'isAccessibilityServiceEnabled':
+        case 'isOverlayPermissionGranted':
+        case 'isNotificationPermissionGranted':
+        case 'startOverlayService':
+        case 'stopOverlayService':
+        case 'syncLimits':
+        case 'refreshOverlayConfig':
+        case 'resetDailyStats':
+          return true;
+        case 'getNativeStats':
+          return <String, dynamic>{'totalToday': 0, 'sessionCount': 0};
+        default:
+          return null;
+      }
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+    await tracking.checkPermissions();
+    await tracking.updateNotificationConfig(
+      warnNearLimit: true,
+      thresholds: const ['80%', '100%'],
+    );
+
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: NotificationsSettingsScreen()),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+
+    // Toggle 'Warn before hitting limit' OFF -> chip '50%' stays ignored
+    await tester.tap(find.byType(ScrolaToggle).first);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tracking.notifWarnNearLimit, isFalse);
+
+    await tester.tap(find.text('50%'), warnIfMissed: false);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tracking.notifThresholds, const ['80%', '100%']);
+
+    // Toggle back ON -> chip '50%' becomes interactive and persists
+    await tester.tap(find.byType(ScrolaToggle).first);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tracking.notifWarnNearLimit, isTrue);
+
+    await tester.tap(find.text('50%'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tracking.notifThresholds, const ['50%', '80%', '100%']);
+
+    // ProfileScreen renders dynamic joinedMonthYear and unlockedBadgeCount
+    await tester.pumpWidget(const MaterialApp(home: ProfileScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.textContaining(tracking.joinedMonthYear), findsOneWidget);
+    expect(find.text('${tracking.unlockedBadgeCount}'), findsWidgets);
+
+    // SettingsScreen 'Export my data' and CSV export verification
+    expect(
+      tracking.buildCsvExport(),
+      contains('date,reels,limit,focus_minutes,blocks'),
+    );
+    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.drag(
+      find.byType(SingleChildScrollView).first,
+      const Offset(0, -400),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.tap(find.text('Export my data'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.text('Daily history CSV copied to clipboard.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      'Batch 2: Pro, Achievements, StreakCalendar, BrainEvolution, and DailyScrollHistory fit 320dp with dynamic data',
+      (WidgetTester tester) async {
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({});
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+    await tracking.addXP(320); // Lv 3 -> Toddler stage in progress
+
+    final stageProgress = GamificationEngine.getStageProgress(tracking.xpTotal);
+    expect(stageProgress, greaterThan(0.0));
+    expect(stageProgress, lessThanOrEqualTo(1.0));
+
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: SubscriptionProScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.takeException(), isNull, reason: 'SubscriptionProScreen');
+
+    await tester.pumpWidget(const MaterialApp(home: AchievementsScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.takeException(), isNull, reason: 'AchievementsScreen');
+
+    await tester.pumpWidget(const MaterialApp(home: StreakCalendarScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+    final streakErr = tester.takeException();
+    if (streakErr is FlutterError) {
+      // ignore: avoid_print
+      print(streakErr.toStringDeep());
+    }
+    expect(streakErr, isNull, reason: 'StreakCalendarScreen');
+
+    await tester.pumpWidget(const MaterialApp(home: BrainEvolutionScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.takeException(), isNull, reason: 'BrainEvolutionScreen');
+
+    await tester.pumpWidget(const MaterialApp(home: DailyScrollHistoryScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.takeException(), isNull, reason: 'DailyScrollHistoryScreen');
+
+    // Verify Achievements shows real unlocked / total count (not static '12 / 40')
+    await tester.pumpWidget(const MaterialApp(home: AchievementsScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      find.text('${tracking.unlockedBadgeCount} / ${tracking.badges.length}'),
+      findsOneWidget,
+    );
+    expect(find.text('12 / 40'), findsNothing);
+  });
+
+  testWidgets(
+      'Batch 2: Onboarding replay preserves settings & Tracking goal disables auto-block',
+      (WidgetTester tester) async {
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({});
+    const channel = MethodChannel('com.scrola.app/native');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      switch (call.method) {
+        case 'isAccessibilityServiceEnabled':
+        case 'isOverlayPermissionGranted':
+        case 'isNotificationPermissionGranted':
+          return false;
+        default:
+          return true;
+      }
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+    await tracking.updateOverlayConfig(expanded: false);
+    await tracking.updateNotificationConfig(warnNearLimit: false);
+    await tracking.updateLimits(total: 70);
+
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: OnboardingWizardScreen(isReplay: true)),
+    );
+    await tester.pump(const Duration(milliseconds: 250));
+
+    Future<void> stepDelay() async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+    }
+
+    await tester.tap(find.text('Skip'));
+    await stepDelay();
+    expect(find.textContaining('Where do you'), findsOneWidget);
+
+    // Verify back navigation using PopScope / step history
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await stepDelay();
+    expect(find.text('See every reel, live'), findsOneWidget);
+
+    // Verify completeOnboarding with 'Just track for now' goal disables auto-block on initial setup
+    await tracking.completeOnboarding(
+      goal: 'Just track for now',
+      dailyLimit: 70,
+      platforms: ['instagram', 'youtube'],
+      preserveExistingSettings: false,
+    );
+
+    expect(tracking.selectedGoal, 'Just track for now');
+    expect(tracking.blockAtLimitEnabled, isFalse);
+    expect(tracking.overlayExpanded, isFalse);
+    expect(tracking.notifWarnNearLimit, isFalse);
+  });
+
+  testWidgets(
+      'Batch 2: Blocking dashboard, Schedule days/timeline, Detox persistence, and Overlay screens work cleanly at 320dp',
+      (WidgetTester tester) async {
+    StorageService.resetForTest();
+    SharedPreferences.setMockInitialValues({});
+    const channel = MethodChannel('com.scrola.app/native');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      switch (call.method) {
+        case 'isAccessibilityServiceEnabled':
+        case 'isOverlayPermissionGranted':
+        case 'isNotificationPermissionGranted':
+        case 'startOverlayService':
+        case 'stopOverlayService':
+        case 'syncLimits':
+        case 'refreshOverlayConfig':
+        case 'resetDailyStats':
+          return true;
+        case 'getNativeStats':
+          return <String, dynamic>{'totalToday': 0, 'sessionCount': 0};
+        default:
+          return null;
+      }
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+    await tracking.checkPermissions();
+
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    // BlockingDashboardScreen reflects persisted blockAtLimitEnabled toggle (3rd toggle in rules)
+    await tester.pumpWidget(
+      const MaterialApp(home: BlockingDashboardScreen()),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(tester.takeException(), isNull, reason: 'BlockingDashboardScreen');
+    expect(tracking.blockAtLimitEnabled, isTrue);
+    await tester.drag(
+      find.byType(SingleChildScrollView).first,
+      const Offset(0, -250),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.byType(ScrolaToggle).at(2));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tracking.blockAtLimitEnabled, isFalse);
+
+    // BlockingScheduleScreen renders cleanly & saves schedule config
+    await tester.pumpWidget(
+      MaterialApp(
+        key: UniqueKey(),
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () => Navigator.of(ctx).push(
+                MaterialPageRoute(
+                  builder: (_) => const BlockingScheduleScreen(),
+                ),
+              ),
+              child: const Text('OpenSchedule'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('OpenSchedule'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'BlockingScheduleScreen');
+    await tester.tap(find.text('Save schedule'));
+    await tester.pumpAndSettle();
+
+    // ScrollDetoxScreen persists selected 7-day duration
+    await tester.pumpWidget(
+      MaterialApp(
+        key: UniqueKey(),
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () => Navigator.of(ctx).push(
+                MaterialPageRoute(
+                  builder: (_) => const ScrollDetoxScreen(),
+                ),
+              ),
+              child: const Text('OpenDetox'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('OpenDetox'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('7'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('Start 7 day detox'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(tracking.isDetoxActive, isTrue);
+    expect(tracking.detoxDays, 7);
+
+    // NotchPillPreview at scale 0.64 & FloatingOverlayPreviewScreen / Settings fit 320dp
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: NotchPillPreview(
+              watched: 12,
+              remaining: 38,
+              expanded: true,
+              scale: 0.64,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: FloatingOverlayPreviewScreen()),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.bySemanticsLabel('Back'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: FloatingOverlaySettingsScreen()),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(tester.takeException(), isNull);
   });
 }

@@ -132,45 +132,61 @@ class _FocusDashboardScreenState extends State<FocusDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Row(
-                    children: [15, 25, 45, 60].map((m) {
-                      final selected = _selectedMinutes == m;
-                      return Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: GestureDetector(
-                            onTap: () {
-                              HapticService.subtle();
-                              setState(() => _selectedMinutes = m);
-                            },
-                            child: Container(
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? AppColors.primaryAccent
-                                    : AppColors.surfaceSolid,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: selected
-                                      ? AppColors.primaryAccent
-                                      : AppColors.borderSubtle,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '$m min',
-                                  style: AppTypography.caption(
+                  IgnorePointer(
+                    ignoring: isActive,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 180),
+                      opacity: isActive ? 0.5 : 1.0,
+                      child: Row(
+                        children: [15, 25, 45, 60].map((m) {
+                          final selected = _selectedMinutes == m;
+                          return Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: GestureDetector(
+                                onTap: () {
+                                  HapticService.subtle();
+                                  setState(() => _selectedMinutes = m);
+                                },
+                                child: Container(
+                                  constraints:
+                                      const BoxConstraints(minHeight: 44),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                    horizontal: 4,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color: selected
-                                        ? AppColors.textOnAccent
-                                        : AppColors.primaryText,
-                                  ).copyWith(fontWeight: FontWeight.w700),
+                                        ? AppColors.primaryAccent
+                                        : AppColors.surfaceSolid,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: selected
+                                          ? AppColors.primaryAccent
+                                          : AppColors.borderSubtle,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '$m min',
+                                        style: AppTypography.caption(
+                                          color: selected
+                                              ? AppColors.textOnAccent
+                                              : AppColors.primaryText,
+                                        ).copyWith(fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 18),
                   ScrolaPrimaryButton(
@@ -178,11 +194,13 @@ class _FocusDashboardScreenState extends State<FocusDashboardScreen> {
                         ? 'Open active session'
                         : 'Start focus session',
                     height: 58,
-                    useMediumHaptic: true,
-                    onPressed: () {
+                    useMediumHaptic: false,
+                    onPressed: () async {
+                      HapticService.medium();
                       if (!isActive) {
-                        _focus.startSession(minutes: _selectedMinutes);
+                        await _focus.startSession(minutes: _selectedMinutes);
                       }
+                      if (!context.mounted) return;
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const ActiveFocusSessionScreen(),
@@ -216,10 +234,10 @@ class _FocusDashboardScreenState extends State<FocusDashboardScreen> {
                             color: AppColors.borderSubtle,
                             width: 1,
                           ),
-                          const Expanded(
+                          Expanded(
                             child: _FocusMetric(
-                              value: '18',
-                              label: 'Reels skipped',
+                              value: '${_tracking.dailyBlocksCount}',
+                              label: 'Blocks today',
                             ),
                           ),
                         ],
@@ -264,9 +282,11 @@ class _FocusDashboardScreenState extends State<FocusDashboardScreen> {
                                     .copyWith(fontSize: 15),
                               ),
                               Text(
-                                _tracking.nightBlockEnabled ||
-                                        _tracking.workBlockEnabled
-                                    ? '2 apps on'
+                                _tracking.isDetoxActive ||
+                                        _tracking.nightBlockEnabled ||
+                                        _tracking.workBlockEnabled ||
+                                        _tracking.blockAtLimitEnabled
+                                    ? '${_tracking.selectedPlatforms.length} apps covered'
                                     : 'Rules off',
                                 style: AppTypography.caption(
                                   color: AppColors.secondaryText,

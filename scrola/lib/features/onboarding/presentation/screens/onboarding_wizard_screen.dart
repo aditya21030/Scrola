@@ -13,7 +13,9 @@ import '../../../../shared/widgets/scrola_toggle.dart';
 import '../../../home/presentation/screens/main_shell.dart';
 
 class OnboardingWizardScreen extends StatefulWidget {
-  const OnboardingWizardScreen({super.key});
+  final bool isReplay;
+
+  const OnboardingWizardScreen({super.key, this.isReplay = false});
 
   @override
   State<OnboardingWizardScreen> createState() => _OnboardingWizardScreenState();
@@ -22,7 +24,9 @@ class OnboardingWizardScreen extends StatefulWidget {
 class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with WidgetsBindingObserver {
   final TrackingService _tracking = TrackingService();
   int _step = 0; // 0 to 8 (maps to screens 03..11)
+  final List<int> _stepHistory = [0];
   int _howItWorksSlide = 0; // 0..2 inside screen 03
+  bool _submitting = false;
 
   // Screen 04 state
   final Set<String> _selectedPlatforms = {'instagram', 'youtube'};
@@ -35,12 +39,19 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (widget.isReplay) {
+      _selectedPlatforms
+        ..clear()
+        ..addAll(_tracking.selectedPlatforms);
+      _selectedGoal = _tracking.selectedGoal;
+      _dailyLimit = _tracking.totalLimit.clamp(5, 200);
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _tracking.checkPermissions();
+      _tracking.refreshPermissionsAndSyncOverlay();
     }
   }
 
@@ -50,14 +61,22 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
     super.dispose();
   }
 
-  void _nextStep() {
+  void _goToStep(int targetStep) {
     HapticService.light();
-    if (_step < 8) {
-      setState(() => _step++);
-      if (_step == 7) {
-        // Screen 10 Tracking Setup Complete celebratory pulse!
-        HapticService.celebratory();
+    setState(() {
+      _step = targetStep;
+      if (_stepHistory.isEmpty || _stepHistory.last != targetStep) {
+        _stepHistory.add(targetStep);
       }
+    });
+    if (targetStep == 7) {
+      HapticService.celebratory();
+    }
+  }
+
+  void _nextStep() {
+    if (_step < 8) {
+      _goToStep(_step + 1);
     }
   }
 
@@ -65,8 +84,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
     HapticService.subtle();
     if (_step == 0 && _howItWorksSlide > 0) {
       setState(() => _howItWorksSlide--);
-    } else if (_step > 0) {
-      setState(() => _step--);
+    } else if (_stepHistory.length > 1) {
+      setState(() {
+        _stepHistory.removeLast();
+        _step = _stepHistory.last;
+      });
     } else {
       Navigator.of(context).pop();
     }
@@ -74,31 +96,39 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _tracking,
-      builder: (context, _) {
-        return Scaffold(
-          backgroundColor: AppColors.primaryBackground,
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Top Bar with Back & Step Progress
-                _buildTopProgress(),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: AppMotion.standard,
-                    switchInCurve: AppMotion.easeOut,
-                    child: KeyedSubtree(
-                      key: ValueKey('step_${_step}_$_howItWorksSlide'),
-                      child: _buildStepBody(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _prevStep();
+        }
+      },
+      child: ListenableBuilder(
+        listenable: _tracking,
+        builder: (context, _) {
+          return Scaffold(
+            backgroundColor: AppColors.primaryBackground,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Top Bar with Back & Step Progress
+                  _buildTopProgress(),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: AppMotion.standard,
+                      switchInCurve: AppMotion.easeOut,
+                      child: KeyedSubtree(
+                        key: ValueKey('step_${_step}_$_howItWorksSlide'),
+                        child: _buildStepBody(),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -168,8 +198,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
           if (_step == 0)
             GestureDetector(
               onTap: () {
-                HapticService.subtle();
-                setState(() => _step = 1);
+                _goToStep(1);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -591,7 +620,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
           const SizedBox(height: 6),
           ScrolaLinkButton(
             label: 'Not now',
-            onPressed: () => setState(() => _step = 4),
+            onPressed: () => _goToStep(4),
           ),
         ],
       ),
@@ -893,7 +922,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
           const SizedBox(height: 6),
           ScrolaLinkButton(
             label: 'Skip for now',
-            onPressed: () => setState(() => _step = 6),
+            onPressed: () => _goToStep(6),
           ),
         ],
       ),
@@ -1041,8 +1070,14 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
           ScrolaPrimaryButton(
             label: 'Allow notifications',
             onPressed: () async {
-              await _tracking.requestNotificationPermission();
-              if (mounted) _nextStep();
+              if (_submitting) return;
+              _submitting = true;
+              try {
+                await _tracking.requestNotificationPermission();
+                if (mounted) _nextStep();
+              } finally {
+                if (mounted) _submitting = false;
+              }
             },
           ),
           const SizedBox(height: 6),
@@ -1054,6 +1089,10 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
 
   // 10 - Setup Complete
   Widget _buildSetupComplete() {
+    final accessOk = _tracking.isAccessibilityGranted;
+    final overlayOk = _tracking.isOverlayGranted;
+    final allReady = accessOk && overlayOk;
+
     return _stepScaffold(
       centerVertically: true,
       body: Column(
@@ -1065,18 +1104,22 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  AppColors.success.withValues(alpha: 0.22),
+                  (allReady ? AppColors.success : AppColors.primaryAccent)
+                      .withValues(alpha: 0.22),
                   Colors.transparent,
                 ],
               ),
             ),
-            child: const Center(
-              child: BrainyMascot(mood: BrainyMood.celebrating, size: 164),
+            child: Center(
+              child: BrainyMascot(
+                mood: allReady ? BrainyMood.celebrating : BrainyMood.happy,
+                size: 164,
+              ),
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            'Permissions ready',
+            allReady ? 'Permissions ready' : 'Setup complete',
             textAlign: TextAlign.center,
             style: AppTypography.title(size: 30),
           ),
@@ -1084,7 +1127,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 310),
             child: Text(
-              'Scrola stays paused until you switch it on from the Home dashboard.',
+              allReady
+                  ? 'Scrola stays paused until you switch it on from the Home dashboard.'
+                  : 'You can turn on any skipped Android permissions later from Settings.',
               style: AppTypography.body(),
               textAlign: TextAlign.center,
             ),
@@ -1094,15 +1139,23 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
             child: Column(
               children: [
                 _buildCheckRow(
-                  Icons.check_circle_rounded,
-                  AppColors.success,
-                  'Reel detection ready',
+                  accessOk
+                      ? Icons.check_circle_rounded
+                      : Icons.pause_circle_outline_rounded,
+                  accessOk ? AppColors.success : AppColors.warning,
+                  accessOk
+                      ? 'Reel detection ready'
+                      : 'Reel detection permission pending',
                 ),
                 const SizedBox(height: 12),
                 _buildCheckRow(
-                  Icons.check_circle_rounded,
-                  AppColors.success,
-                  'Top notch mascot ready',
+                  overlayOk
+                      ? Icons.check_circle_rounded
+                      : Icons.layers_outlined,
+                  overlayOk ? AppColors.success : AppColors.warning,
+                  overlayOk
+                      ? 'Top notch mascot ready'
+                      : 'Floating mascot permission pending',
                 ),
                 const SizedBox(height: 12),
                 _buildCheckRow(
@@ -1232,6 +1285,7 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 _buildStepperBtn(Icons.remove_rounded, () {
                   if (_dailyLimit > 5) {
                     HapticService.subtle();
@@ -1261,17 +1315,28 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
         label: 'Finish setup',
         useMediumHaptic: true,
         onPressed: () async {
-          await _tracking.completeOnboarding(
-            goal: _selectedGoal,
-            dailyLimit: _dailyLimit,
-            platforms: _selectedPlatforms.toList(),
-          );
-          await HapticService.celebratory();
-          if (!mounted) return;
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const MainShell()),
-            (_) => false,
-          );
+          if (_submitting) return;
+          _submitting = true;
+          try {
+            await _tracking.completeOnboarding(
+              goal: _selectedGoal,
+              dailyLimit: _dailyLimit,
+              platforms: _selectedPlatforms.toList(),
+              preserveExistingSettings: widget.isReplay,
+            );
+            await HapticService.celebratory();
+            if (!mounted) return;
+            if (widget.isReplay) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const MainShell()),
+                (_) => false,
+              );
+            }
+          } finally {
+            if (mounted) _submitting = false;
+          }
         },
       ),
     );
