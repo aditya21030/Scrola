@@ -5,6 +5,7 @@ import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/platform_icon.dart';
+import '../../../../shared/widgets/platform_selection_modal.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import '../../../../shared/widgets/scrola_segmented_control.dart';
@@ -53,81 +54,7 @@ class _PlatformBreakdownScreenState extends State<PlatformBreakdownScreen> {
   }
 
   Future<void> _showManageAppsSheet() async {
-    final selected = Set<String>.from(_tracking.selectedPlatforms);
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.cardSurface,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Tracked apps', style: AppTypography.heading()),
-                const SizedBox(height: 6),
-                Text(
-                  'Choose which short-video feeds Scrola counts.',
-                  style: AppTypography.caption(color: AppColors.secondaryText),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final platform in SocialPlatform.values)
-                      FilterChip(
-                        selected: selected.contains(platform.id),
-                        label: Text(platform.shortName),
-                        selectedColor:
-                            AppColors.primaryAccent.withValues(alpha: 0.24),
-                        checkmarkColor: AppColors.primaryAccent,
-                        backgroundColor: AppColors.elevatedSurface,
-                        labelStyle: AppTypography.caption(
-                          color: selected.contains(platform.id)
-                              ? AppColors.primaryAccent
-                              : AppColors.primaryText,
-                        ),
-                        onSelected: (isOn) {
-                          HapticService.subtle();
-                          setModalState(() {
-                            if (isOn) {
-                              selected.add(platform.id);
-                            } else if (selected.length > 1) {
-                              selected.remove(platform.id);
-                            }
-                          });
-                        },
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryAccent,
-                    foregroundColor: AppColors.textOnAccent,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                  onPressed: () async {
-                    await _tracking.updateSelectedPlatforms(selected.toList());
-                    if (ctx.mounted) Navigator.of(ctx).pop();
-                  },
-                  child: const Text('Save apps'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    await showPlatformSelectionModal(context);
   }
 
   @override

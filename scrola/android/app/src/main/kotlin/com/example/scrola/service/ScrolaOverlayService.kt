@@ -86,6 +86,8 @@ class ScrolaOverlayService : Service() {
         const val ACTION_UPDATE = "ACTION_UPDATE_OVERLAY"
         const val ACTION_REFRESH_CONFIG = "ACTION_REFRESH_OVERLAY_CONFIG"
         const val ACTION_DISMISS_USER = "ACTION_DISMISS_OVERLAY_BY_USER"
+        const val ACTION_SHOW_LIMIT_MODAL = "ACTION_SHOW_LIMIT_MODAL"
+        const val ACTION_HIDE_LIMIT_MODAL = "ACTION_HIDE_LIMIT_MODAL"
 
         const val EXTRA_TODAY = "EXTRA_TODAY"
         const val EXTRA_LIMIT = "EXTRA_LIMIT"
@@ -199,6 +201,40 @@ class ScrolaOverlayService : Service() {
             startCompat(context, intent)
         }
 
+        fun showLimitModal(context: Context, platform: String = "") {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                return
+            }
+            val instance = activeInstance
+            if (isServiceRunning && instance != null && !instance.isStopping) {
+                instance.mainHandler.post {
+                    if (!instance.isStopping) {
+                        instance.handleShowLimitModal(platform)
+                    }
+                }
+                return
+            }
+            val intent = Intent(context, ScrolaOverlayService::class.java).apply {
+                action = ACTION_SHOW_LIMIT_MODAL
+                putExtra(EXTRA_PLATFORM, platform)
+            }
+            startCompat(context, intent)
+        }
+
+        fun hideLimitModal(context: Context) {
+            val instance = activeInstance
+            if (instance != null) {
+                instance.mainHandler.post {
+                    instance.handleHideLimitModal()
+                }
+                return
+            }
+            val intent = Intent(context, ScrolaOverlayService::class.java).apply {
+                action = ACTION_HIDE_LIMIT_MODAL
+            }
+            startCompat(context, intent)
+        }
+
         private fun startCompat(context: Context, intent: Intent): Boolean {
             return try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -298,6 +334,13 @@ class ScrolaOverlayService : Service() {
                 val platform = intent.getStringExtra(EXTRA_PLATFORM) ?: lastPlatform
                 val isFocus = intent.getBooleanExtra(EXTRA_IS_FOCUS, dm.isFocusModeActive())
                 handleLiveStatsUpdate(today, limit, session, platform, isFocus)
+            }
+            ACTION_SHOW_LIMIT_MODAL -> {
+                val platform = intent.getStringExtra(EXTRA_PLATFORM) ?: lastPlatform
+                handleShowLimitModal(platform)
+            }
+            ACTION_HIDE_LIMIT_MODAL -> {
+                handleHideLimitModal()
             }
         }
         return START_STICKY
@@ -1061,9 +1104,279 @@ class ScrolaOverlayService : Service() {
         return (dp * resources.displayMetrics.density).toInt()
     }
 
+    private var limitModalContainer: FrameLayout? = null
+
+    private fun handleShowLimitModal(platform: String = "") {
+        if (limitModalContainer != null) return
+        val wm = windowManager ?: getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
+
+        val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            @Suppress("DEPRECATION")
+            WindowManager.LayoutParams.TYPE_PHONE
+        }
+
+        val dm = ScrolaDataManager.getInstance(this)
+        val limit = dm.getTotalLimit()
+
+        val modalParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            layoutType,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.CENTER
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            }
+        }
+
+        val root = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#B3000000")) // 70% dark scrim over reel app
+            clipChildren = false
+            clipToPadding = false
+        }
+
+        // Center card matching 080-3-limit-reached-animated.html
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dpToPx(24), dpToPx(26), dpToPx(24), dpToPx(24))
+
+            val bg = GradientDrawable().apply {
+                setColor(Color.parseColor("#141414"))
+                cornerRadius = dpToPx(28).toFloat()
+                setStroke(dpToPx(2), Color.parseColor("#FF5252"))
+            }
+            background = bg
+            elevation = dpToPx(16).toFloat()
+            isClickable = true
+        }
+
+        val cardLp = FrameLayout.LayoutParams(
+            dpToPx(340),
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.CENTER
+            setMargins(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20))
+        }
+
+        // 1. Brainy Mascot (Sad mood)
+        val mascotView = BrainyOverlayView(this).apply {
+            setSkinIndex(dm.getSkinIndex())
+            setMood("sad")
+        }
+        val mascotLp = LinearLayout.LayoutParams(dpToPx(88), dpToPx(88)).apply {
+            bottomMargin = dpToPx(12)
+        }
+        card.addView(mascotView, mascotLp)
+
+        // 2. "Limit reached" pill badge
+        val badge = TextView(this).apply {
+            text = "Limit reached"
+            setTextColor(Color.parseColor("#FF7A8A"))
+            textSize = 12f
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            setPadding(dpToPx(12), dpToPx(5), dpToPx(12), dpToPx(5))
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#2B1414"))
+                cornerRadius = dpToPx(12).toFloat()
+                setStroke(dpToPx(1), Color.parseColor("#4A2020"))
+            }
+        }
+        val badgeLp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = dpToPx(12)
+        }
+        card.addView(badge, badgeLp)
+
+        // 3. Title: "That's your limit for today"
+        val titleView = TextView(this).apply {
+            text = "That's your limit for today"
+            setTextColor(Color.WHITE)
+            textSize = 21f
+            gravity = Gravity.CENTER
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+        }
+        val titleLp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = dpToPx(8)
+        }
+        card.addView(titleView, titleLp)
+
+        // 4. Subtitle: "You reached your limit of $limit reels. Reels stay locked until midnight."
+        val subtitleView = TextView(this).apply {
+            text = "You reached your limit of $limit reels.\nReels stay locked until midnight."
+            setTextColor(Color.parseColor("#A3A3A3"))
+            textSize = 13.5f
+            gravity = Gravity.CENTER
+            setLineSpacing(0f, 1.25f)
+        }
+        val subtitleLp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            bottomMargin = dpToPx(16)
+        }
+        card.addView(subtitleView, subtitleLp)
+
+        // 5. Status chips row
+        val chipsRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        val resetChip = TextView(this).apply {
+            text = "Resets at midnight"
+            setTextColor(Color.parseColor("#E0E0E0"))
+            textSize = 11.5f
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            setPadding(dpToPx(10), dpToPx(6), dpToPx(10), dpToPx(6))
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#242424"))
+                cornerRadius = dpToPx(12).toFloat()
+            }
+        }
+        val streakChip = TextView(this).apply {
+            text = "Streak active"
+            setTextColor(Color.parseColor("#FF8A4C"))
+            textSize = 11.5f
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            setPadding(dpToPx(10), dpToPx(6), dpToPx(10), dpToPx(6))
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#2A180E"))
+                cornerRadius = dpToPx(12).toFloat()
+            }
+        }
+        val chipLp1 = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { rightMargin = dpToPx(8) }
+        chipsRow.addView(resetChip, chipLp1)
+        chipsRow.addView(streakChip)
+        val chipsLp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dpToPx(20) }
+        card.addView(chipsRow, chipsLp)
+
+        // 6. Primary Button: "Back to Scrola"
+        val backBtn = TextView(this).apply {
+            text = "Back to Scrola"
+            setTextColor(Color.parseColor("#101010"))
+            textSize = 15f
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            gravity = Gravity.CENTER
+            background = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(Color.parseColor("#FF8A4C"), Color.parseColor("#FF6B24"))
+            ).apply {
+                cornerRadius = dpToPx(24).toFloat()
+            }
+            isClickable = true
+            setOnClickListener {
+                handleHideLimitModal()
+                val launchIntent = Intent(this@ScrolaOverlayService, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                }
+                startActivity(launchIntent)
+            }
+        }
+        val btnLp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            dpToPx(48)
+        ).apply { bottomMargin = dpToPx(12) }
+        card.addView(backBtn, btnLp)
+
+        // 7. Action row: "Exit app" and "Unlock for 5 min"
+        val actionsRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        val exitBtn = TextView(this).apply {
+            text = "Exit app"
+            setTextColor(Color.parseColor("#888888"))
+            textSize = 13.5f
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8))
+            isClickable = true
+            setOnClickListener {
+                handleHideLimitModal()
+                val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_HOME)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(homeIntent)
+            }
+        }
+        val unlockBtn = TextView(this).apply {
+            text = "Unlock for 5 min"
+            setTextColor(Color.parseColor("#FF8A4C"))
+            textSize = 13.5f
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8))
+            isClickable = true
+            setOnClickListener {
+                dm.grantEmergencyUnlock(5)
+                handleHideLimitModal()
+            }
+        }
+        actionsRow.addView(exitBtn)
+        val divView = View(this).apply {
+            setBackgroundColor(Color.parseColor("#353535"))
+        }
+        val divLp = LinearLayout.LayoutParams(dpToPx(1), dpToPx(14)).apply {
+            leftMargin = dpToPx(6)
+            rightMargin = dpToPx(6)
+        }
+        actionsRow.addView(divView, divLp)
+        actionsRow.addView(unlockBtn)
+        card.addView(actionsRow)
+
+        root.addView(card, cardLp)
+
+        card.alpha = 0f
+        card.scaleX = 0.88f
+        card.scaleY = 0.88f
+        card.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(240)
+            .setInterpolator(OvershootInterpolator(1.1f))
+            .start()
+
+        try {
+            wm.addView(root, modalParams)
+            limitModalContainer = root
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding limit modal to window", e)
+        }
+    }
+
+    private fun handleHideLimitModal() {
+        val root = limitModalContainer ?: return
+        val wm = windowManager ?: getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
+        try {
+            wm.removeViewImmediate(root)
+        } catch (e: Exception) {
+            Log.w(TAG, "Error removing limit modal", e)
+        } finally {
+            limitModalContainer = null
+        }
+    }
+
     override fun onDestroy() {
         isServiceRunning = false
         isStopping = true
+        handleHideLimitModal()
         if (activeInstance === this) {
             activeInstance = null
         }

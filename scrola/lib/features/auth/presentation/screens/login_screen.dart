@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const ScrolaAppBar(title: 'Log in'),
+              const ScrolaAppBar(title: ''),
               Expanded(
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       if (_error != null) ...[
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: AppColors.error.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(14),
@@ -153,11 +153,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Icon(
                                 Icons.error_outline_rounded,
                                 color: AppColors.error,
-                                size: 18,
+                                size: 20,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -165,7 +166,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   _error!,
                                   style: AppTypography.caption(
                                     color: AppColors.error,
-                                  ).copyWith(fontWeight: FontWeight.w600),
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
+                                  ),
                                 ),
                               ),
                             ],

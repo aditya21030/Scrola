@@ -13,6 +13,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
 
     private lateinit var dataManager: ScrolaDataManager
     private var lastScrollTimestamp: Long = 0L
+    private var feedEnteredTimestamp: Long = 0L
     private var lastBlockTimestamp: Long = 0L
     private var currentPlatform: String? = null
     private var isInShortsFeed: Boolean = false
@@ -26,17 +27,25 @@ class ScrolaAccessibilityService : AccessibilityService() {
 
         var isServiceRunning = false
             private set
+
+        @Volatile
+        var currentInstance: ScrolaAccessibilityService? = null
+            private set
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         dataManager = ScrolaDataManager.getInstance(this)
         isServiceRunning = true
+        currentInstance = this
     }
 
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
+        if (currentInstance == this) {
+            currentInstance = null
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -258,6 +267,10 @@ class ScrolaAccessibilityService : AccessibilityService() {
     }
 
     private fun onShortsFeedEntered(platform: String) {
+        val now = System.currentTimeMillis()
+        feedEnteredTimestamp = now
+        lastScrollTimestamp = now // Initialize scroll debounce so app launch layout does not consume a reel
+
         checkAndEnforceLimits(platform)
 
         if (dataManager.isOverlayEnabled()) {
@@ -278,9 +291,21 @@ class ScrolaAccessibilityService : AccessibilityService() {
         }
         val now = System.currentTimeMillis()
 
+        // Warm-up protection: Ignore view layout settling during initial feed loading
+        if (now - feedEnteredTimestamp < 1500) {
+            return
+        }
+
         // Debounce: A distinct reel swipe takes at least 1200ms
         if (now - lastScrollTimestamp < 1200) {
             return
+        }
+
+        // Scroll delta check on API 28+: layout passes have 0 scroll delta
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (event.scrollDeltaY == 0 && event.scrollDeltaX == 0) {
+                return
+            }
         }
 
         val root = rootInActiveWindow
@@ -360,6 +385,9 @@ class ScrolaAccessibilityService : AccessibilityService() {
                 vibrator.vibrate(longArrayOf(0, 150, 100, 200), -1)
             }
         }
+
+        // Show interactive Limit Reached Modal overlay directly over reel app!
+        ScrolaOverlayService.showLimitModal(this, platform)
 
         // Perform Back action to exit the feed
         performGlobalAction(GLOBAL_ACTION_BACK)

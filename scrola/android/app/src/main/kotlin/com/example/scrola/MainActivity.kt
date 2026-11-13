@@ -184,6 +184,16 @@ class MainActivity : FlutterActivity() {
                     }
                     result.success(true)
                 }
+                "showLimitModal" -> {
+                    val platform = call.argument<String>("platform") ?: ""
+                    ScrolaOverlayService.showLimitModal(this, platform)
+                    result.success(true)
+                }
+                "grantEmergencyUnlock" -> {
+                    val minutes = call.argument<Int>("minutes") ?: 5
+                    dataManager.grantEmergencyUnlock(minutes)
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }

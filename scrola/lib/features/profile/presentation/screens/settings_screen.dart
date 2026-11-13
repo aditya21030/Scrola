@@ -5,6 +5,7 @@ import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/platform_selection_modal.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import '../../../../shared/widgets/scrola_segmented_control.dart';
@@ -57,8 +58,15 @@ class SettingsScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               _SettingLinkRow(
-                                title: 'Platforms',
+                                title: 'Tracked Apps',
                                 value: '${tracking.selectedPlatforms.length} apps',
+                                onTap: () => showPlatformSelectionModal(context),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _SettingLinkRow(
+                                title: 'Platforms breakdown',
+                                value: 'View stats',
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) =>

@@ -149,7 +149,15 @@ class AuthService extends ChangeNotifier {
   }
 
   String _mapFirebaseAuthError(FirebaseAuthException e) {
-    switch (e.code) {
+    final msg = e.message ?? '';
+    final code = e.code.toLowerCase();
+
+    if (code == 'configuration-not-found' ||
+        msg.contains('CONFIGURATION_NOT_FOUND')) {
+      return 'Firebase Email/Password sign-in is not enabled in Firebase Console. Please enable Email/Password under Authentication > Sign-in method, or continue as a Guest.';
+    }
+
+    switch (code) {
       case 'invalid-email':
         return 'Please enter a valid email address.';
       case 'user-disabled':
@@ -165,6 +173,8 @@ class AuthService extends ChangeNotifier {
         return 'Password should be at least 6 characters.';
       case 'network-request-failed':
         return 'Network connection failed. Please check your internet.';
+      case 'operation-not-allowed':
+        return 'Email/Password sign-in is currently disabled in Firebase Console.';
       default:
         return e.message ?? 'Authentication error (${e.code})';
     }

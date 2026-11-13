@@ -181,6 +181,16 @@ class ScrolaNativeBridge {
     await _invoke<void>('resetDailyStats');
   }
 
+  /// Show the native Limit Reached modal directly over the current app (Instagram, TikTok, etc.)
+  static Future<bool> showLimitModal([String platform = '']) async {
+    return (await _invoke<bool>('showLimitModal', {'platform': platform})) ?? false;
+  }
+
+  /// Grant emergency 5-minute unlock in native DataManager
+  static Future<bool> grantEmergencyUnlock([int minutes = 5]) async {
+    return (await _invoke<bool>('grantEmergencyUnlock', {'minutes': minutes})) ?? false;
+  }
+
   /// Stream of real-time reel tracking and blocking events from native Android
   static Stream<ReelEvent> get reelEventsStream {
     _eventStream ??= _eventChannel

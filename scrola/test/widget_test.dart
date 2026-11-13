@@ -50,6 +50,7 @@ import 'package:scrola/features/focus/presentation/widgets/emergency_unlock_moda
 import 'package:scrola/features/focus/presentation/widgets/limit_reached_modal.dart';
 import 'package:scrola/main.dart';
 import 'package:scrola/shared/widgets/platform_icon.dart';
+import 'package:scrola/shared/widgets/platform_selection_modal.dart';
 import 'package:scrola/shared/widgets/scrola_card.dart';
 import 'package:scrola/shared/widgets/scrola_toggle.dart';
 
@@ -1363,5 +1364,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Unlock for 5 minutes?'), findsOneWidget);
     expect(find.text('Keep it locked'), findsOneWidget);
+
+    // 7. PlatformSelectionModal renders
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: PlatformSelectionModal()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Tracked platforms'), findsOneWidget);
+    expect(find.text('Save tracked apps'), findsOneWidget);
   });
 }

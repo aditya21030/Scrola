@@ -577,10 +577,11 @@ class TrackingService extends ChangeNotifier {
     }
   }
 
-  Future<bool> useEmergencyUnlock() async {
+  Future<bool> useEmergencyUnlock([int minutes = 5]) async {
     final storage = await _ensureStorage();
     if (storage.emergencyUnlocksUsedToday >= 3) return false;
     await storage.incrementEmergencyUnlocksUsed();
+    await ScrolaNativeBridge.grantEmergencyUnlock(minutes);
     notifyListeners();
     return true;
   }

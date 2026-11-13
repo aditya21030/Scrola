@@ -4,6 +4,7 @@ import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/platform_icon.dart';
+import '../../../../shared/widgets/platform_selection_modal.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
@@ -55,7 +56,36 @@ class _PlatformLimitsScreenState extends State<PlatformLimitsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const ScrolaAppBar(title: 'Platform limits'),
+                  ScrolaAppBar(
+                    title: 'Platform limits',
+                    trailing: GestureDetector(
+                      onTap: () => showPlatformSelectionModal(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.elevatedSurface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderSubtle),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.apps_rounded,
+                                size: 14, color: AppColors.primaryAccent),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Apps',
+                              style: AppTypography.caption(
+                                color: AppColors.primaryAccent,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ScrolaCard(
                     padding: const EdgeInsets.all(18),

@@ -34,6 +34,7 @@ class ScrolaDataManager private constructor(context: Context) {
         private const val KEY_STRICT_BLOCKING = "strict_blocking_enabled"
         private const val KEY_DETOX_ACTIVE = "detox_active"
         private const val KEY_LAST_PLATFORM = "last_platform"
+        private const val KEY_EMERGENCY_UNLOCK_UNTIL = "emergency_unlock_until"
 
         @Volatile
         private var instance: ScrolaDataManager? = null
@@ -243,7 +244,18 @@ class ScrolaDataManager private constructor(context: Context) {
             .apply()
     }
 
+    fun grantEmergencyUnlock(minutes: Int = 5) {
+        val until = System.currentTimeMillis() + (minutes * 60 * 1000L)
+        prefs.edit().putLong(KEY_EMERGENCY_UNLOCK_UNTIL, until).apply()
+    }
+
+    fun isEmergencyUnlocked(): Boolean {
+        val until = prefs.getLong(KEY_EMERGENCY_UNLOCK_UNTIL, 0L)
+        return System.currentTimeMillis() < until
+    }
+
     fun isPlatformLimitReached(platform: String): Boolean {
+        if (isEmergencyUnlocked()) return false
         val totalCount = getTotalReelsToday()
         val totalLimit = getTotalLimit()
         if (totalCount >= totalLimit) return true
@@ -308,6 +320,7 @@ class ScrolaDataManager private constructor(context: Context) {
     }
 
     fun isBlockingActiveNow(cal: Calendar = Calendar.getInstance()): Boolean {
+        if (isEmergencyUnlocked()) return false
         return isFocusModeActive() || isDetoxActive() || isScheduleBlockingActiveNow(cal)
     }
 }
