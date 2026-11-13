@@ -6,6 +6,7 @@ import '../../core/theme/app_motion.dart';
 class BrainyMascot extends StatefulWidget {
   final BrainyMood mood;
   final BrainySkin skin;
+  final int? stageNumber;
   final double size;
   final bool animate;
   final bool silhouette;
@@ -14,6 +15,7 @@ class BrainyMascot extends StatefulWidget {
     super.key,
     this.mood = BrainyMood.happy,
     this.skin = BrainySkin.classic,
+    this.stageNumber,
     this.size = 140,
     this.animate = true,
     this.silhouette = false,
@@ -108,13 +110,22 @@ class _BrainyMascotState extends State<BrainyMascot> with SingleTickerProviderSt
           0.20, 0.24, 0.56, 0, 0,
           0.00, 0.00, 0.00, 1, 0,
         ]);
+      default:
+        return null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final reducedMotion = AppMotion.isReducedMotion(context);
-    final asset = GamificationEngine.moodAssetPath(widget.mood);
+    final String asset;
+    if (widget.stageNumber != null) {
+      asset = GamificationEngine.stageAssetPath(widget.stageNumber!);
+    } else if (widget.mood == BrainyMood.happy) {
+      asset = GamificationEngine.skinAssetPath(widget.skin);
+    } else {
+      asset = GamificationEngine.moodAssetPath(widget.mood);
+    }
 
     Widget svgWidget = SvgPicture.asset(
       asset,
@@ -123,7 +134,15 @@ class _BrainyMascotState extends State<BrainyMascot> with SingleTickerProviderSt
       fit: BoxFit.contain,
     );
 
-    final filter = _getSkinColorFilter();
+    final ColorFilter? filter;
+    if (widget.silhouette) {
+      filter = const ColorFilter.mode(Colors.black, BlendMode.srcIn);
+    } else if (widget.stageNumber == null && widget.mood != BrainyMood.happy) {
+      filter = _getSkinColorFilter();
+    } else {
+      filter = null;
+    }
+
     if (filter != null) {
       svgWidget = ColorFiltered(
         colorFilter: filter,

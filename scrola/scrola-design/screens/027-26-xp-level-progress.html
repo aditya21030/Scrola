@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>26 XP & Level Progress · Scrola</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter',sans-serif}
+*{box-sizing:border-box}
+.jk{font-family:'Plus Jakarta Sans',sans-serif}
+.tn{font-variant-numeric:tabular-nums}
+.card{background:#242424;border:1px solid #353535;border-radius:24px}
+.lab{font:600 11px/16px 'Inter',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A3A3A3}
+.btn{height:56px;border-radius:28px;border:0;font:700 16px 'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 24px;cursor:pointer}
+.pri{background:#FF6B24;color:#101010}
+.sec{background:transparent;color:#fff;border:1.5px solid #353535}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.in{animation:up .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ring{from{stroke-dashoffset:390}to{stroke-dashoffset:156}}
+.rp{animation:ring 1.2s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.fb{transform-origin:left;animation:fill 1s cubic-bezier(.2,.8,.2,1) .4s both}
+@property --n{syntax:'<integer>';inherits:false;initial-value:24}
+@keyframes cnt{from{--n:0}to{--n:24}}
+.cnt{animation:cnt 1.2s ease-out .2s both;counter-reset:n var(--n)}
+.cnt::after{content:counter(n)}
+@keyframes br{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.mb{transform-origin:50% 92%;animation:br 3.6s ease-in-out infinite}
+@keyframes bl{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.eye{transform-box:fill-box;transform-origin:center;animation:bl 4.5s infinite}
+@media (prefers-reduced-motion:reduce){
+*{animation:none !important}
+}
+
+.gl{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:24px}.gl.fl{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);backdrop-filter:blur(14px)}
+@keyframes ring2{from{stroke-dashoffset:60}to{stroke-dashoffset:0}}
+.r2{animation:ring2 1.4s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.fl{animation:fl 4s ease-in-out infinite}
+@keyframes pl{0%,100%{box-shadow:0 0 0 0 rgba(255,107,36,.5)}50%{box-shadow:0 0 0 7px rgba(255,107,36,0)}}
+.pl{animation:pl 2s infinite}
+
+.pg{background:#FF6B24;color:#101010;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.lk{background:none;border:0;font:600 15px Inter,sans-serif;color:#A3A3A3;height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+@keyframes pr{0%{transform:scale(.88);opacity:.7}100%{transform:scale(1.12);opacity:0}}
+.rg{animation:pr 3.2s ease-out infinite}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
+.rs{animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ld{from{transform:scaleX(.05)}to{transform:scaleX(.66)}}
+.ld{transform-origin:left;animation:ld 1.8s cubic-bezier(.2,.8,.2,1) .3s both}
+
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.gr{transform-origin:bottom;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+</style>
+
+<style>html,body{background:#000}</style>
+</head>
+<body>
+
+<main style="width:390px;height:844px;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;padding:56px 20px 28px;background:radial-gradient(75% 42% at 50% 24%,rgba(255,107,36,0.17),rgba(255,107,36,0) 72%),#101010"><svg width="390" height="844" style="position:absolute;inset:0;opacity:.07;mix-blend-mode:screen;pointer-events:none" aria-hidden="true"><filter id="nz"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/></filter><rect width="390" height="844" filter="url(#nz)"/></svg><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="gw"><feGaussianBlur stdDeviation="5"/></filter><linearGradient id="og2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB27F"/><stop offset="1" stop-color="#FF6B24"/></linearGradient></defs></svg><div style="display:flex;align-items:center;justify-content:space-between;position:relative;z-index:3"><span class="gl" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d='M19 12H5M11 6l-6 6 6 6'/></svg></span><span class="jk" style="font-weight:700;font-size:20px">Level progress</span><span style="min-width:44px;display:flex;justify-content:flex-end"></span></div>
+<div style="position:relative;display:flex;justify-content:center;margin-top:8px"><div style="position:relative;width:196px;height:196px"><svg viewBox="0 0 200 200" width="196" height="196" aria-hidden="true"><g transform="rotate(-90 100 100)"><circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="14"/><circle class="r2" cx="100" cy="100" r="88" pathLength="100" fill="none" stroke="#FF6B24" stroke-width="18" stroke-linecap="round" stroke-dasharray="64 100" filter="url(#gw)" opacity=".6"/><circle class="r2" cx="100" cy="100" r="88" pathLength="100" fill="none" stroke="url(#og2)" stroke-width="14" stroke-linecap="round" stroke-dasharray="64 100"/></g><circle cx="32.2" cy="156.1" r="9" fill="#fff" stroke="#FF6B24" stroke-width="4"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="lab">Level</div><div class="jk tn" style="font-weight:800;font-size:68px;line-height:68px">4</div></div></div></div>
+<div style="text-align:center;margin-top:8px;position:relative"><div class="jk tn" style="font-weight:800;font-size:22px">320 <span style="color:#A3A3A3;font-weight:600;font-size:16px">/ 500 XP</span></div><div style="font:500 13.5px Inter,sans-serif;color:#A3A3A3">180 XP to Level 5</div></div>
+<section class="gl" style="margin-top:16px;padding:6px 16px;position:relative"><div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px"><span class="jk" style="font-weight:700;font-size:16px">Today</span><span class="tn" style="font:700 13px Inter,sans-serif;color:#FF8A4C">+60 XP ready</span></div><div style="display:flex;align-items:center;gap:12px;height:58px"><span style="width:38px;height:38px;border-radius:12px;background:#FF6B24;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="#101010" stroke="#101010" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div style="flex:1"><div style="font:700 15px Inter,sans-serif">Stayed under limit</div><div style="font:500 12px Inter,sans-serif;color:#A3A3A3">So far today</div></div><span class="jk tn" style="font-weight:800;font-size:18px;color:#FF8A4C">+20</span></div><div style="display:flex;align-items:center;gap:12px;height:58px"><span style="width:38px;height:38px;border-radius:12px;background:#FF6B24;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="#101010" stroke="#101010" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div style="flex:1"><div style="font:700 15px Inter,sans-serif">Focus session</div><div style="font:500 12px Inter,sans-serif;color:#A3A3A3">25 minutes</div></div><span class="jk tn" style="font-weight:800;font-size:18px;color:#FF8A4C">+30</span></div><div style="display:flex;align-items:center;gap:12px;height:58px"><span style="width:38px;height:38px;border-radius:12px;background:#FF6B24;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="#101010" stroke="#101010" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div style="flex:1"><div style="font:700 15px Inter,sans-serif">Streak bonus</div><div style="font:500 12px Inter,sans-serif;color:#A3A3A3">7 day streak</div></div><span class="jk tn" style="font-weight:800;font-size:18px;color:#FF8A4C">+10</span></div></section>
+<section class="gl" style="margin-top:12px;padding:16px 8px;display:flex;position:relative"><div style="flex:1;text-align:center"><span class="jk" style="display:inline-flex;width:36px;height:36px;border-radius:50%;align-items:center;justify-content:center;font-weight:800;font-size:15px;background:#FF6B24;color:#101010;box-shadow:none">3</span><div style="font:600 10.5px Inter,sans-serif;color:#A3A3A3;margin-top:6px">Done</div></div><div style="flex:1;text-align:center"><span class="jk" style="display:inline-flex;width:44px;height:44px;border-radius:50%;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:#FF6B24;color:#101010;box-shadow:0 0 12px rgba(255,107,36,.05)">4</span><div style="font:600 10.5px Inter,sans-serif;color:#A3A3A3;margin-top:6px">You</div></div><div style="flex:1;text-align:center"><span class="jk" style="display:inline-flex;width:36px;height:36px;border-radius:50%;align-items:center;justify-content:center;font-weight:800;font-size:15px;background:rgba(255,255,255,.08);color:#A3A3A3;box-shadow:none">5</span><div style="font:600 10.5px Inter,sans-serif;color:#A3A3A3;margin-top:6px">Reward</div></div><div style="flex:1;text-align:center"><span class="jk" style="display:inline-flex;width:36px;height:36px;border-radius:50%;align-items:center;justify-content:center;font-weight:800;font-size:15px;background:rgba(255,255,255,.08);color:#A3A3A3;box-shadow:none">6</span><div style="font:600 10.5px Inter,sans-serif;color:#A3A3A3;margin-top:6px">Evolve</div></div></section>
+<div style="flex:1"></div><button class="btn pg" style="position:relative">Collect +60 XP</button></main>
+
+</body>
+</html>

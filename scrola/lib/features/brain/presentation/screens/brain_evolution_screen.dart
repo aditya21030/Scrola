@@ -63,7 +63,8 @@ class _BrainEvolutionScreenState extends State<BrainEvolutionScreen> {
                                   child: Opacity(
                                     opacity: 0.45,
                                     child: BrainyMascot(
-                                      mood: BrainyMood.sleepy,
+                                      stageNumber:
+                                          stages[currentIdx - 1].stageNumber,
                                       size: 84,
                                       animate: false,
                                       silhouette: true,
@@ -76,7 +77,7 @@ class _BrainEvolutionScreenState extends State<BrainEvolutionScreen> {
                                   child: Opacity(
                                     opacity: 0.45,
                                     child: BrainyMascot(
-                                      mood: BrainyMood.excited,
+                                      stageNumber: nextStage.stageNumber,
                                       size: 84,
                                       animate: false,
                                       silhouette: true,
@@ -101,10 +102,7 @@ class _BrainEvolutionScreenState extends State<BrainEvolutionScreen> {
                                           )
                                         : null,
                                     child: BrainyMascot(
-                                      mood: _previewingNext
-                                          ? BrainyMood.celebrating
-                                          : BrainyMood.happy,
-                                      skin: _tracking.equippedSkin,
+                                      stageNumber: displayedStage.stageNumber,
                                       silhouette: _previewingNext,
                                       size: 148,
                                     ),
@@ -166,6 +164,15 @@ class _BrainEvolutionScreenState extends State<BrainEvolutionScreen> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
+                                            Center(
+                                              child: BrainyMascot(
+                                                stageNumber: st.stageNumber,
+                                                size: 38,
+                                                animate: false,
+                                                silhouette: !unlocked,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
                                             Text(
                                               'Lv ${st.minLevel}+',
                                               style: AppTypography.label(
@@ -174,10 +181,10 @@ class _BrainEvolutionScreenState extends State<BrainEvolutionScreen> {
                                                     : AppColors.mutedText,
                                               ).copyWith(fontSize: 10),
                                             ),
-                                            const SizedBox(height: 4),
+                                            const SizedBox(height: 2),
                                             Text(
                                               st.title,
-                                              maxLines: 2,
+                                              maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: AppTypography.caption(
                                                 color: unlocked

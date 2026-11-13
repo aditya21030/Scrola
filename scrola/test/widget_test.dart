@@ -538,24 +538,27 @@ void main() {
 
     final lv12 = GamificationEngine.getLevelForXP(3300);
     expect(lv12.level, 12);
-    expect(lv12.stageNumber, 4);
-    expect(lv12.title, 'Sharp Genius');
+    expect(lv12.stageNumber, 5);
+    expect(lv12.title, 'Explorer');
 
     final lv15 = GamificationEngine.getLevelForXP(5250);
     expect(lv15.level, 15);
-    expect(lv15.stageNumber, 5);
-    expect(lv15.title, 'Zen Master');
+    expect(lv15.stageNumber, 6);
+    expect(lv15.title, 'Ninja Focus');
 
     final lv20 = GamificationEngine.getLevelForXP(9500);
     expect(lv20.level, 20);
-    expect(lv20.stageNumber, 5);
+    expect(lv20.stageNumber, 7);
 
     final lv21 = GamificationEngine.getLevelForXP(10500);
     expect(lv21.level, 21);
-    expect(lv21.stageNumber, 5);
+    expect(lv21.stageNumber, 8);
+    expect(lv21.title, 'Wizard');
 
     final lv23 = GamificationEngine.getLevelForXP(12500);
     expect(lv23.level, 23);
+    expect(lv23.stageNumber, 8);
+    expect(lv23.title, 'Wizard');
 
     expect(GamificationEngine.unlockLevelForSkin(BrainySkin.classic), 1);
     expect(GamificationEngine.unlockLevelForSkin(BrainySkin.ember), 2);
@@ -676,10 +679,10 @@ void main() {
     expect(find.text('Display name cannot be empty'), findsOneWidget);
     expect(tracking.displayName, 'Alex');
 
-    // BrainCollectionScreen: empty 'Locked' filter when Lv 20+ shows friendly state
+    // BrainCollectionScreen: empty 'Locked' filter when all skins unlocked shows friendly state
     StorageService.resetForTest();
     SharedPreferences.setMockInitialValues({
-      'scrola_xp_total': 9500, // Level 20
+      'scrola_xp_total': 100000, // Level 100+ (all skins unlocked)
     });
     await tracking.resetForTest();
 

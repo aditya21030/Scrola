@@ -16,6 +16,40 @@ enum BrainySkin {
   frost,
   mint,
   midnight,
+  sunset,
+  peach,
+  coral,
+  lava,
+  copper,
+  bronze,
+  silver,
+  steel,
+  obsidian,
+  ruby,
+  rose,
+  candy,
+  sakura,
+  sky,
+  ocean,
+  teal,
+  lagoon,
+  lime,
+  forest,
+  jade,
+  moss,
+  olive,
+  sand,
+  cream,
+  snow,
+  charcoal,
+  ink,
+  aqua,
+  cherry,
+  wine,
+  mango,
+  lemon,
+  honey,
+  rust,
 }
 
 class EvolutionStage {
@@ -65,35 +99,210 @@ class GamificationEngine {
       name: 'Sleepy Seed',
       minLevel: 1,
       maxLevel: 2,
-      description: 'Just waking up from endless scrolls.',
+      description: 'Pale and small, with a sprout.',
     ),
     EvolutionStage(
       stageNumber: 2,
       name: 'Curious Cortex',
       minLevel: 3,
       maxLevel: 5,
-      description: 'Building mindful awareness of your habits.',
+      description: 'The base form waking up to mindfulness.',
     ),
     EvolutionStage(
       stageNumber: 3,
       name: 'Bright Mind',
       minLevel: 6,
-      maxLevel: 9,
-      description: 'Consistent control over daily feeds.',
+      maxLevel: 8,
+      description: 'A floating idea bulb powering consistent habits.',
     ),
     EvolutionStage(
       stageNumber: 4,
       name: 'Sharp Genius',
-      minLevel: 10,
-      maxLevel: 14,
-      description: 'Master of focus and intentional screen time.',
+      minLevel: 9,
+      maxLevel: 11,
+      description: 'Round glasses and sparks of daily discipline.',
     ),
     EvolutionStage(
       stageNumber: 5,
-      name: 'Zen Master',
+      name: 'Explorer',
+      minLevel: 12,
+      maxLevel: 14,
+      description: 'Goggles and a scarf exploring digital balance.',
+    ),
+    EvolutionStage(
+      stageNumber: 6,
+      name: 'Ninja Focus',
       minLevel: 15,
+      maxLevel: 17,
+      description: 'Headband tied, ready to focus and defeat distractions.',
+    ),
+    EvolutionStage(
+      stageNumber: 7,
+      name: 'Zen Master',
+      minLevel: 18,
+      maxLevel: 20,
+      description: 'Halo and golden calm over screen urges.',
+    ),
+    EvolutionStage(
+      stageNumber: 8,
+      name: 'Wizard',
+      minLevel: 21,
+      maxLevel: 23,
+      description: 'Starry hat and wand casting deep work spells.',
+    ),
+    EvolutionStage(
+      stageNumber: 9,
+      name: 'Astronaut',
+      minLevel: 24,
+      maxLevel: 26,
+      description: 'Helmet and antenna venturing beyond feeds.',
+    ),
+    EvolutionStage(
+      stageNumber: 10,
+      name: 'Storm Brain',
+      minLevel: 27,
+      maxLevel: 29,
+      description: 'Electrifying focus and unstoppable momentum.',
+    ),
+    EvolutionStage(
+      stageNumber: 11,
+      name: 'Cosmic Mind',
+      minLevel: 30,
+      maxLevel: 34,
+      description: 'Starry body with orbiting planet of clarity.',
+    ),
+    EvolutionStage(
+      stageNumber: 12,
+      name: 'Royal Legend',
+      minLevel: 35,
+      maxLevel: 39,
+      description: 'Golden crown and cape of pure self-mastery.',
+    ),
+    EvolutionStage(
+      stageNumber: 13,
+      name: 'Chef',
+      minLevel: 40,
+      maxLevel: 42,
+      description: 'Tall white toque cooking up mindful days.',
+    ),
+    EvolutionStage(
+      stageNumber: 14,
+      name: 'Pirate',
+      minLevel: 43,
+      maxLevel: 45,
+      description: 'Bandana and eyepatch sailing clear of rabbit holes.',
+    ),
+    EvolutionStage(
+      stageNumber: 15,
+      name: 'Knight',
+      minLevel: 46,
+      maxLevel: 48,
+      description: 'Steel helmet defending your attention.',
+    ),
+    EvolutionStage(
+      stageNumber: 16,
+      name: 'Viking',
+      minLevel: 49,
+      maxLevel: 51,
+      description: 'Horned helmet conquering screen addiction.',
+    ),
+    EvolutionStage(
+      stageNumber: 17,
+      name: 'Cowboy',
+      minLevel: 52,
+      maxLevel: 54,
+      description: 'Wide brim hat wrangling wild scroll impulses.',
+    ),
+    EvolutionStage(
+      stageNumber: 18,
+      name: 'Detective',
+      minLevel: 55,
+      maxLevel: 57,
+      description: 'Fedora and magnifier uncovering true priorities.',
+    ),
+    EvolutionStage(
+      stageNumber: 19,
+      name: 'DJ',
+      minLevel: 58,
+      maxLevel: 60,
+      description: 'Big headphones tuning into flow state.',
+    ),
+    EvolutionStage(
+      stageNumber: 20,
+      name: 'Scientist',
+      minLevel: 61,
+      maxLevel: 63,
+      description: 'Goggles and a flask experimenting with productivity.',
+    ),
+    EvolutionStage(
+      stageNumber: 21,
+      name: 'Robot',
+      minLevel: 64,
+      maxLevel: 66,
+      description: 'Steel body running flawless daily routines.',
+    ),
+    EvolutionStage(
+      stageNumber: 22,
+      name: 'Alien',
+      minLevel: 67,
+      maxLevel: 69,
+      description: 'Glowing antennae transmitting otherworldly calm.',
+    ),
+    EvolutionStage(
+      stageNumber: 23,
+      name: 'Frost Monarch',
+      minLevel: 70,
+      maxLevel: 72,
+      description: 'Ice crown freezing digital distractions in their tracks.',
+    ),
+    EvolutionStage(
+      stageNumber: 24,
+      name: 'Fire Spirit',
+      minLevel: 73,
+      maxLevel: 75,
+      description: 'Flame crest burning bright with creative drive.',
+    ),
+    EvolutionStage(
+      stageNumber: 25,
+      name: 'Pharaoh',
+      minLevel: 76,
+      maxLevel: 79,
+      description: 'Striped headdress ruling over timeless habits.',
+    ),
+    EvolutionStage(
+      stageNumber: 26,
+      name: 'Angel',
+      minLevel: 80,
+      maxLevel: 84,
+      description: 'Wings and halo ascending into effortless peace.',
+    ),
+    EvolutionStage(
+      stageNumber: 27,
+      name: 'Dragon',
+      minLevel: 85,
+      maxLevel: 89,
+      description: 'Horns and wings commanding supreme focus power.',
+    ),
+    EvolutionStage(
+      stageNumber: 28,
+      name: 'Time Traveler',
+      minLevel: 90,
+      maxLevel: 94,
+      description: 'Gear ring and clock reclaiming lost hours.',
+    ),
+    EvolutionStage(
+      stageNumber: 29,
+      name: 'Galaxy Emperor',
+      minLevel: 95,
       maxLevel: 99,
-      description: 'Total digital clarity and effortless balance.',
+      description: 'Star crown presiding over limitless digital clarity.',
+    ),
+    EvolutionStage(
+      stageNumber: 30,
+      name: 'Infinity',
+      minLevel: 100,
+      maxLevel: 999,
+      description: 'Triple halo and orbiting gems of ultimate enlightenment.',
     ),
   ];
 
@@ -106,19 +315,62 @@ class GamificationEngine {
     LevelInfo(level: 6, title: 'Bright Mind', minXP: 750, maxXP: 1050, stageNumber: 3),
     LevelInfo(level: 7, title: 'Bright Mind', minXP: 1050, maxXP: 1400, stageNumber: 3),
     LevelInfo(level: 8, title: 'Bright Mind', minXP: 1400, maxXP: 1800, stageNumber: 3),
-    LevelInfo(level: 9, title: 'Bright Mind', minXP: 1800, maxXP: 2250, stageNumber: 3),
+    LevelInfo(level: 9, title: 'Sharp Genius', minXP: 1800, maxXP: 2250, stageNumber: 4),
     LevelInfo(level: 10, title: 'Sharp Genius', minXP: 2250, maxXP: 2750, stageNumber: 4),
     LevelInfo(level: 11, title: 'Sharp Genius', minXP: 2750, maxXP: 3300, stageNumber: 4),
-    LevelInfo(level: 12, title: 'Sharp Genius', minXP: 3300, maxXP: 3900, stageNumber: 4),
-    LevelInfo(level: 13, title: 'Sharp Genius', minXP: 3900, maxXP: 4550, stageNumber: 4),
-    LevelInfo(level: 14, title: 'Sharp Genius', minXP: 4550, maxXP: 5250, stageNumber: 4),
-    LevelInfo(level: 15, title: 'Zen Master', minXP: 5250, maxXP: 6000, stageNumber: 5),
-    LevelInfo(level: 16, title: 'Zen Master', minXP: 6000, maxXP: 6800, stageNumber: 5),
-    LevelInfo(level: 17, title: 'Zen Master', minXP: 6800, maxXP: 7650, stageNumber: 5),
-    LevelInfo(level: 18, title: 'Zen Master', minXP: 7650, maxXP: 8550, stageNumber: 5),
-    LevelInfo(level: 19, title: 'Zen Master', minXP: 8550, maxXP: 9500, stageNumber: 5),
-    LevelInfo(level: 20, title: 'Zen Master', minXP: 9500, maxXP: 10500, stageNumber: 5),
+    LevelInfo(level: 12, title: 'Explorer', minXP: 3300, maxXP: 3900, stageNumber: 5),
+    LevelInfo(level: 13, title: 'Explorer', minXP: 3900, maxXP: 4550, stageNumber: 5),
+    LevelInfo(level: 14, title: 'Explorer', minXP: 4550, maxXP: 5250, stageNumber: 5),
+    LevelInfo(level: 15, title: 'Ninja Focus', minXP: 5250, maxXP: 6000, stageNumber: 6),
+    LevelInfo(level: 16, title: 'Ninja Focus', minXP: 6000, maxXP: 6800, stageNumber: 6),
+    LevelInfo(level: 17, title: 'Ninja Focus', minXP: 6800, maxXP: 7650, stageNumber: 6),
+    LevelInfo(level: 18, title: 'Zen Master', minXP: 7650, maxXP: 8550, stageNumber: 7),
+    LevelInfo(level: 19, title: 'Zen Master', minXP: 8550, maxXP: 9500, stageNumber: 7),
+    LevelInfo(level: 20, title: 'Zen Master', minXP: 9500, maxXP: 10500, stageNumber: 7),
   ];
+
+  static const Map<int, String> _stageSlugs = {
+    1: 'sleepy-seed',
+    2: 'curious-cortex',
+    3: 'bright-mind',
+    4: 'sharp-genius',
+    5: 'explorer',
+    6: 'ninja-focus',
+    7: 'zen-master',
+    8: 'wizard',
+    9: 'astronaut',
+    10: 'storm-brain',
+    11: 'cosmic-mind',
+    12: 'royal-legend',
+    13: 'chef',
+    14: 'pirate',
+    15: 'knight',
+    16: 'viking',
+    17: 'cowboy',
+    18: 'detective',
+    19: 'dj',
+    20: 'scientist',
+    21: 'robot',
+    22: 'alien',
+    23: 'frost-monarch',
+    24: 'fire-spirit',
+    25: 'pharaoh',
+    26: 'angel',
+    27: 'dragon',
+    28: 'time-traveler',
+    29: 'galaxy-emperor',
+    30: 'infinity',
+  };
+
+  static String stageAssetPath(int stageNumber) {
+    final clamped = stageNumber.clamp(1, 30);
+    final slug = _stageSlugs[clamped] ?? 'curious-cortex';
+    return 'assets/mascot/stages/brainy-stage$clamped-$slug.svg';
+  }
+
+  static String skinAssetPath(BrainySkin skin) {
+    return 'assets/mascot/skins/brainy-skin-${skin.name}.svg';
+  }
 
   static int unlockLevelForSkin(BrainySkin skin) {
     switch (skin) {
@@ -134,6 +386,74 @@ class GamificationEngine {
         return 12;
       case BrainySkin.midnight:
         return 20;
+      case BrainySkin.sunset:
+        return 22;
+      case BrainySkin.peach:
+        return 24;
+      case BrainySkin.coral:
+        return 26;
+      case BrainySkin.lava:
+        return 28;
+      case BrainySkin.copper:
+        return 30;
+      case BrainySkin.bronze:
+        return 32;
+      case BrainySkin.silver:
+        return 34;
+      case BrainySkin.steel:
+        return 36;
+      case BrainySkin.obsidian:
+        return 38;
+      case BrainySkin.ruby:
+        return 40;
+      case BrainySkin.rose:
+        return 42;
+      case BrainySkin.candy:
+        return 44;
+      case BrainySkin.sakura:
+        return 46;
+      case BrainySkin.sky:
+        return 48;
+      case BrainySkin.ocean:
+        return 50;
+      case BrainySkin.teal:
+        return 52;
+      case BrainySkin.lagoon:
+        return 54;
+      case BrainySkin.lime:
+        return 56;
+      case BrainySkin.forest:
+        return 58;
+      case BrainySkin.jade:
+        return 60;
+      case BrainySkin.moss:
+        return 62;
+      case BrainySkin.olive:
+        return 64;
+      case BrainySkin.sand:
+        return 66;
+      case BrainySkin.cream:
+        return 68;
+      case BrainySkin.snow:
+        return 70;
+      case BrainySkin.charcoal:
+        return 72;
+      case BrainySkin.ink:
+        return 74;
+      case BrainySkin.aqua:
+        return 76;
+      case BrainySkin.cherry:
+        return 78;
+      case BrainySkin.wine:
+        return 80;
+      case BrainySkin.mango:
+        return 82;
+      case BrainySkin.lemon:
+        return 84;
+      case BrainySkin.honey:
+        return 86;
+      case BrainySkin.rust:
+        return 88;
     }
   }
 

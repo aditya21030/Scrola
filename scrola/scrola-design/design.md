@@ -1,51 +1,49 @@
 # Scrola design specification
 
-Version 0.2. Product: Scrola, a digital wellbeing app for Android (Flutter). Tagline: **Take Control of Your Scroll.**
+Version 0.3. Product: Scrola, a digital wellbeing app for Android (Flutter). Tagline: **Take Control of Your Scroll.**
 
 ## 1. What is in this package
 
-- `screens/`: 41 high-fidelity screens as standalone HTML (390 px wide phone frames). Open any file in a browser.
-- `index.html`: gallery of all screens.
-- `assets/mascot/`: Brainy in 8 moods as SVG (flat stand-ins, see section 7).
+- `index.html`: gallery of every screen, grouped by flow. Open it first.
+- `screens/`: every screen as standalone HTML (390 px wide phone frames), numbered in canvas order.
+- `assets/mascot/`: Brainy as SVG. 8 moods, 12 evolution forms, 6 skins.
 - `tokens.json`: colour, type, spacing, radius and motion tokens.
 
-Covered: screens 1 to 36 and 49 to 53. Not designed yet: 37 to 48 (Social and Insights), loading, empty, error, offline and permission-denied states, the 8 modals and bottom sheets.
+Covered: all 53 screens from the approved architecture, plus the automatic in-app guide, level up and evolution, 12 brain forms, authentication, the limit warning and limit reached flow, 5 modals and 7 app states.
 
-All numbers, names ("Alex") and prices are sample data. Keep them out of production code.
+All numbers, names ("Alex") and prices are sample data. Keep them out of production code. The screens are design prototypes, not Flutter code.
 
 ## 2. Principles
 
 1. Black dominates. Orange guides: actions, progress, selection, key numbers.
 2. No purple. Success, warning and error colours are used only for their meaning.
-3. Solid surfaces by default. Glass and glow are reserved for hero moments (Home hero, floating orbs, selected cards, celebration screens).
-4. Large expressive numbers, one clear primary action per screen.
-5. Every motion and haptic has a reason. Nothing loops without cause.
-6. Copy is specific ("16 left. Easy day.") and never claims more than the app does.
+3. Solid surfaces by default. Glass and glow only for floating things (counter orbs, selected cards, celebrations).
+4. Large expressive numbers. One clear primary action per screen.
+5. Every motion and every haptic has a reason. Never vibrate while counting reels.
+6. Copy is specific and never claims more than the app does. Brainy never scolds.
 
 ## 3. Colour
 
 | Token | Hex | Use |
 |---|---|---|
 | bg.primary | #101010 | Screen background |
-| bg.secondary | #191919 | Nav bar, sheets |
+| bg.secondary | #191919 | Nav, sheets |
 | surface.solid | #1A1A1A | Default card |
 | surface.card | #242424 | Raised card |
 | surface.elevated | #2B2B2B | Icon wells, pressed |
-| border | #353535 | Inputs, dividers on cards |
-| border.subtle | #2A2A2A | Card outline |
+| border / border.subtle | #353535 / #2A2A2A | Inputs, card outlines |
 | accent | #FF6B24 | Primary action, progress, selection |
 | accent.highlight | #FF8A4C | Numbers, links, icons on dark |
-| text.primary | #FFFFFF | |
-| text.secondary | #A3A3A3 | |
+| text.primary / secondary | #FFFFFF / #A3A3A3 | |
 | text.muted | #707070 | Decoration only, fails contrast for small text |
 | text.onAccent | #101010 | Text on orange. White on orange fails contrast. |
 | success / warning / error | #36C98F / #FFC15A / #FF5252 | Semantic only |
 
-Gradients: only in hero areas (ring arcs, Focus card, level badge). Buttons and bars are solid orange. Glows are soft and low opacity.
+Gradients are for hero areas only. Buttons and bars are solid orange. Glows are soft and low.
 
 ## 4. Typography
 
-Plus Jakarta Sans for headings and numbers, Inter for body and data. Five levels only. Use tabular numerals for all statistics.
+Plus Jakarta Sans for headings and numbers, Inter for body and data. Five levels. Tabular numerals for statistics.
 
 | Level | Font | Size / line | Weight |
 |---|---|---|---|
@@ -57,141 +55,183 @@ Plus Jakarta Sans for headings and numbers, Inter for body and data. Five levels
 
 ## 5. Spacing, shape, depth
 
-- 8 pt grid: 8, 16, 24, 32, 48. Screen padding 20 to 24. Card padding 14 to 18.
-- Radius: 12 chips and tiles, 20 to 24 cards, 28 hero cards and sheets, pill for buttons and nav.
-- Depth comes from surface colour and a 1 px border, not shadows. Shadows only on the floating nav and the floating counter.
-- Touch targets 44 px or larger. Primary button 56 to 60 px high.
+8 pt grid (8, 16, 24, 32, 48). Screen padding 20 to 24. Radius 12 chips, 20 to 24 cards, 28 to 44 hero cards and sheets, pill for buttons. Depth comes from surface colour and a 1 px border, not shadows. Touch targets 44 px or more. Primary button 54 to 60 px.
 
 ## 6. Components
 
-- **Primary button:** solid #FF6B24, #101010 label, pill, no arrow icon. Secondary: outline #353535. Link: #A3A3A3 underline.
-- **Card:** solid surface.solid with a 1 px border. Selected state: 1 to 2 px orange border and a faint orange glow, check badge on the right.
-- **Toggle:** 52 x 32, orange when on, dark knob. A pulsing orange ring marks the toggle the user must tap in permission guides.
-- **Segmented control and chips:** pill, orange fill for the active item.
-- **Progress:** ring (tick marks plus glowing arc with knob), bar (6 to 10 px), 11 step onboarding bar.
-- **Platform tile:** rounded square in the platform's brand colour with a generic reel glyph. Do not use real brand logos without permission.
-- **Bottom nav:** floating pill, 68 px high, 16 px side margin. Five tabs: Home, Insights, Battles, Brain, Profile. Active tab is an orange circle with a dark icon.
-- **Medals (achievements):** done = orange gradient disc, in progress = partial ring, locked = grey with lock.
-- **Permission guide pattern:** explain why, show exactly what is and is not read, then a mock of the Android settings screen with the target toggle ringed, numbered steps, a "Waiting for permission" status and an "Open Settings" button.
+- **Buttons:** primary solid orange with a dark label, secondary outline, destructive outline in red, disabled grey. No arrow icons inside buttons.
+- **Inputs:** 54 px, radius 16. States: idle, focus (orange, with a soft ring), error (red with a message), ok (green with a tick).
+- **Cards:** solid with a 1 px border. Selected: orange border with a faint glow and a check badge.
+- **Toggle, segmented control, chips, progress ring and bar, platform tiles, medals.**
+- **Bottom nav:** floating pill, 68 px, 5 tabs (Home, Insights, Battles, Brain, Profile).
+- **Bottom sheets and modals:** 36 to 44 px top radius, grabber, dimmed and blurred background.
+- **State patterns:** skeleton (shimmer) only if data takes over 300 ms, empty (Brainy plus one action), partial data (progress toward unlocking), error (what happened, what still works, retry), offline banner, permission-denied card.
 
 ### Floating counter (notch pill)
 
-- Black capsule at top centre. Brainy sits in the exact centre, reels watched on the left, reels remaining (orange) on the right. Tap opens Scrola.
-- Compact: 150 x 42, numbers only. Expanded: 252 x 48, adds "watched" and "left" labels.
-- Position: "Stick to top centre" (default) or "Free" (drag).
-- Android cannot draw inside the camera cutout. Build it as a native overlay (Kotlin, `TYPE_APPLICATION_OVERLAY`), read the display cutout insets, and place the pill beside the cutout. On phones without a cutout it sits below the status bar.
-- Never vibrate while counting reels.
+Black capsule at top centre. Brainy sits in the centre, reels watched on the left, reels left on the right. Compact 150 x 42, expanded 252 x 48. States: normal, 80% (amber, tired), limit reached (red pulse, sad). Position "Stick to top centre" or "Free". Android cannot draw inside the camera cutout. Build it as a native overlay (Kotlin, `TYPE_APPLICATION_OVERLAY`), read the display cutout insets and place the pill beside the cutout.
 
 ## 7. Mascot: Brainy
 
-Original character, a rounded brain in orange with a soft 3D look (radial light, rim light, bounce light, ground shadow). The SVGs here are flat stand-ins. The production character should be a Blender render exported to Rive, with the same eight states.
+Original character: a rounded brain, orange, soft 3D look (key light top left, rim light, orange bounce, contact shadow). The SVGs here are stand-ins. Production: a Blender render exported to Rive with the same states.
 
-| State | Proposed trigger (to confirm) |
+Eight moods (one face rig): happy, excited, neutral, focused, tired, sad, sleepy, celebrating.
+
+| Mood | Proposed trigger (to confirm) |
 |---|---|
-| Happy | Under 60% of today's limit |
+| Happy | Under 60% of the limit |
 | Neutral | 60 to 80% |
 | Tired | 80 to 100% |
 | Sad | Over the limit |
 | Focused | During a focus session |
-| Sleepy | Detox, night block |
+| Sleepy | Detox, night block, tracking paused |
 | Excited | Level up, streak milestone |
 | Celebrating | Achievement, evolution, setup complete |
 
-Evolution stages: Sleepy Seed (Lv 1 to 2), Curious Cortex (3 to 5), Bright Mind (6 to 9), Sharp Genius (10 to 14), Zen Master (15+). Skins: Classic, Ember, Golden, Frost, Mint, Midnight.
+Twelve evolution forms: Sleepy Seed (Lv 1 to 2), Curious Cortex (3 to 5), Bright Mind (6 to 8), Sharp Genius (9 to 11), Explorer (12 to 14), Ninja Focus (15 to 17), Zen Master (18 to 20), Wizard (21 to 23), Astronaut (24 to 26), Storm Brain (27 to 29), Cosmic Mind (30 to 34), Royal Legend (35+). Skins (colour only): Classic, Ember, Golden, Frost, Mint, Midnight.
 
 ## 8. Motion
 
-Easing: `cubic-bezier(0.2, 0.8, 0.2, 1)` for entrances, ease-in `(0.4, 0, 1, 1)` for exits.
-
-| Token | ms | Use |
-|---|---|---|
-| press | 120 | Button feedback |
-| standard | 240 | Toggles, tabs, sheets |
-| enter | 480 | Card entrance, 50 ms stagger |
-| data | 1000+ | Rings, bars, charts, counters |
-
-Present in the prototypes: count-up numbers, ring draw, bar fill, staggered card entrance, idle breathing and blinking, floating orbs, pulsing "tap here" and "live" dots, chart bars growing. Pause off-screen animation, cap work at 60 fps, and swap movement for fades when Android "remove animations" is on.
+Ease-out `cubic-bezier(0.2, 0.8, 0.2, 1)` for entrances. Durations: 120 ms press, 240 ms toggles and sheets, 480 ms entrances (50 ms stagger), 600 ms notch drop and evolution pop, 1000 ms and up for rings, bars and counters. Pause off-screen animation. With Android "remove animations" on, swap movement for fades.
 
 ## 9. Haptics (one central HapticService)
 
-| Level | Feel | Used for |
+| Level | Used for |
+|---|---|
+| 1 Subtle (selection click) | Nav, tabs, segmented controls, slider ticks |
+| 2 Light | Buttons, toggles, the 80% heads up (one tap) |
+| 3 Medium | Submit, emergency unlock, battle start, focus complete |
+| 4 Celebratory (custom pattern) | Level up, evolution, achievement, battle win |
+| Warning | Limit reached |
+| Error | Swipe while locked (at most once per 2 s), invalid input |
+
+No haptics at 50% or during normal reel counting. Settings: on/off and Light / Medium / Strong. Follow the system setting.
+
+## 10. Key flows
+
+**First run:** Splash, Welcome, Create account (or Log in, or Google then pick a username), How Scrola works, Platform selection, Accessibility explanation and setup, Overlay explanation and setup, Notifications, Tracking complete, Goal selection, Home. The automatic guide (8 spotlight steps) starts by itself once when Home first opens. It is not part of onboarding. Replay it from Profile, Help.
+
+**Authentication:** Log in takes an email or a username plus a password, or Google. Create account asks for email, a unique username and a password. Username: 3 to 20 characters, letters, numbers, dot, underscore, checked live after a 400 ms pause, with suggestions when taken. A new Google user must pick a username before setup. Errors never reveal whether an account exists. Reset links expire in 30 minutes (proposal).
+
+**Limit flow:** 50% quiet tag, no haptic. 80% amber pill and a banner from the notch, one light tap. Last 3 reels: three dots. 100%: warning haptic, Brainy drops from the notch into the Limit reached modal (Back to Scrola, Go home, Unlock for 5 min). Emergency unlock waits 30 s, ends the streak and uses 1 of 2 daily unlocks. Swiping while locked gives an error tap and the reel bounces back. Gentle mode shows the unlock link. Strict mode hides it.
+
+## 11. Screen inventory
+
+| Screen | File | Flow |
 |---|---|---|
-| 1 Subtle | Selection click | Bottom nav, tabs, segmented controls, slider ticks, pull to refresh |
-| 2 Light | Light impact | Buttons, toggles |
-| 3 Medium | Medium impact / success | Form submit, blocking on, battle start, focus complete |
-| 4 Celebratory | Custom multi-step pattern | Achievement, level up, evolution, victory |
+| Design system v0.3 | `screens/001-design-system-v0-3.html` | Scrola · Foundation & Home |
+| 12 Home Dashboard · premium v2 (full scroll) | `screens/002-12-home-dashboard-premium-v2-full-scroll.html` | Scrola · Foundation & Home |
+| 1 Splash | `screens/003-1-splash.html` | Permissions & setup (Screens 6–10) |
+| 2 Welcome | `screens/004-2-welcome.html` | Permissions & setup (Screens 6–10) |
+| 3 How Scrola Works | `screens/005-3-how-scrola-works.html` | Permissions & setup (Screens 6–10) |
+| 4 Platform Selection | `screens/006-4-platform-selection.html` | Permissions & setup (Screens 6–10) |
+| 5 Accessibility Permission | `screens/007-5-accessibility-permission.html` | Permissions & setup (Screens 6–10) |
+| 6 Accessibility Setup | `screens/008-6-accessibility-setup.html` | Permissions & setup (Screens 6–10) |
+| 7 Overlay Explanation | `screens/009-7-overlay-explanation.html` | Permissions & setup (Screens 6–10) |
+| 8 Overlay Setup | `screens/010-8-overlay-setup.html` | Permissions & setup (Screens 6–10) |
+| 9 Notification Permission | `screens/011-9-notification-permission.html` | Permissions & setup (Screens 6–10) |
+| 10 Tracking Setup Complete | `screens/012-10-tracking-setup-complete.html` | Permissions & setup (Screens 6–10) |
+| 11 Goal Selection | `screens/013-11-goal-selection.html` | Goal & Home tracking (Screens 11, 13–16) |
+| 13 Platform Breakdown | `screens/014-13-platform-breakdown.html` | Goal & Home tracking (Screens 11, 13–16) |
+| 14 Live Tracking | `screens/015-14-live-tracking.html` | Goal & Home tracking (Screens 11, 13–16) |
+| 15 Daily Scroll History | `screens/016-15-daily-scroll-history.html` | Goal & Home tracking (Screens 11, 13–16) |
+| 16 Reel Limit Setup | `screens/017-16-reel-limit-setup.html` | Goal & Home tracking (Screens 11, 13–16) |
+| 17 Platform-wise Limits | `screens/018-17-platform-wise-limits.html` | Limits, status & floating overlay (Screens 17–21) |
+| 18 Tracking Status | `screens/019-18-tracking-status.html` | Limits, status & floating overlay (Screens 17–21) |
+| 19 Floating Overlay Setup | `screens/020-19-floating-overlay-setup.html` | Limits, status & floating overlay (Screens 17–21) |
+| 20 Floating Overlay Preview | `screens/021-20-floating-overlay-preview.html` | Limits, status & floating overlay (Screens 17–21) |
+| 21 Floating Overlay Settings | `screens/022-21-floating-overlay-settings.html` | Limits, status & floating overlay (Screens 17–21) |
+| 22 Brain Overview | `screens/023-22-brain-overview.html` | Brain & gamification (Screens 22–26) |
+| 23 Brain Evolution | `screens/024-23-brain-evolution.html` | Brain & gamification (Screens 22–26) |
+| 24 Brain Collection | `screens/025-24-brain-collection.html` | Brain & gamification (Screens 22–26) |
+| 25 Brain Details | `screens/026-25-brain-details.html` | Brain & gamification (Screens 22–26) |
+| 26 XP & Level Progress | `screens/027-26-xp-level-progress.html` | Brain & gamification (Screens 22–26) |
+| 27 Achievements | `screens/028-27-achievements.html` | Achievements, rewards & focus (Screens 27–31) |
+| 28 Streak Calendar | `screens/029-28-streak-calendar.html` | Achievements, rewards & focus (Screens 27–31) |
+| 29 Rewards | `screens/030-29-rewards.html` | Achievements, rewards & focus (Screens 27–31) |
+| 30 Focus Dashboard | `screens/031-30-focus-dashboard.html` | Achievements, rewards & focus (Screens 27–31) |
+| 31 Focus Session Setup | `screens/032-31-focus-session-setup.html` | Achievements, rewards & focus (Screens 27–31) |
+| 32 Active Focus Session | `screens/033-32-active-focus-session.html` | Focus & scroll control (Screens 32–36) |
+| 33 Blocking Dashboard | `screens/034-33-blocking-dashboard.html` | Focus & scroll control (Screens 32–36) |
+| 34 Blocking Schedule | `screens/035-34-blocking-schedule.html` | Focus & scroll control (Screens 32–36) |
+| 35 Blocking Settings | `screens/036-35-blocking-settings.html` | Focus & scroll control (Screens 32–36) |
+| 36 Scroll Detox | `screens/037-36-scroll-detox.html` | Focus & scroll control (Screens 32–36) |
+| 49 Profile | `screens/038-49-profile.html` | Profile, settings & monetisation (Screens 49–53) |
+| 50 Edit Profile | `screens/039-50-edit-profile.html` | Profile, settings & monetisation (Screens 49–53) |
+| 51 Settings | `screens/040-51-settings.html` | Profile, settings & monetisation (Screens 49–53) |
+| 52 Notifications | `screens/041-52-notifications.html` | Profile, settings & monetisation (Screens 49–53) |
+| 53 Subscription & Scrola Pro | `screens/042-53-subscription-scrola-pro.html` | Profile, settings & monetisation (Screens 49–53) |
+| Guide 1 Intro | `screens/043-guide-1-intro.html` | Automatic in-app guide (first launch, after setup) |
+| Guide 2 Your reels today | `screens/044-guide-2-your-reels-today.html` | Automatic in-app guide (first launch, after setup) |
+| Guide 3 Every app, counted | `screens/045-guide-3-every-app-counted.html` | Automatic in-app guide (first launch, after setup) |
+| Guide 4 Stay under it, level up | `screens/046-guide-4-stay-under-it-level-up.html` | Automatic in-app guide (first launch, after setup) |
+| Guide 5 Need a break? | `screens/047-guide-5-need-a-break.html` | Automatic in-app guide (first launch, after setup) |
+| Guide 6 Counter over your apps | `screens/048-guide-6-counter-over-your-apps.html` | Automatic in-app guide (first launch, after setup) |
+| Guide 7 Find your way around | `screens/049-guide-7-find-your-way-around.html` | Automatic in-app guide (first launch, after setup) |
+| Guide 8 You're ready | `screens/050-guide-8-you-re-ready.html` | Automatic in-app guide (first launch, after setup) |
+| Level Up | `screens/051-level-up.html` | Level up and evolution (Brain Evolution Animation) |
+| Evolution: ready | `screens/052-evolution-ready.html` | Level up and evolution (Brain Evolution Animation) |
+| Evolution: evolving | `screens/053-evolution-evolving.html` | Level up and evolution (Brain Evolution Animation) |
+| Evolution: reveal | `screens/054-evolution-reveal.html` | Level up and evolution (Brain Evolution Animation) |
+| Evolution: complete | `screens/055-evolution-complete.html` | Level up and evolution (Brain Evolution Animation) |
+| Brain forms (all 12) | `screens/056-brain-forms-all-12.html` | Level up and evolution (Brain Evolution Animation) |
+| 37 Friends Dashboard | `screens/057-37-friends-dashboard.html` | Social and competition (Screens 37 to 41) |
+| 38 Find Friends | `screens/058-38-find-friends.html` | Social and competition (Screens 37 to 41) |
+| 39 Friend Profile | `screens/059-39-friend-profile.html` | Social and competition (Screens 37 to 41) |
+| 40 Friends Leaderboard | `screens/060-40-friends-leaderboard.html` | Social and competition (Screens 37 to 41) |
+| 41 Scroll Battles | `screens/061-41-scroll-battles.html` | Social and competition (Screens 37 to 41) |
+| 42 Create Battle | `screens/062-42-create-battle.html` | Battles and challenges (Screens 42 to 45) |
+| 43 Battle Details | `screens/063-43-battle-details.html` | Battles and challenges (Screens 42 to 45) |
+| 44 Battle Results | `screens/064-44-battle-results.html` | Battles and challenges (Screens 42 to 45) |
+| 45 Group Challenges | `screens/065-45-group-challenges.html` | Battles and challenges (Screens 42 to 45) |
+| 46 Insights Dashboard | `screens/066-46-insights-dashboard.html` | Insights and reports (Screens 46 to 48) |
+| 47 Weekly Report | `screens/067-47-weekly-report.html` | Insights and reports (Screens 46 to 48) |
+| 48 Monthly Report | `screens/068-48-monthly-report.html` | Insights and reports (Screens 46 to 48) |
+| Login | `screens/069-login.html` | Authentication: log in and create account |
+| Login: wrong details | `screens/070-login-wrong-details.html` | Authentication: log in and create account |
+| Create account | `screens/071-create-account.html` | Authentication: log in and create account |
+| Create account: username taken | `screens/072-create-account-username-taken.html` | Authentication: log in and create account |
+| Google sign-in: pick a username | `screens/073-google-sign-in-pick-a-username.html` | Authentication: log in and create account |
+| Forgot password | `screens/074-forgot-password.html` | Authentication: forgot and reset password |
+| Check your email | `screens/075-check-your-email.html` | Authentication: forgot and reset password |
+| Reset password | `screens/076-reset-password.html` | Authentication: forgot and reset password |
+| Password updated | `screens/077-password-updated.html` | Authentication: forgot and reset password |
+| 1 Counter hits the limit | `screens/078-1-counter-hits-the-limit.html` | Limit reached: from the notch to the modal |
+| 2 Brainy drops from the notch | `screens/079-2-brainy-drops-from-the-notch.html` | Limit reached: from the notch to the modal |
+| 3 Limit reached (animated) | `screens/080-3-limit-reached-animated.html` | Limit reached: from the notch to the modal |
+| 4 Unlock for 5 minutes | `screens/081-4-unlock-for-5-minutes.html` | Limit reached: from the notch to the modal |
+| 5 Swipe while locked | `screens/082-5-swipe-while-locked.html` | Limit reached: from the notch to the modal |
+| 1 Halfway: 50% | `screens/083-1-halfway-50.html` | Limit approaching: 50%, 80% and the last 3 reels |
+| 2 Heads up: 80% | `screens/084-2-heads-up-80.html` | Limit approaching: 50%, 80% and the last 3 reels |
+| 3 Heads up banner (animated) | `screens/085-3-heads-up-banner-animated.html` | Limit approaching: 50%, 80% and the last 3 reels |
+| 4 Last 3 reels | `screens/086-4-last-3-reels.html` | Limit approaching: 50%, 80% and the last 3 reels |
+| Modal: Battle invitation | `screens/087-modal-battle-invitation.html` | Modals and bottom sheets |
+| Modal: Achievement unlocked | `screens/088-modal-achievement-unlocked.html` | Modals and bottom sheets |
+| Modal: Log out | `screens/089-modal-log-out.html` | Modals and bottom sheets |
+| Modal: Delete account | `screens/090-modal-delete-account.html` | Modals and bottom sheets |
+| Modal: Permission explanation | `screens/091-modal-permission-explanation.html` | Modals and bottom sheets |
+| State: Loading | `screens/092-state-loading.html` | App states: loading, empty, partial data, error |
+| State: Empty (friends) | `screens/093-state-empty-friends.html` | App states: loading, empty, partial data, error |
+| State: Partial data (insights) | `screens/094-state-partial-data-insights.html` | App states: loading, empty, partial data, error |
+| State: Error | `screens/095-state-error.html` | App states: loading, empty, partial data, error |
+| State: Offline | `screens/096-state-offline.html` | App states: offline, permission denied, empty history |
+| State: Permission denied | `screens/097-state-permission-denied.html` | App states: offline, permission denied, empty history |
+| State: Empty (history) | `screens/098-state-empty-history.html` | App states: offline, permission denied, empty history |
 
-Also: warning notification at the daily limit, error notification on failures, subtle feedback on a battle loss. Settings has an on/off switch and Light / Medium / Strong intensity. Follow the system haptic setting.
+## 12. Review notes
 
-## 10. Screen inventory
+Frosted cards became solid surfaces, glowing gradient buttons became solid orange, glows and decorative stars were removed, icon-row lists were replaced with comparisons and labelled diagrams, and filler copy was rewritten. Still worth a human pass: the repeated top glow and the shared Brainy pose on some screens.
 
-| # | Screen | File | Section |
-|---|---|---|---|
-| 1 | Splash | `screens/01-splash.html` | Onboarding |
-| 2 | Welcome | `screens/02-welcome.html` | Onboarding |
-| 3 | How Scrola Works | `screens/03-how-scrola-works.html` | Onboarding |
-| 4 | Platform Selection | `screens/04-platform-selection.html` | Onboarding |
-| 5 | Accessibility Permission Explanation | `screens/05-accessibility-permission-explanation.html` | Onboarding |
-| 6 | Accessibility Permission Setup | `screens/06-accessibility-permission-setup.html` | Onboarding |
-| 7 | Overlay Permission Explanation | `screens/07-overlay-permission-explanation.html` | Onboarding |
-| 8 | Overlay Permission Setup | `screens/08-overlay-permission-setup.html` | Onboarding |
-| 9 | Notification Permission | `screens/09-notification-permission.html` | Onboarding |
-| 10 | Tracking Setup Complete | `screens/10-tracking-setup-complete.html` | Onboarding |
-| 11 | Goal Selection | `screens/11-goal-selection.html` | Onboarding |
-| 12 | Home Dashboard | `screens/12-home-dashboard.html` | Home and tracking |
-| 13 | Platform Breakdown | `screens/13-platform-breakdown.html` | Home and tracking |
-| 14 | Live Tracking | `screens/14-live-tracking.html` | Home and tracking |
-| 15 | Daily Scroll History | `screens/15-daily-scroll-history.html` | Home and tracking |
-| 16 | Reel Limit Setup | `screens/16-reel-limit-setup.html` | Home and tracking |
-| 17 | Platform-wise Limits | `screens/17-platform-wise-limits.html` | Home and tracking |
-| 18 | Tracking Status | `screens/18-tracking-status.html` | Home and tracking |
-| 19 | Floating Overlay Setup | `screens/19-floating-overlay-setup.html` | Floating overlay |
-| 20 | Floating Overlay Preview | `screens/20-floating-overlay-preview.html` | Floating overlay |
-| 21 | Floating Overlay Settings | `screens/21-floating-overlay-settings.html` | Floating overlay |
-| 22 | Brain Overview | `screens/22-brain-overview.html` | Brain and gamification |
-| 23 | Brain Evolution | `screens/23-brain-evolution.html` | Brain and gamification |
-| 24 | Brain Collection | `screens/24-brain-collection.html` | Brain and gamification |
-| 25 | Brain Details | `screens/25-brain-details.html` | Brain and gamification |
-| 26 | XP and Level Progress | `screens/26-xp-and-level-progress.html` | Brain and gamification |
-| 27 | Achievements | `screens/27-achievements.html` | Brain and gamification |
-| 28 | Streak Calendar | `screens/28-streak-calendar.html` | Brain and gamification |
-| 29 | Rewards | `screens/29-rewards.html` | Brain and gamification |
-| 30 | Focus Dashboard | `screens/30-focus-dashboard.html` | Focus and scroll control |
-| 31 | Focus Session Setup | `screens/31-focus-session-setup.html` | Focus and scroll control |
-| 32 | Active Focus Session | `screens/32-active-focus-session.html` | Focus and scroll control |
-| 33 | Blocking Dashboard | `screens/33-blocking-dashboard.html` | Focus and scroll control |
-| 34 | Blocking Schedule | `screens/34-blocking-schedule.html` | Focus and scroll control |
-| 35 | Blocking Settings | `screens/35-blocking-settings.html` | Focus and scroll control |
-| 36 | Scroll Detox | `screens/36-scroll-detox.html` | Focus and scroll control |
-| 49 | Profile | `screens/49-profile.html` | Profile and settings |
-| 50 | Edit Profile | `screens/50-edit-profile.html` | Profile and settings |
-| 51 | Settings | `screens/51-settings.html` | Profile and settings |
-| 52 | Notifications (settings) | `screens/52-notifications-settings.html` | Profile and settings |
-| 53 | Subscription and Scrola Pro | `screens/53-subscription-and-scrola-pro.html` | Profile and settings |
+## 13. Flutter implementation notes
 
-## 11. Review notes: what was changed to avoid a generic look
+Clean architecture (presentation, application, domain, data, platform). Riverpod or Bloc, GoRouter, Drift. Map `tokens.json` to a `ThemeExtension`. Brainy via Rive state machine. Charts and tick rings via `CustomPainter`. Native Kotlin for the Accessibility service, overlay, blocking and cutout insets. Accessibility: font scaling, 44 px targets, contrast, reduced motion. Test at 320 dp wide. Keep mock data in its own package.
 
-- Frosted glass cards everywhere became solid surfaces. Glass stays on floating orbs only.
-- Glowing gradient buttons became solid orange. Arrow icons removed from buttons.
-- Orange glows and shadows halved. Decorative stars removed, rings kept only on Splash and the setup-complete screen. Background glow reduced on utility screens.
-- The repeated "three icon rows" pattern replaced on the accessibility and overlay explanations with a "sees / never reads" comparison and a labelled counter diagram.
-- Filler copy rewritten to be specific.
+## 14. Open items
 
-Still worth a human design pass: the repeated top-glow background, uniform title weight, and the identical Brainy pose on many screens.
-
-## 12. Flutter implementation notes
-
-- Architecture: presentation, application, domain, data, platform. Riverpod or Bloc, GoRouter, Drift (SQLite).
-- Theme: map `tokens.json` into a `ThemeExtension`. Build the components in section 6 as widgets before screens.
-- Mascot: Rive state machine with the eight states. Charts and tick rings: `CustomPainter`.
-- Native Kotlin: Accessibility service (reel detection), overlay service, app blocking, usage of cutout insets.
-- Accessibility: respect font scaling, 44 px targets, contrast (see colour notes), reduced motion. The UI must not overflow on small phones, so test at 320 dp wide.
-- Keep mock data in a separate package. Real tracking data must never be faked.
-
-## 13. Open items
-
-1. Screens 37 to 48 and the 8 modals and bottom sheets.
-2. Loading, empty, error, offline and permission-denied states for every data screen.
-3. Real 3D mascot and Rive file.
-4. Final Pro pricing and store copy.
-5. Confirm Brainy mood thresholds and the evolution levels.
+1. Email verification code screen.
+2. Home dashboard state at 80% of the limit.
+3. Final 3D Brainy (Blender and Rive) and the Rive animation timings.
+4. Play Store direction (A to D) and the remaining four screenshots in that style.
+5. Replace sample data with real captures for store assets.
+6. Test on small phones (320 dp).
+7. Flutter implementation.
