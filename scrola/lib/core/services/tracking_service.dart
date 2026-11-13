@@ -17,6 +17,10 @@ class TrackingService extends ChangeNotifier {
   Future<void>? _refreshPermissionsInFlight;
   bool _focusListenerAttached = false;
   bool _lastFocusEnforcing = false;
+  final StreamController<void> _limitReachedController =
+      StreamController<void>.broadcast();
+
+  Stream<void> get onLimitReached => _limitReachedController.stream;
 
   bool _isAccessibilityGranted = false;
   bool _isOverlayGranted = false;
@@ -743,6 +747,7 @@ class TrackingService extends ChangeNotifier {
       // Only fire warning/error haptics when hitting 80% or 100% thresholds
       if (totalReelsToday == totalLimit) {
         await HapticService.warning();
+        _limitReachedController.add(null);
       } else if (totalReelsToday > totalLimit) {
         await HapticService.error();
       }
@@ -754,6 +759,9 @@ class TrackingService extends ChangeNotifier {
       await storage.incrementDailyBlocksCount();
       FocusModeService().incrementBlockedAttempt();
       await HapticService.error();
+      if (event.eventType == 'limit_block_enforced') {
+        _limitReachedController.add(null);
+      }
       notifyListeners();
     } else if (event.eventType == 'overlay_dismissed') {
       final storage = await _ensureStorage();

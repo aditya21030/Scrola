@@ -1330,7 +1330,9 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
               Navigator.of(context).pop();
             } else {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const MainShell()),
+                MaterialPageRoute(
+                  builder: (_) => const MainShell(promptRegistration: true),
+                ),
                 (_) => false,
               );
             }

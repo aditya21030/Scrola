@@ -96,7 +96,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Navigator.of(context).pop();
       }
     } finally {
-      _saving = false;
+      if (mounted) {
+        _saving = false;
+      }
     }
   }
 
@@ -105,6 +107,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final isUnlocked = _tracking.currentLevel >= reqLevel;
     final selected = isUnlocked && _selectedSkin == skin;
     final label = skin.name[0].toUpperCase() + skin.name.substring(1);
+
     return Opacity(
       opacity: isUnlocked ? 1.0 : 0.72,
       child: ScrolaSelectableCard(
@@ -211,9 +214,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: Text(
                           'Save',
                           style: AppTypography.caption(
-                                  color: AppColors.primaryAccent)
-                              .copyWith(
-                                  fontWeight: FontWeight.w700, fontSize: 15),
+                            color: AppColors.primaryAccent,
+                          ).copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ),
@@ -226,55 +231,68 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
+                          // Avatar preview
                           Center(
-                            child: Container(
-                              width: 112,
-                              height: 112,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    AppColors.primaryAccent
-                                        .withValues(alpha: 0.25),
-                                    AppColors.surfaceSolid,
-                                  ],
+                            child: Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                Container(
+                                  width: 104,
+                                  height: 104,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        AppColors.primaryAccent
+                                            .withValues(alpha: 0.28),
+                                        AppColors.elevatedSurface,
+                                      ],
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.primaryAccent,
+                                      width: 2.2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryAccent
+                                            .withValues(alpha: 0.25),
+                                        blurRadius: 18,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: BrainyMascot(
+                                      mood: BrainyMood.happy,
+                                      skin: _selectedSkin,
+                                      size: 76,
+                                    ),
+                                  ),
                                 ),
-                                border: Border.all(
-                                  color: AppColors.primaryAccent
-                                      .withValues(alpha: 0.4),
+                                Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryAccent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.primaryBackground,
+                                      width: 2.2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit_rounded,
+                                    size: 15,
+                                    color: AppColors.textOnAccent,
+                                  ),
                                 ),
-                              ),
-                              child: Center(
-                                child: BrainyMascot(
-                                  mood: BrainyMood.happy,
-                                  skin: _selectedSkin,
-                                  size: 84,
-                                ),
-                              ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 20),
-                          Text(
-                            'BRAINY SKIN',
-                            style: AppTypography.label(
-                              color: AppColors.secondaryText,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 0.82,
-                            children: [
-                              for (final skin in BrainySkin.values)
-                                _buildSkinCard(context, skin),
-                            ],
-                          ),
-                          const SizedBox(height: 22),
+
+                          // Text fields appear FIRST right below the avatar
                           _FieldBlock(
                             label: 'DISPLAY NAME',
                             controller: _nameCtrl,
@@ -312,15 +330,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               }
                             },
                           ),
+                          const SizedBox(height: 24),
+
+                          // Brainy Skin selector below the fields
+                          Text(
+                            'BRAINY SKIN',
+                            style: AppTypography.label(
+                              color: AppColors.secondaryText,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.82,
+                            children: [
+                              for (final skin in BrainySkin.values)
+                                _buildSkinCard(context, skin),
+                            ],
+                          ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   ScrolaPrimaryButton(
-                    label: 'Save changes',
+                    label: _saving ? 'Saving...' : 'Save changes',
                     useMediumHaptic: true,
-                    onPressed: _save,
+                    onPressed: _saving ? null : _save,
                   ),
                 ],
               ),
@@ -353,48 +393,64 @@ class _FieldBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasError = errorText != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: AppTypography.label(color: AppColors.secondaryText)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          onChanged: onChanged,
-          style: AppTypography.body(color: AppColors.primaryText),
-          decoration: InputDecoration(
-            prefixText: prefixText,
-            prefixStyle:
-                AppTypography.body(color: AppColors.secondaryText),
-            errorText: errorText,
-            errorStyle: AppTypography.caption(color: AppColors.error),
-            filled: true,
-            fillColor: AppColors.surfaceSolid,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.borderSubtle),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.primaryAccent),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.error),
+        Text(
+          label,
+          style: AppTypography.label(color: AppColors.secondaryText),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 52,
+          decoration: BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hasError ? AppColors.error : AppColors.border,
+              width: 1.2,
             ),
           ),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            children: [
+              if (prefixText != null) ...[
+                Text(
+                  prefixText!,
+                  style: AppTypography.body(color: AppColors.secondaryText)
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 2),
+              ],
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
+                  textInputAction: textInputAction,
+                  style: AppTypography.body(color: AppColors.primaryText)
+                      .copyWith(fontWeight: FontWeight.w600),
+                  cursorColor: AppColors.primaryAccent,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: onChanged,
+                ),
+              ),
+            ],
+          ),
         ),
+        if (hasError) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText!,
+            style: AppTypography.caption(color: AppColors.error),
+          ),
+        ],
       ],
     );
   }

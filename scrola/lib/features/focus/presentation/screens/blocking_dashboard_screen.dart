@@ -11,6 +11,7 @@ import '../../../../shared/widgets/scrola_toggle.dart';
 import 'blocking_schedule_screen.dart';
 import 'blocking_settings_screen.dart';
 import 'scroll_detox_screen.dart';
+import '../widgets/limit_reached_modal.dart';
 
 class BlockingDashboardScreen extends StatefulWidget {
   const BlockingDashboardScreen({super.key});
@@ -251,6 +252,11 @@ class _BlockingDashboardScreenState extends State<BlockingDashboardScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  ScrolaSecondaryButton(
+                    label: 'Preview limit reached screen',
+                    onPressed: () => LimitReachedModal.show(context),
                   ),
                 ],
               ),

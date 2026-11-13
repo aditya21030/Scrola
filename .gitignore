@@ -36,3 +36,5 @@
 **/android/app/release
 **/local.properties
 **/GeneratedPluginRegistrant.java
+**/.gradle/
+**/.kotlin/

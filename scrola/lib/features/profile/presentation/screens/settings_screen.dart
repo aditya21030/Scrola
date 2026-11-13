@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -8,6 +9,8 @@ import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import '../../../../shared/widgets/scrola_segmented_control.dart';
 import '../../../../shared/widgets/scrola_toggle.dart';
+import '../../../auth/presentation/screens/create_account_screen.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../focus/presentation/screens/blocking_dashboard_screen.dart';
 import '../../../insights/presentation/screens/platform_breakdown_screen.dart';
 import '../../../insights/presentation/screens/reel_limit_setup_screen.dart';
@@ -318,6 +321,127 @@ class SettingsScreen extends StatelessWidget {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'ACCOUNT',
+                          style: AppTypography.label(
+                            color: AppColors.secondaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ListenableBuilder(
+                          listenable: AuthService(),
+                          builder: (context, _) {
+                            final auth = AuthService();
+                            final isGuest = auth.isGuest;
+
+                            return ScrolaCard(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 2,
+                              ),
+                              child: Column(
+                                children: [
+                                  if (isGuest) ...[
+                                    _SettingLinkRow(
+                                      title: 'Status',
+                                      value: 'Guest Mode',
+                                      valueColor: AppColors.primaryAccent,
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const CreateAccountScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const Divider(
+                                      color: AppColors.borderSubtle,
+                                      height: 1,
+                                    ),
+                                    _SettingLinkRow(
+                                      title: 'Create account',
+                                      value: 'Sync stats',
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const CreateAccountScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const Divider(
+                                      color: AppColors.borderSubtle,
+                                      height: 1,
+                                    ),
+                                    _SettingLinkRow(
+                                      title: 'Log in',
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const LoginScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ] else ...[
+                                    _SettingLinkRow(
+                                      title: 'Account',
+                                      value: auth.email ?? 'Logged in',
+                                      onTap: () {},
+                                    ),
+                                    const Divider(
+                                      color: AppColors.borderSubtle,
+                                      height: 1,
+                                    ),
+                                    _SettingLinkRow(
+                                      title: 'Log out',
+                                      titleColor: AppColors.error,
+                                      onTap: () {
+                                        HapticService.warning();
+                                        showDialog<void>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            backgroundColor:
+                                                AppColors.cardSurface,
+                                            title: const Text('Log out?'),
+                                            content: const Text(
+                                              'You can log back in anytime to restore your streak.',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(ctx).pop(),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () async {
+                                                  await auth.signOut();
+                                                  if (ctx.mounted) {
+                                                    Navigator.of(ctx).pop();
+                                                  }
+                                                },
+                                                child: const Text(
+                                                  'Log out',
+                                                  style: TextStyle(
+                                                    color: AppColors.error,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -359,6 +483,7 @@ class _SettingLinkRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
+              flex: 3,
               child: Text(
                 title,
                 style: AppTypography.subheading(
@@ -367,14 +492,18 @@ class _SettingLinkRow extends StatelessWidget {
               ),
             ),
             if (value != null) ...[
-              const SizedBox(width: 12),
-              Text(
-                value!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.caption(
-                  color: valueColor ?? AppColors.secondaryText,
-                ).copyWith(fontWeight: FontWeight.w600),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: Text(
+                  value!,
+                  maxLines: 1,
+                  textAlign: TextAlign.right,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption(
+                    color: valueColor ?? AppColors.secondaryText,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
               ),
             ],
             const SizedBox(width: 6),

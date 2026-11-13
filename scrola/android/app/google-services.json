@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "524694824239",
+    "project_id": "scrola-111",
+    "storage_bucket": "scrola-111.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:524694824239:android:897cdc00c102e007ff6dda",
+        "android_client_info": {
+          "package_name": "com.yousful.scrola"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgNPaGgX6L4f7f3kaKgXDSz800qY6VVRQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

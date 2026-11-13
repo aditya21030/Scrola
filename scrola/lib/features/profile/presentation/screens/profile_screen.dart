@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
@@ -7,6 +8,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import '../../../auth/presentation/widgets/registration_prompt_modal.dart';
 import 'edit_profile_screen.dart';
 import 'notifications_settings_screen.dart';
 import 'settings_screen.dart';
@@ -59,6 +61,68 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (AuthService().isGuest) ...[
+                          ScrolaCard(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            borderColor: AppColors.primaryAccent
+                                .withValues(alpha: 0.35),
+                            onTap: () {
+                              HapticService.subtle();
+                              RegistrationPromptModal.show(context);
+                            },
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryAccent
+                                        .withValues(alpha: 0.16),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.cloud_upload_outlined,
+                                    color: AppColors.primaryAccent,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Using Scrola as Guest',
+                                        style: AppTypography.subheading()
+                                            .copyWith(
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Tap to register & save streak progress',
+                                        style: AppTypography.caption(
+                                          color: AppColors.secondaryText,
+                                        ).copyWith(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: AppColors.secondaryText,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         ScrolaCard(
                           padding: const EdgeInsets.all(20),
                           onTap: () {

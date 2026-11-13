@@ -42,6 +42,12 @@ import 'package:scrola/features/profile/presentation/screens/notifications_setti
 import 'package:scrola/features/profile/presentation/screens/profile_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/settings_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/subscription_pro_screen.dart';
+import 'package:scrola/core/services/auth_service.dart';
+import 'package:scrola/features/auth/presentation/screens/create_account_screen.dart';
+import 'package:scrola/features/auth/presentation/screens/login_screen.dart';
+import 'package:scrola/features/auth/presentation/widgets/registration_prompt_modal.dart';
+import 'package:scrola/features/focus/presentation/widgets/emergency_unlock_modal.dart';
+import 'package:scrola/features/focus/presentation/widgets/limit_reached_modal.dart';
 import 'package:scrola/main.dart';
 import 'package:scrola/shared/widgets/platform_icon.dart';
 import 'package:scrola/shared/widgets/scrola_card.dart';
@@ -676,12 +682,16 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: EditProfileScreen()));
     await tester.pump(const Duration(milliseconds: 200));
 
+    await tester.ensureVisible(find.text('Midnight'));
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.tap(find.text('Midnight'));
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Unlock Midnight Brainy at Level 20.'), findsOneWidget);
     expect(tracking.equippedSkin, BrainySkin.classic);
 
     await tester.enterText(find.byType(TextField).first, '   ');
+    await tester.ensureVisible(find.text('Save changes'));
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.tap(find.text('Save changes'));
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Display name cannot be empty'), findsOneWidget);
@@ -1298,5 +1308,60 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets(
+      'Auth screens, RegistrationPromptModal, LimitReachedModal, and EmergencyUnlockModal render cleanly',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    // 1. AuthService guest check
+    expect(AuthService().isGuest, isTrue);
+
+    // 2. LoginScreen renders
+    await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Log in'), findsWidgets);
+
+    // 3. CreateAccountScreen renders
+    await tester.pumpWidget(const MaterialApp(home: CreateAccountScreen()));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Create your account'), findsOneWidget);
+    expect(find.text('Create account'), findsWidgets);
+
+    // 4. RegistrationPromptModal renders
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: RegistrationPromptModal()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Save your streak & progress'), findsOneWidget);
+    expect(find.text('Create free account'), findsOneWidget);
+    expect(find.text('Continue as Guest'), findsOneWidget);
+
+    // 5. LimitReachedModal renders
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: LimitReachedModal()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text("That's your limit for today"), findsOneWidget);
+    expect(find.text('Limit reached'), findsOneWidget);
+    expect(find.text('Back to Scrola'), findsOneWidget);
+
+    // 6. EmergencyUnlockModal renders
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: EmergencyUnlockModal()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Unlock for 5 minutes?'), findsOneWidget);
+    expect(find.text('Keep it locked'), findsOneWidget);
   });
 }

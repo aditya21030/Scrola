@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/widgets/registration_prompt_modal.dart';
 import '../../../brain/presentation/screens/brain_overview_screen.dart';
 import '../../../focus/presentation/screens/focus_dashboard_screen.dart';
+import '../../../focus/presentation/widgets/limit_reached_modal.dart';
 import '../../../insights/presentation/screens/daily_scroll_history_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../widgets/scrola_bottom_nav.dart';
@@ -11,8 +15,13 @@ import 'home_screen.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
+  final bool promptRegistration;
 
-  const MainShell({super.key, this.initialIndex = 0});
+  const MainShell({
+    super.key,
+    this.initialIndex = 0,
+    this.promptRegistration = false,
+  });
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -20,6 +29,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   final TrackingService _tracking = TrackingService();
+  StreamSubscription<void>? _limitSub;
   late int _currentIndex;
 
   @override
@@ -28,6 +38,22 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     _currentIndex = widget.initialIndex;
     WidgetsBinding.instance.addObserver(this);
     _tracking.initialize();
+
+    _limitSub = _tracking.onLimitReached.listen((_) {
+      if (mounted) {
+        LimitReachedModal.show(context);
+      }
+    });
+
+    if (widget.promptRegistration) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 650), () {
+          if (mounted && AuthService().isGuest) {
+            RegistrationPromptModal.show(context);
+          }
+        });
+      });
+    }
   }
 
   @override
@@ -40,6 +66,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _limitSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

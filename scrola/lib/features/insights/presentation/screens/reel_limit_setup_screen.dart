@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import '../../../focus/presentation/widgets/limit_reached_modal.dart';
 
 class ReelLimitSetupScreen extends StatefulWidget {
   const ReelLimitSetupScreen({super.key});
@@ -185,6 +186,11 @@ class _ReelLimitSetupScreenState extends State<ReelLimitSetupScreen> {
                     ),
                     const Spacer(),
                     const SizedBox(height: 16),
+                    ScrolaSecondaryButton(
+                      label: 'Preview limit reached modal',
+                      onPressed: () => LimitReachedModal.show(context),
+                    ),
+                    const SizedBox(height: 10),
                     ScrolaPrimaryButton(
                       label: 'Save limit',
                       useMediumHaptic: true,
