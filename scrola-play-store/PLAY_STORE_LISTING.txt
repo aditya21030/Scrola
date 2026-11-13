@@ -1,0 +1,74 @@
+================================================================================
+GOOGLE PLAY STORE LISTING DETAILS - SCROLA
+================================================================================
+
+[ APP TITLE ] (Max 30 characters)
+Scrola: Reel & Shorts Blocker
+
+--------------------------------------------------------------------------------
+
+[ SHORT DESCRIPTION ] (Max 80 characters)
+Stop doomscrolling. Block Reels and Shorts while keeping DMs and search 🛑
+
+--------------------------------------------------------------------------------
+
+[ LONG DESCRIPTION ] (Max 4000 characters)
+
+You open Instagram to reply to a friend 💬
+Thirty seconds later, the algorithm hooks you into a swipe marathon 🌀
+Forty five minutes just vanished into thin air ⏳
+
+You do not want to delete Instagram or YouTube. You still need your chats. You still watch tutorials. You just want the bottomless scroll trap gone 🛑
+
+That is why Scrola exists 🧠✨
+
+Scrola targets the exact feed causing the damage. It leaves your direct messages, search bar, and long videos untouched while cutting off Reels, Shorts, and algorithmic video feeds the moment you hit your limit 🎯
+
+No guilt trips. Just clean boundaries backed by Brainy, your evolving focus companion 🐾
+
+⚡ HOW SCROLA GUARDS YOUR ATTENTION
+
+🎯 Surgical Reel and Short blocking
+Most app blockers shut down the whole app. Scrola only steps in when you enter the vertical video feed in Instagram, YouTube, TikTok, Facebook, Snapchat, X, and Reddit. Your chats and study tools stay open.
+
+👀 Live Notch counter
+A discreet pill sits right by your front camera. It shows how many reels you watched today and how many you have left. Watching the counter climb in real time breaks the dopamine trance instantly.
+
+⏱️ The 15 second breath test
+When you hit your limit, Scrola puts a calm lock screen right over the video feed with a 15 second cooldown. If you really need to keep going, wait out the timer for an emergency 5 minute unlock. That quick pause alone stops 90 percent of mindless binges.
+
+🧠 Brainy evolves when you stay in control
+Every day you respect your daily limit, Brainy gains XP. Brainy evolves through 30 forms and unlocks 40 fun skins. Binge scroll and Brainy gets sad. It turns screen time into an actual game you want to win.
+
+🌙 Night Block and Work Hours
+Set custom schedules so reels stay locked during work, study hours, or right before sleep. Protect your rest and wake up without screen fatigue.
+
+📊 Clean visual insights
+Track your daily scroll count, time saved, and weekly trends without messy charts. See your dopamine intake drop and your real life focus return.
+
+🔒 100% PRIVATE BY DESIGN
+
+Scrola runs locally on your phone.
+👤 No account required to start. Use it as a guest immediately.
+🚫 No personal data sold or uploaded.
+🛡️ Zero tracking of your private messages or searches.
+
+📱 SUPPORTED APPS
+
+📸 Instagram Reels
+▶️ YouTube Shorts
+🎵 TikTok
+👻 Snapchat Spotlight
+📘 Facebook Reels
+🐦 X Videos
+🤖 Reddit Watch
+💃 Moj Reels
+
+⚙️ ACCESSIBILITY SERVICE PERMISSION
+
+Scrola uses the Android Accessibility Service API to detect when a short video feed opens on your screen and count your vertical swipes.
+
+🛡️ Privacy guarantee:
+Scrola never reads your chats, passwords, keystrokes, personal photos, or bank details. All detection happens 100% on device in real time and never leaves your phone.
+
+Take back your hours. Protect your brain. Stop doomscrolling with Scrola today 🚀
