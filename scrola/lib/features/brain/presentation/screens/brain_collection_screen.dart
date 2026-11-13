@@ -118,86 +118,95 @@ class _BrainCollectionScreenState extends State<BrainCollectionScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              childAspectRatio: 0.88,
+                              childAspectRatio: 0.76,
                             ),
                             itemBuilder: (context, idx) {
                               final skin = visible[idx];
                               final reqLv =
                                   GamificationEngine.unlockLevelForSkin(skin);
                               final isOwned = currentLevel >= reqLv;
-                        final isEquipped = _tracking.equippedSkin == skin;
-                        final name = skin.name[0].toUpperCase() +
-                            skin.name.substring(1);
+                              final isEquipped = _tracking.equippedSkin == skin;
+                              final name = skin.name[0].toUpperCase() +
+                                  skin.name.substring(1);
 
-                        return ScrolaSelectableCard(
-                          isSelected: isEquipped,
-                          checkPosition: ScrolaCheckPosition.topRight,
-                          onTap: () {
-                            HapticService.subtle();
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => BrainDetailsScreen(
-                                  initialSkin: skin,
-                                  requiredLevel: reqLv,
-                                ),
-                              ),
-                            );
-                          },
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              BrainyMascot(
-                                mood: BrainyMood.happy,
-                                skin: skin,
-                                size: 92,
-                                animate: false,
-                                silhouette: !isOwned,
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                name,
-                                style: AppTypography.subheading()
-                                    .copyWith(fontSize: 15),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
+                              return ScrolaSelectableCard(
+                                isSelected: isEquipped,
+                                checkPosition: ScrolaCheckPosition.topRight,
+                                onTap: () {
+                                  HapticService.subtle();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => BrainDetailsScreen(
+                                        initialSkin: skin,
+                                        requiredLevel: reqLv,
+                                      ),
+                                    ),
+                                  );
+                                },
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
-                                  vertical: 4,
+                                  vertical: 12,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: isEquipped
-                                      ? AppColors.primaryAccent
-                                          .withValues(alpha: 0.18)
-                                      : isOwned
-                                          ? AppColors.successBackground
-                                          : AppColors.elevatedSurface,
-                                  borderRadius: BorderRadius.circular(10),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Center(
+                                        child: BrainyMascot(
+                                          mood: BrainyMood.happy,
+                                          skin: skin,
+                                          size: 80,
+                                          animate: false,
+                                          silhouette: !isOwned,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.subheading()
+                                          .copyWith(fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isEquipped
+                                            ? AppColors.primaryAccent
+                                                .withValues(alpha: 0.18)
+                                            : isOwned
+                                                ? AppColors.successBackground
+                                                : AppColors.elevatedSurface,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        isEquipped
+                                            ? 'Equipped'
+                                            : isOwned
+                                                ? 'Owned'
+                                                : 'Level $reqLv',
+                                        style: AppTypography.caption(
+                                          color: isEquipped
+                                              ? AppColors.primaryAccent
+                                              : isOwned
+                                                  ? AppColors.success
+                                                  : AppColors.secondaryText,
+                                        ).copyWith(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: Text(
-                                  isEquipped
-                                      ? 'Equipped'
-                                      : isOwned
-                                          ? 'Owned'
-                                          : 'Level $reqLv',
-                                  style: AppTypography.caption(
-                                    color: isEquipped
-                                        ? AppColors.primaryAccent
-                                        : isOwned
-                                            ? AppColors.success
-                                            : AppColors.secondaryText,
-                                  ).copyWith(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

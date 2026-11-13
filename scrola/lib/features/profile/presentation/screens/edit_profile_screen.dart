@@ -110,9 +110,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: ScrolaSelectableCard(
         isSelected: selected,
         checkPosition: ScrolaCheckPosition.topRight,
-        checkBadgeSize: 16,
-        radius: 18,
-        padding: const EdgeInsets.fromLTRB(6, 12, 6, 10),
+        checkBadgeSize: 15,
+        radius: 16,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         onTap: () {
           if (!isUnlocked) {
             HapticService.warning();
@@ -133,14 +133,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            BrainyMascot(
-              mood: BrainyMood.happy,
-              skin: skin,
-              size: 40,
-              animate: false,
-              silhouette: !isUnlocked,
+            Expanded(
+              child: Center(
+                child: BrainyMascot(
+                  mood: BrainyMood.happy,
+                  skin: skin,
+                  size: 36,
+                  animate: false,
+                  silhouette: !isUnlocked,
+                ),
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
@@ -153,7 +157,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ? AppColors.primaryText
                       : AppColors.secondaryText,
                 ).copyWith(
-                  fontSize: 12,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -168,7 +172,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ? AppColors.primaryAccent
                     : AppColors.secondaryText,
               ).copyWith(
-                fontSize: 10.5,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -264,7 +268,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             crossAxisCount: 3,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
-                            childAspectRatio: 0.90,
+                            childAspectRatio: 0.82,
                             children: [
                               for (final skin in BrainySkin.values)
                                 _buildSkinCard(context, skin),

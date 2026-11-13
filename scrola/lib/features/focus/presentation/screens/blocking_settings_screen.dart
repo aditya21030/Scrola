@@ -127,19 +127,26 @@ class _BlockingSettingsScreenState extends State<BlockingSettingsScreen> {
                           child: Column(
                             children: [
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      'Emergency unlock',
-                                      style: AppTypography.subheading()
-                                          .copyWith(fontSize: 15),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    '5 min pass · ${_tracking.emergencyUnlocksLeft} left today',
-                                    style: AppTypography.caption(
-                                      color: AppColors.secondaryText,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Emergency unlock',
+                                          style: AppTypography.subheading()
+                                              .copyWith(fontSize: 15),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '5 min pass · ${_tracking.emergencyUnlocksLeft} left today',
+                                          style: AppTypography.caption(
+                                            color: AppColors.secondaryText,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],

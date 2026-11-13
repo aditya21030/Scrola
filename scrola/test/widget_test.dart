@@ -11,23 +11,31 @@ import 'package:scrola/features/brain/presentation/screens/achievements_screen.d
 import 'package:scrola/features/brain/presentation/screens/brain_collection_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/brain_details_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/brain_evolution_screen.dart';
+import 'package:scrola/features/brain/presentation/screens/brain_overview_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/rewards_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/streak_calendar_screen.dart';
 import 'package:scrola/features/brain/presentation/screens/xp_progress_screen.dart';
 import 'package:scrola/features/focus/presentation/screens/active_focus_session_screen.dart';
 import 'package:scrola/features/focus/presentation/screens/blocking_dashboard_screen.dart';
 import 'package:scrola/features/focus/presentation/screens/blocking_schedule_screen.dart';
+import 'package:scrola/features/focus/presentation/screens/blocking_settings_screen.dart';
+import 'package:scrola/features/focus/presentation/screens/focus_dashboard_screen.dart';
+import 'package:scrola/features/focus/presentation/screens/focus_session_setup_screen.dart';
 import 'package:scrola/features/focus/presentation/screens/scroll_detox_screen.dart';
 import 'package:scrola/features/home/presentation/screens/home_screen.dart';
 import 'package:scrola/features/home/presentation/screens/main_shell.dart';
 import 'package:scrola/features/home/presentation/widgets/scrola_bottom_nav.dart';
 import 'package:scrola/features/insights/presentation/screens/daily_scroll_history_screen.dart';
+import 'package:scrola/features/insights/presentation/screens/live_tracking_screen.dart';
 import 'package:scrola/features/insights/presentation/screens/platform_breakdown_screen.dart';
 import 'package:scrola/features/insights/presentation/screens/platform_limits_screen.dart';
+import 'package:scrola/features/insights/presentation/screens/reel_limit_setup_screen.dart';
+import 'package:scrola/features/insights/presentation/screens/tracking_status_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import 'package:scrola/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:scrola/features/overlay/presentation/screens/floating_overlay_preview_screen.dart';
 import 'package:scrola/features/overlay/presentation/screens/floating_overlay_settings_screen.dart';
+import 'package:scrola/features/overlay/presentation/screens/floating_overlay_setup_screen.dart';
 import 'package:scrola/features/overlay/presentation/widgets/notch_pill_preview.dart';
 import 'package:scrola/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:scrola/features/profile/presentation/screens/notifications_settings_screen.dart';
@@ -1240,5 +1248,55 @@ void main() {
     await tester.pump(const Duration(milliseconds: 150));
     expect(find.text('Done'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'Full App Suite: All feature screens render cleanly without overflow at 320x560',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(320, 560);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final screens = <WidgetBuilder>[
+      (_) => const AchievementsScreen(),
+      (_) => const BrainCollectionScreen(),
+      (_) => const BrainDetailsScreen(),
+      (_) => const BrainEvolutionScreen(),
+      (_) => const BrainOverviewScreen(),
+      (_) => const RewardsScreen(),
+      (_) => const StreakCalendarScreen(),
+      (_) => const XpProgressScreen(),
+      (_) => const ActiveFocusSessionScreen(),
+      (_) => const BlockingDashboardScreen(),
+      (_) => const BlockingScheduleScreen(),
+      (_) => const BlockingSettingsScreen(),
+      (_) => const FocusDashboardScreen(),
+      (_) => const FocusSessionSetupScreen(),
+      (_) => const ScrollDetoxScreen(),
+      (_) => const HomeScreen(),
+      (_) => const DailyScrollHistoryScreen(),
+      (_) => const LiveTrackingScreen(),
+      (_) => const PlatformBreakdownScreen(),
+      (_) => const PlatformLimitsScreen(),
+      (_) => const ReelLimitSetupScreen(),
+      (_) => const TrackingStatusScreen(),
+      (_) => const OnboardingWizardScreen(),
+      (_) => const WelcomeScreen(),
+      (_) => const FloatingOverlayPreviewScreen(),
+      (_) => const FloatingOverlaySettingsScreen(),
+      (_) => const FloatingOverlaySetupScreen(),
+      (_) => const EditProfileScreen(),
+      (_) => const NotificationsSettingsScreen(),
+      (_) => const ProfileScreen(),
+      (_) => const SettingsScreen(),
+      (_) => const SubscriptionProScreen(),
+    ];
+
+    for (final builder in screens) {
+      await tester.pumpWidget(MaterialApp(home: Builder(builder: builder)));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.takeException(), isNull);
+    }
   });
 }

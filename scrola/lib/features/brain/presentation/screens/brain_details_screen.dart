@@ -161,15 +161,18 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                             crossAxisCount: 4,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
-                            childAspectRatio: 0.88,
+                            childAspectRatio: 0.78,
                             children: BrainyMood.values.map((m) {
                               final selected = _selectedMood == m;
                               return ScrolaSelectableCard(
                                 isSelected: selected,
                                 checkPosition: ScrolaCheckPosition.topRight,
-                                checkBadgeSize: 16,
-                                radius: 18,
-                                padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
+                                checkBadgeSize: 14,
+                                radius: 16,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 6,
+                                ),
                                 onTap: () {
                                   HapticService.subtle();
                                   setState(() => _selectedMood = m);
@@ -177,14 +180,18 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    BrainyMascot(
-                                      mood: m,
-                                      skin: widget.initialSkin,
-                                      size: 42,
-                                      animate: false,
-                                      silhouette: !isOwned,
+                                    Expanded(
+                                      child: Center(
+                                        child: BrainyMascot(
+                                          mood: m,
+                                          skin: widget.initialSkin,
+                                          size: 36,
+                                          animate: false,
+                                          silhouette: !isOwned,
+                                        ),
+                                      ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 2),
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
@@ -197,7 +204,7 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                                               ? AppColors.primaryText
                                               : AppColors.secondaryText,
                                         ).copyWith(
-                                          fontSize: 11,
+                                          fontSize: 10.5,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
