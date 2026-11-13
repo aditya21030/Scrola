@@ -105,131 +105,158 @@ class _ActiveFocusSessionScreenState extends State<ActiveFocusSessionScreen>
                       ),
                     ),
                   ),
-                  const Spacer(),
-                  Center(
-                    child: SizedBox(
-                      width: 248,
-                      height: 248,
-                      child: CustomPaint(
-                        painter: _ActiveFocusRingPainter(
-                          progress: isCompleted ? 1.0 : _focus.progress,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            BrainyMascot(
-                              mood: isCompleted
-                                  ? BrainyMood.celebrating
-                                  : BrainyMood.focused,
-                              skin: _tracking.equippedSkin,
-                              size: 88,
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Spacer(),
+                                Center(
+                                  child: SizedBox(
+                                    width: 248,
+                                    height: 248,
+                                    child: CustomPaint(
+                                      painter: _ActiveFocusRingPainter(
+                                        progress:
+                                            isCompleted ? 1.0 : _focus.progress,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          BrainyMascot(
+                                            mood: isCompleted
+                                                ? BrainyMood.celebrating
+                                                : BrainyMood.focused,
+                                            skin: _tracking.equippedSkin,
+                                            size: 88,
+                                          ),
+                                          Text(
+                                            isCompleted
+                                                ? '00:00'
+                                                : _focus.formattedRemainingTime,
+                                            style: AppTypography.display(),
+                                          ),
+                                          Text(
+                                            isCompleted
+                                                ? 'completed'
+                                                : 'remaining',
+                                            style: AppTypography.caption(
+                                              color: AppColors.secondaryText,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Center(
+                                  child: Text(
+                                    isCompleted
+                                        ? 'Focus session complete!'
+                                        : '$doneMin of $totalMin minutes done',
+                                    style: AppTypography.caption(
+                                      color: isCompleted
+                                          ? AppColors.success
+                                          : AppColors.primaryAccent,
+                                    ).copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Center(
+                                  child: Text(
+                                    isCompleted
+                                        ? 'Earned +30 XP · ${_focus.blockedAttempts} distraction${_focus.blockedAttempts == 1 ? '' : 's'} blocked'
+                                        : isEnded
+                                            ? 'Start a focus session to block short-video feeds'
+                                            : 'Reels stay blocked until the timer ends',
+                                    style: AppTypography.caption(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                ScrolaCard(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 42,
+                                        height: 42,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryAccent
+                                              .withValues(alpha: 0.14),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.shield_rounded,
+                                          color: AppColors.primaryAccent,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              isCompleted
+                                                  ? 'Distractions stayed blocked'
+                                                  : 'Reels are blocked',
+                                              style: AppTypography.subheading()
+                                                  .copyWith(fontSize: 15),
+                                            ),
+                                            Text(
+                                              blockedAppsLabel,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: AppTypography.caption(
+                                                color: AppColors.secondaryText,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.elevatedSurface,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '${_focus.blockedAttempts} attempts',
+                                          style: AppTypography.numeric(
+                                            color: AppColors.secondaryText,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Spacer(),
+                              ],
                             ),
-                            Text(
-                              isCompleted
-                                  ? '00:00'
-                                  : _focus.formattedRemainingTime,
-                              style: AppTypography.display(),
-                            ),
-                            Text(
-                              isCompleted ? 'completed' : 'remaining',
-                              style: AppTypography.caption(
-                                color: AppColors.secondaryText,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Center(
-                    child: Text(
-                      isCompleted
-                          ? 'Focus session complete!'
-                          : '$doneMin of $totalMin minutes done',
-                      style: AppTypography.caption(
-                        color: isCompleted
-                            ? AppColors.success
-                            : AppColors.primaryAccent,
-                      ).copyWith(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Center(
-                    child: Text(
-                      isCompleted
-                          ? 'Earned +30 XP · ${_focus.blockedAttempts} distraction${_focus.blockedAttempts == 1 ? '' : 's'} blocked'
-                          : isEnded
-                              ? 'Start a focus session to block short-video feeds'
-                              : 'Reels stay blocked until the timer ends',
-                      style: AppTypography.caption(
-                        color: AppColors.secondaryText,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ScrolaCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryAccent.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.shield_rounded,
-                            color: AppColors.primaryAccent,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isCompleted
-                                    ? 'Distractions stayed blocked'
-                                    : 'Reels are blocked',
-                                style: AppTypography.subheading()
-                                    .copyWith(fontSize: 15),
-                              ),
-                              Text(
-                                blockedAppsLabel,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.caption(
-                                  color: AppColors.secondaryText,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.elevatedSurface,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_focus.blockedAttempts} attempts',
-                            style: AppTypography.numeric(
-                              color: AppColors.secondaryText,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
                   if (_focus.isActive)
                     Row(
                       children: [

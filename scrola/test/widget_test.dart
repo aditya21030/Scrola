@@ -1177,4 +1177,65 @@ void main() {
     await tester.pump(const Duration(milliseconds: 150));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+      'ActiveFocusSessionScreen renders cleanly at constrained 320x520 viewport',
+      (WidgetTester tester) async {
+    const channel = MethodChannel('com.scrola.app/native');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall call) async {
+      return true;
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+    await tracking.checkPermissions();
+
+    final focus = FocusModeService();
+    await focus.startSession(minutes: 25);
+
+    tester.view.physicalSize = const Size(320, 520);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: ActiveFocusSessionScreen()),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(tester.takeException(), isNull,
+        reason: 'ActiveFocusSessionScreen initial render at 320x520');
+
+    expect(find.text('Focus session'), findsOneWidget);
+    expect(find.text('Blocking on'), findsOneWidget);
+    expect(find.text('25:00'), findsOneWidget);
+
+    // Toggle Pause
+    await tester.tap(find.text('Pause'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(focus.isPaused, isTrue);
+    expect(find.text('Resume'), findsOneWidget);
+    expect(find.text('Paused'), findsOneWidget);
+
+    // Toggle Resume
+    await tester.tap(find.text('Resume'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(focus.isPaused, isFalse);
+    expect(find.text('Pause'), findsOneWidget);
+
+    // Add 5 min
+    await tester.tap(find.text('+5 min'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(focus.totalDurationSeconds, 30 * 60);
+
+    // Cancel Session
+    await focus.cancelSession();
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.text('Done'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
