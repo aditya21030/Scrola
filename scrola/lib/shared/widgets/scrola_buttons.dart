@@ -7,6 +7,7 @@ import '../../core/theme/app_typography.dart';
 class ScrolaPrimaryButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
+  final VoidCallback? onTap;
   final double height;
   final bool useMediumHaptic;
   final Widget? leadingIcon;
@@ -14,7 +15,8 @@ class ScrolaPrimaryButton extends StatefulWidget {
   const ScrolaPrimaryButton({
     super.key,
     required this.label,
-    required this.onPressed,
+    this.onPressed,
+    this.onTap,
     this.height = 56,
     this.useMediumHaptic = false,
     this.leadingIcon,
@@ -29,7 +31,8 @@ class _ScrolaPrimaryButtonState extends State<ScrolaPrimaryButton> {
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onPressed != null;
+    final callback = widget.onPressed ?? widget.onTap;
+    final enabled = callback != null;
 
     return GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _isPressed = true) : null,
@@ -42,7 +45,7 @@ class _ScrolaPrimaryButtonState extends State<ScrolaPrimaryButton> {
               } else {
                 HapticService.light();
               }
-              widget.onPressed?.call();
+              callback();
             }
           : null,
       child: AnimatedScale(
@@ -88,13 +91,15 @@ class _ScrolaPrimaryButtonState extends State<ScrolaPrimaryButton> {
 class ScrolaSecondaryButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
+  final VoidCallback? onTap;
   final double height;
   final Widget? leadingIcon;
 
   const ScrolaSecondaryButton({
     super.key,
     required this.label,
-    required this.onPressed,
+    this.onPressed,
+    this.onTap,
     this.height = 56,
     this.leadingIcon,
   });
@@ -108,7 +113,8 @@ class _ScrolaSecondaryButtonState extends State<ScrolaSecondaryButton> {
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onPressed != null;
+    final callback = widget.onPressed ?? widget.onTap;
+    final enabled = callback != null;
 
     return GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _isPressed = true) : null,
@@ -117,7 +123,7 @@ class _ScrolaSecondaryButtonState extends State<ScrolaSecondaryButton> {
       onTap: enabled
           ? () {
               HapticService.light();
-              widget.onPressed?.call();
+              callback();
             }
           : null,
       child: AnimatedScale(
@@ -152,7 +158,7 @@ class _ScrolaSecondaryButtonState extends State<ScrolaSecondaryButton> {
                     maxLines: 1,
                     style: AppTypography.subheading(
                       color: enabled ? AppColors.primaryText : AppColors.mutedText,
-                    ).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+                    ).copyWith(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -166,21 +172,24 @@ class _ScrolaSecondaryButtonState extends State<ScrolaSecondaryButton> {
 
 class ScrolaLinkButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final VoidCallback? onTap;
 
   const ScrolaLinkButton({
     super.key,
     required this.label,
-    required this.onPressed,
+    this.onPressed,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final callback = onPressed ?? onTap;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         HapticService.subtle();
-        onPressed();
+        callback?.call();
       },
       child: Container(
         constraints: const BoxConstraints(minHeight: 44),
@@ -190,12 +199,55 @@ class ScrolaLinkButton extends StatelessWidget {
           label,
           style: AppTypography.body(
             color: AppColors.secondaryText,
-            weight: FontWeight.w600,
           ).copyWith(
+            fontWeight: FontWeight.w600,
             decoration: TextDecoration.underline,
             decorationColor: AppColors.secondaryText,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ScrolaTextButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final VoidCallback? onTap;
+  final Color? color;
+
+  const ScrolaTextButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final callback = onPressed ?? onTap;
+    final enabled = callback != null;
+
+    return TextButton(
+      onPressed: enabled
+          ? () {
+              HapticService.light();
+              callback();
+            }
+          : null,
+      style: TextButton.styleFrom(
+        foregroundColor: color ?? AppColors.primaryAccent,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.subheading(
+          color: color ?? AppColors.primaryAccent,
+        ).copyWith(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     );
   }

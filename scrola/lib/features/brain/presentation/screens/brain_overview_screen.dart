@@ -14,6 +14,7 @@ import 'brain_details_screen.dart';
 import 'brain_evolution_screen.dart';
 import 'rewards_screen.dart';
 import 'streak_calendar_screen.dart';
+import 'level_rewards_roadmap_screen.dart';
 import 'xp_progress_screen.dart';
 
 class BrainOverviewScreen extends StatelessWidget {
@@ -284,6 +285,57 @@ class BrainOverviewScreen extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  ScrolaCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    onTap: () {
+                      HapticService.light();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const LevelRewardsRoadmapScreen(),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryAccent.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.timeline_rounded,
+                            color: AppColors.primaryAccent,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Level Rewards Roadmap',
+                                style: AppTypography.subheading(),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Explore all 30 stages and 40 skins from Lv 1 to 100',
+                                style: AppTypography.caption(color: AppColors.secondaryText),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: AppColors.secondaryText,
+                          size: 16,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

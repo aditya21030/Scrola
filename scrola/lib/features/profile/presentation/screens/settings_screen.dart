@@ -18,6 +18,8 @@ import '../../../insights/presentation/screens/reel_limit_setup_screen.dart';
 import '../../../insights/presentation/screens/tracking_status_screen.dart';
 import '../../../onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import '../../../overlay/presentation/screens/floating_overlay_settings_screen.dart';
+import '../widgets/delete_account_modal.dart';
+import '../widgets/log_out_modal.dart';
 import 'subscription_pro_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -409,38 +411,30 @@ class SettingsScreen extends StatelessWidget {
                                       title: 'Log out',
                                       titleColor: AppColors.error,
                                       onTap: () {
-                                        HapticService.warning();
-                                        showDialog<void>(
-                                          context: context,
-                                          builder: (ctx) => AlertDialog(
-                                            backgroundColor:
-                                                AppColors.cardSurface,
-                                            title: const Text('Log out?'),
-                                            content: const Text(
-                                              'You can log back in anytime to restore your streak.',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(ctx).pop(),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () async {
-                                                  await auth.signOut();
-                                                  if (ctx.mounted) {
-                                                    Navigator.of(ctx).pop();
-                                                  }
-                                                },
-                                                child: const Text(
-                                                  'Log out',
-                                                  style: TextStyle(
-                                                    color: AppColors.error,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                        LogOutModal.show(
+                                          context,
+                                          onConfirmLogout: () async {
+                                            await auth.signOut();
+                                          },
+                                        );
+                                      },
+                                    ),
+                                    const Divider(
+                                      color: AppColors.borderSubtle,
+                                      height: 1,
+                                    ),
+                                    _SettingLinkRow(
+                                      title: 'Delete account',
+                                      titleColor: AppColors.error,
+                                      onTap: () {
+                                        DeleteAccountModal.show(
+                                          context,
+                                          onConfirmDelete: () async {
+                                            await auth.signOut();
+                                            if (context.mounted) {
+                                              Navigator.of(context).pop();
+                                            }
+                                          },
                                         );
                                       },
                                     ),

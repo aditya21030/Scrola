@@ -8,6 +8,8 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import 'evolution_cutscene_screen.dart';
+import 'level_rewards_roadmap_screen.dart';
 
 class BrainEvolutionScreen extends StatefulWidget {
   const BrainEvolutionScreen({super.key});
@@ -50,7 +52,39 @@ class _BrainEvolutionScreenState extends State<BrainEvolutionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const ScrolaAppBar(title: 'Evolution'),
+                        ScrolaAppBar(
+                          title: 'Evolution',
+                          trailing: GestureDetector(
+                            onTap: () {
+                              HapticService.light();
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const LevelRewardsRoadmapScreen(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceSolid,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.borderSubtle),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.map_outlined, size: 16, color: AppColors.primaryAccent),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Roadmap',
+                                    style: AppTypography.caption(color: AppColors.primaryAccent)
+                                        .copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 210,
@@ -270,6 +304,25 @@ class _BrainEvolutionScreenState extends State<BrainEvolutionScreen> {
                               HapticService.light();
                               setState(
                                   () => _previewingNext = !_previewingNext);
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          ScrolaSecondaryButton(
+                            label: 'Play Evolution Cutscene',
+                            leadingIcon: const Icon(
+                              Icons.play_circle_outline_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              HapticService.medium();
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => EvolutionCutsceneScreen(
+                                    targetStage: nextStage,
+                                  ),
+                                ),
+                              );
                             },
                           ),
                         ],

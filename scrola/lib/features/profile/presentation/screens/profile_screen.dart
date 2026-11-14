@@ -9,6 +9,7 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import '../../../auth/presentation/widgets/registration_prompt_modal.dart';
+import '../../../home/presentation/screens/in_app_guide_screen.dart';
 import 'edit_profile_screen.dart';
 import 'notifications_settings_screen.dart';
 import 'settings_screen.dart';
@@ -368,6 +369,17 @@ class ProfileScreen extends StatelessWidget {
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => const SettingsScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _MenuRow(
+                                icon: Icons.explore_outlined,
+                                title: 'How Scrola works (Guide)',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const InAppGuideScreen(),
                                   ),
                                 ),
                               ),

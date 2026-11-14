@@ -6,9 +6,9 @@ import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/registration_prompt_modal.dart';
 import '../../../brain/presentation/screens/brain_overview_screen.dart';
-import '../../../focus/presentation/screens/focus_dashboard_screen.dart';
 import '../../../focus/presentation/widgets/limit_reached_modal.dart';
-import '../../../insights/presentation/screens/daily_scroll_history_screen.dart';
+import '../../../friends/presentation/screens/friends_dashboard_screen.dart';
+import '../../../insights/presentation/screens/insights_dashboard_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../widgets/scrola_bottom_nav.dart';
 import 'home_screen.dart';
@@ -99,8 +99,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 HomeScreen(
                   onSwitchTab: (idx) => setState(() => _currentIndex = idx),
                 ),
-                const DailyScrollHistoryScreen(showBack: false),
-                const FocusDashboardScreen(showBack: false),
+                const InsightsDashboardScreen(showBack: false),
+                const FriendsDashboardScreen(showBack: false),
                 const BrainOverviewScreen(showBack: false),
                 const ProfileScreen(showBack: false),
               ],
