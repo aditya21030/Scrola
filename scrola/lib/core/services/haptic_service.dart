@@ -57,6 +57,7 @@ class HapticService {
         break;
       case HapticIntensity.strong:
         _fire(HapticFeedback.heavyImpact);
+        _fire(HapticFeedback.vibrate);
         break;
     }
   }
@@ -65,24 +66,22 @@ class HapticService {
   /// Used for: Achievement unlocked, level up, evolution, setup complete, chest open
   static Future<void> celebratory() async {
     if (!isEnabled) return;
-    _fire(HapticFeedback.lightImpact);
-    await Future<void>.delayed(const Duration(milliseconds: 80));
+    _fire(HapticFeedback.mediumImpact);
+    await Future<void>.delayed(const Duration(milliseconds: 70));
+    if (!isEnabled) return;
+    _fire(HapticFeedback.heavyImpact);
+    _fire(HapticFeedback.vibrate);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     if (!isEnabled) return;
     _fire(HapticFeedback.mediumImpact);
-    await Future<void>.delayed(const Duration(milliseconds: 110));
-    if (!isEnabled) return;
-    if (intensity == HapticIntensity.light) {
-      _fire(HapticFeedback.mediumImpact);
-    } else {
-      _fire(HapticFeedback.heavyImpact);
-    }
   }
 
   /// Warning notification at daily limit or approaching threshold
   static Future<void> warning() async {
     if (!isEnabled) return;
     _fire(HapticFeedback.mediumImpact);
-    await Future<void>.delayed(const Duration(milliseconds: 70));
+    _fire(HapticFeedback.vibrate);
+    await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!isEnabled) return;
     _fire(HapticFeedback.lightImpact);
   }
@@ -91,8 +90,10 @@ class HapticService {
   static Future<void> error() async {
     if (!isEnabled) return;
     _fire(HapticFeedback.heavyImpact);
-    await Future<void>.delayed(const Duration(milliseconds: 90));
+    _fire(HapticFeedback.vibrate);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     if (!isEnabled) return;
     _fire(HapticFeedback.heavyImpact);
+    _fire(HapticFeedback.vibrate);
   }
 }
