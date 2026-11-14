@@ -6,10 +6,10 @@ Version 0.3. Product: Scrola, a digital wellbeing app for Android (Flutter). Tag
 
 - `index.html`: gallery of every screen, grouped by flow. Open it first.
 - `screens/`: every screen as standalone HTML (390 px wide phone frames), numbered in canvas order.
-- `assets/mascot/`: Brainy as SVG. 8 moods, 12 evolution forms, 6 skins.
+- `assets/mascot/`: Brainy as SVG. 8 moods, 30 evolution forms, 40 skins.
 - `tokens.json`: colour, type, spacing, radius and motion tokens.
 
-Covered: all 53 screens from the approved architecture, plus the automatic in-app guide, level up and evolution, 12 brain forms, authentication, the limit warning and limit reached flow, 5 modals and 7 app states.
+Covered: all 53 screens from the approved architecture, plus the automatic in-app guide, level up and evolution, 30 brain forms and 40 skins, authentication, the limit warning and limit reached flow, 5 modals and 7 app states.
 
 All numbers, names ("Alex") and prices are sample data. Keep them out of production code. The screens are design prototypes, not Flutter code.
 
@@ -88,7 +88,7 @@ Eight moods (one face rig): happy, excited, neutral, focused, tired, sad, sleepy
 | Excited | Level up, streak milestone |
 | Celebrating | Achievement, evolution, setup complete |
 
-Twelve evolution forms: Sleepy Seed (Lv 1 to 2), Curious Cortex (3 to 5), Bright Mind (6 to 8), Sharp Genius (9 to 11), Explorer (12 to 14), Ninja Focus (15 to 17), Zen Master (18 to 20), Wizard (21 to 23), Astronaut (24 to 26), Storm Brain (27 to 29), Cosmic Mind (30 to 34), Royal Legend (35+). Skins (colour only): Classic, Ember, Golden, Frost, Mint, Midnight.
+Thirty evolution forms unlocked by level, from Sleepy Seed (Lv 1 to 2) and Curious Cortex (3 to 5) up to Royal Legend (35 to 39) and, from Level 40, Chef, Pirate, Knight, Viking, Cowboy, Detective, DJ, Scientist, Robot, Alien, Frost Monarch, Fire Spirit, Pharaoh, Angel, Dragon, Time Traveler, Galaxy Emperor, and Infinity (Level 100). Forty skins (colour only, same rig): 3 starters, then unlocked by level (for example Frost at 8, Mint at 12, Midnight at 20, up to Rust at 70), by streaks (Silver at 14 days, Obsidian at 30 days) or by battle wins (Ruby at 25, Snow at 10). The full list is in the mascot sheet.
 
 ## 8. Motion
 
@@ -114,6 +114,16 @@ No haptics at 50% or during normal reel counting. Settings: on/off and Light / M
 **Authentication:** Log in takes an email or a username plus a password, or Google. Create account asks for email, a unique username and a password. Username: 3 to 20 characters, letters, numbers, dot, underscore, checked live after a 400 ms pause, with suggestions when taken. A new Google user must pick a username before setup. Errors never reveal whether an account exists. Reset links expire in 30 minutes (proposal).
 
 **Limit flow:** 50% quiet tag, no haptic. 80% amber pill and a banner from the notch, one light tap. Last 3 reels: three dots. 100%: warning haptic, Brainy drops from the notch into the Limit reached modal (Back to Scrola, Go home, Unlock for 5 min). Emergency unlock waits 30 s, ends the streak and uses 1 of 2 daily unlocks. Swiping while locked gives an error tap and the reel bounces back. Gentle mode shows the unlock link. Strict mode hides it.
+
+## 10b. Scrola Pro (proposal)
+
+Prices in INR, billed through Google Play, taxes included: **Monthly ₹99**, **Yearly ₹799** (about ₹67 a month, 33% off) with a 7 day free trial on Yearly. Set the real prices in Google Play Console.
+
+**Free keeps everything that helps people scroll less:** tracking, daily and per-app limits, the notch counter, one block schedule, focus sessions, the weekly report, joining friends and battles, 12 Brainy forms and 6 skins. Levels, streaks and battle wins unlock the rest for free players, only more slowly.
+
+**Pro adds:** monthly report and trends, unlimited block schedules, home-screen widgets with Brainy, a streak freeze (1 a month), forms 13 to 30 and all 40 skins unlocked early, creating group challenges with custom rules and stakes, and data export and backup.
+
+**Rules:** Pro never blocks a screen and never counts down. Locked things show one calm card with one button. Brainy's mood, blocking and the counter stay free. The Pro canvas has 14 screens (plans, trial, manage subscription, locked prompt, trends, schedules, widgets, streak freeze, early access, challenge builder, backup).
 
 ## 11. Screen inventory
 
@@ -174,7 +184,7 @@ No haptics at 50% or during normal reel counting. Settings: on/off and Light / M
 | Evolution: evolving | `screens/053-evolution-evolving.html` | Level up and evolution (Brain Evolution Animation) |
 | Evolution: reveal | `screens/054-evolution-reveal.html` | Level up and evolution (Brain Evolution Animation) |
 | Evolution: complete | `screens/055-evolution-complete.html` | Level up and evolution (Brain Evolution Animation) |
-| Brain forms (all 12) | `screens/056-brain-forms-all-12.html` | Level up and evolution (Brain Evolution Animation) |
+| Brain forms (all 30) | `screens/056-brain-forms-all-30.html` | Level up and evolution (Brain Evolution Animation) |
 | 37 Friends Dashboard | `screens/057-37-friends-dashboard.html` | Social and competition (Screens 37 to 41) |
 | 38 Find Friends | `screens/058-38-find-friends.html` | Social and competition (Screens 37 to 41) |
 | 39 Friend Profile | `screens/059-39-friend-profile.html` | Social and competition (Screens 37 to 41) |
@@ -217,6 +227,25 @@ No haptics at 50% or during normal reel counting. Settings: on/off and Light / M
 | State: Offline | `screens/096-state-offline.html` | App states: offline, permission denied, empty history |
 | State: Permission denied | `screens/097-state-permission-denied.html` | App states: offline, permission denied, empty history |
 | State: Empty (history) | `screens/098-state-empty-history.html` | App states: offline, permission denied, empty history |
+| Level rewards roadmap | `screens/099-level-rewards-roadmap.html` | Level rewards: 30 forms, 40 skins, up to Level 100 |
+| Modal: Skin unlocked | `screens/100-modal-skin-unlocked.html` | Level rewards: 30 forms, 40 skins, up to Level 100 |
+| Home at 80% of the limit | `screens/101-home-at-80-of-the-limit.html` | Home at 80% and email verification |
+| Verify email: enter code | `screens/102-verify-email-enter-code.html` | Home at 80% and email verification |
+| Verify email: wrong code | `screens/103-verify-email-wrong-code.html` | Home at 80% and email verification |
+| 1 Scrola Pro: what's included | `screens/104-pro-1-scrola-pro-what-s-included.html` | Scrola Pro: Plans and purchase |
+| 2 Choose a plan (INR) | `screens/105-pro-2-choose-a-plan-inr.html` | Scrola Pro: Plans and purchase |
+| 3 Welcome to Pro | `screens/106-pro-3-welcome-to-pro.html` | Scrola Pro: Plans and purchase |
+| 4 Manage subscription | `screens/107-pro-4-manage-subscription.html` | Scrola Pro: Plans and purchase |
+| 5 Locked feature prompt | `screens/108-pro-5-locked-feature-prompt.html` | Scrola Pro: Plans and purchase |
+| 6 Monthly report and trends | `screens/109-pro-6-monthly-report-and-trends.html` | Scrola Pro: Pro features, part 1 |
+| 7 Unlimited schedules | `screens/110-pro-7-unlimited-schedules.html` | Scrola Pro: Pro features, part 1 |
+| 8 Home-screen widgets | `screens/111-pro-8-home-screen-widgets.html` | Scrola Pro: Pro features, part 1 |
+| 9 Widget settings | `screens/112-pro-9-widget-settings.html` | Scrola Pro: Pro features, part 1 |
+| 10 Streak freeze | `screens/113-pro-10-streak-freeze.html` | Scrola Pro: Pro features, part 1 |
+| 11 Use a freeze | `screens/114-pro-11-use-a-freeze.html` | Scrola Pro: Pro features, part 2 |
+| 12 Pro early access | `screens/115-pro-12-pro-early-access.html` | Scrola Pro: Pro features, part 2 |
+| 13 Group challenge builder | `screens/116-pro-13-group-challenge-builder.html` | Scrola Pro: Pro features, part 2 |
+| 14 Data and backup | `screens/117-pro-14-data-and-backup.html` | Scrola Pro: Pro features, part 2 |
 
 ## 12. Review notes
 
@@ -228,10 +257,9 @@ Clean architecture (presentation, application, domain, data, platform). Riverpod
 
 ## 14. Open items
 
-1. Email verification code screen.
-2. Home dashboard state at 80% of the limit.
+1. Wire the email verification and the 80% state to real data.
 3. Final 3D Brainy (Blender and Rive) and the Rive animation timings.
 4. Play Store direction (A to D) and the remaining four screenshots in that style.
-5. Replace sample data with real captures for store assets.
+5. Replace sample data with real captures for store assets. Confirm Pro pricing (INR) in Google Play.
 6. Test on small phones (320 dp).
 7. Flutter implementation.

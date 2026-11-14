@@ -100,11 +100,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       username: username.isNotEmpty ? username : tracking.username,
       email: email.isNotEmpty ? email : tracking.email,
     );
+    await _auth.signInAsGuest();
     await HapticService.celebratory();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Profile saved locally as Guest!'),
+        content: Text('Profile saved! Welcome to Scrola.'),
         backgroundColor: AppColors.success,
       ),
     );
@@ -141,7 +142,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 Text(
                                   'Create your account',
                                   style: AppTypography.title().copyWith(
-                                    fontSize: 30,
+                                    fontSize: 26,
                                     letterSpacing: -0.6,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -151,6 +152,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                   'Pick a username friends can find. Save your streak forever.',
                                   style: AppTypography.body(
                                     color: AppColors.secondaryText,
+                                    size: 14,
                                   ),
                                 ),
                               ],
@@ -159,7 +161,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           const SizedBox(width: 8),
                           BrainyMascot(
                             mood: BrainyMood.excited,
-                            size: 92,
+                            size: 84,
                           ),
                         ],
                       ),
@@ -200,30 +202,44 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                   ),
                                 ],
                               ),
-                              if (_error!.contains('Firebase Console') ||
-                                  _error!.contains('CONFIGURATION_NOT_FOUND')) ...[
+                              if (_error!.contains('Firebase') ||
+                                  _error!.contains('CONFIGURATION_NOT_FOUND') ||
+                                  _error!.contains('Guest') ||
+                                  _error!.contains('locally')) ...[
                                 const SizedBox(height: 12),
                                 GestureDetector(
                                   onTap: _handleSaveLocallyAsGuest,
                                   child: Container(
                                     padding:
-                                        const EdgeInsets.symmetric(vertical: 10),
+                                        const EdgeInsets.symmetric(vertical: 11),
                                     decoration: BoxDecoration(
                                       color: AppColors.primaryAccent
                                           .withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: AppColors.primaryAccent
-                                            .withValues(alpha: 0.5),
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                     alignment: Alignment.center,
-                                    child: Text(
-                                      'Save Details Locally as Guest',
-                                      style: AppTypography.caption(
-                                        color: AppColors.primaryAccent,
-                                        weight: FontWeight.w700,
-                                      ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle_outline_rounded,
+                                          size: 17,
+                                          color: AppColors.primaryAccent,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Save Details Locally as Guest',
+                                          style: AppTypography.caption(
+                                            color: AppColors.primaryAccent,
+                                            weight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -485,6 +501,27 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticService.light();
+                            _handleSaveLocallyAsGuest();
+                          },
+                          child: Text(
+                            'Continue as Guest (Skip)',
+                            style: AppTypography.caption(
+                              color: AppColors.secondaryText,
+                            ).copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.secondaryText,
                             ),
                           ),
                         ),

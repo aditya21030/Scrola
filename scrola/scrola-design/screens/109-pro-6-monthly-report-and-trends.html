@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6 Monthly report and trends · Scrola Pro</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter',sans-serif}
+*{box-sizing:border-box}
+.jk{font-family:'Plus Jakarta Sans',sans-serif}
+.tn{font-variant-numeric:tabular-nums}
+.card{background:#242424;border:1px solid #353535;border-radius:24px}
+.lab{font:600 11px/16px 'Inter',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A3A3A3}
+.btn{height:56px;border-radius:28px;border:0;font:700 16px 'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 24px;cursor:pointer}
+.pri{background:#FF6B24;color:#101010}
+.sec{background:transparent;color:#fff;border:1.5px solid #353535}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.in{animation:up .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ring{from{stroke-dashoffset:390}to{stroke-dashoffset:156}}
+.rp{animation:ring 1.2s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.fb{transform-origin:left;animation:fill 1s cubic-bezier(.2,.8,.2,1) .4s both}
+@property --n{syntax:'<integer>';inherits:false;initial-value:24}
+@keyframes cnt{from{--n:0}to{--n:24}}
+.cnt{animation:cnt 1.2s ease-out .2s both;counter-reset:n var(--n)}
+.cnt::after{content:counter(n)}
+@keyframes br{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.mb{transform-origin:50% 92%;animation:br 3.6s ease-in-out infinite}
+@keyframes bl{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.eye{transform-box:fill-box;transform-origin:center;animation:bl 4.5s infinite}
+@media (prefers-reduced-motion:reduce){
+*{animation:none !important}
+}
+
+.gl{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:24px}.gl.fl{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);backdrop-filter:blur(14px)}
+@keyframes ring2{from{stroke-dashoffset:60}to{stroke-dashoffset:0}}
+.r2{animation:ring2 1.4s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.fl{animation:fl 4s ease-in-out infinite}
+@keyframes pl{0%,100%{box-shadow:0 0 0 0 rgba(255,107,36,.5)}50%{box-shadow:0 0 0 7px rgba(255,107,36,0)}}
+.pl{animation:pl 2s infinite}
+
+.pg{background:#FF6B24;color:#101010;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.lk{background:none;border:0;font:600 15px Inter,sans-serif;color:#A3A3A3;height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+@keyframes pr{0%{transform:scale(.88);opacity:.7}100%{transform:scale(1.12);opacity:0}}
+.rg{animation:pr 3.2s ease-out infinite}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
+.rs{animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ld{from{transform:scaleX(.05)}to{transform:scaleX(.66)}}
+.ld{transform-origin:left;animation:ld 1.8s cubic-bezier(.2,.8,.2,1) .3s both}
+
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.gr{transform-origin:bottom;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+
+.mb{transform-box:fill-box;transform-origin:50% 100%}
+.eye{transform-box:fill-box;transform-origin:center}
+@property --c{syntax:'<integer>';inherits:false;initial-value:24}
+@property --d{syntax:'<integer>';inherits:false;initial-value:16}
+@keyframes cnt2{from{--c:21;--d:19}to{--c:24;--d:16}}
+.k1{animation:cnt2 6s steps(3) infinite;counter-reset:cc var(--c) dd var(--d)}
+.k1 .a::after{content:counter(cc)}.k1 .b::after{content:counter(dd)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 20s linear infinite}.spinr{animation:spin 20s linear infinite reverse}
+@keyframes swipe{0%,22%{transform:translateY(0)}30%,55%{transform:translateY(-33.333%)}63%,88%{transform:translateY(-66.666%)}96%,100%{transform:translateY(-66.666%)}}
+.sw{animation:swipe 6s cubic-bezier(.7,0,.2,1) infinite}
+@keyframes v1{0%,34%{opacity:1}40%,100%{opacity:0}}
+@keyframes v2{0%,34%{opacity:0}40%,66%{opacity:1}72%,100%{opacity:0}}
+@keyframes v3{0%,66%{opacity:0}72%,96%{opacity:1}100%{opacity:0}}
+.v1{animation:v1 7s infinite}.v2{animation:v2 7s infinite}.v3{animation:v3 7s infinite}
+@keyframes fillr{0%{stroke-dashoffset:100}85%,100%{stroke-dashoffset:8}}
+.fr{animation:fillr 7s ease-in-out infinite}
+@keyframes bar{0%{transform:scaleX(.1)}90%,100%{transform:scaleX(1)}}
+.xb{transform-origin:left;animation:bar 7s ease-in-out infinite}
+@keyframes blk{0%,38%{opacity:0;transform:translateY(40px)}48%,92%{opacity:1;transform:none}100%{opacity:0}}
+.blk{animation:blk 6s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes shake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-4px) rotate(-1.5deg)}40%{transform:translateX(4px) rotate(1.5deg)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.shk{animation:shake .35s linear infinite}
+@keyframes pop{0%{transform:scale(.2);opacity:0}55%{transform:scale(1.14);opacity:1}100%{transform:scale(1)}}
+.pop{animation:pop 1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes flash{0%{opacity:.95}100%{opacity:0}}
+.fls{animation:flash 1.6s ease-out both}
+@keyframes conv{0%{transform:translate(var(--x),var(--y)) scale(1);opacity:0}25%{opacity:1}100%{transform:translate(0,0) scale(.2);opacity:0}}
+.pt{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#FFB27F;animation:conv 2.2s ease-in infinite}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(900px) rotate(540deg);opacity:.9}}
+.cf{position:absolute;top:0;animation:fall 5s linear infinite}
+@keyframes hold{0%{stroke-dashoffset:100}80%,100%{stroke-dashoffset:0}}
+.hd{animation:hold 2.6s ease-in-out infinite}
+@keyframes rip{0%{transform:scale(.7);opacity:.6}100%{transform:scale(1.6);opacity:0}}
+.rip{animation:rip 1.6s ease-out infinite}
+@keyframes ray{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.rays{position:absolute;left:50%;top:var(--ty);width:760px;height:760px;transform:translate(-50%,-50%);background:repeating-conic-gradient(rgba(255,138,76,.2) 0 7deg,transparent 7deg 22deg);-webkit-mask-image:radial-gradient(circle,#000 8%,transparent 62%);mask-image:radial-gradient(circle,#000 8%,transparent 62%);animation:ray 40s linear infinite}
+@keyframes mbr{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@keyframes bl{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.mb{animation:mbr 3.6s ease-in-out infinite}.eye{animation:bl 4.5s infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none !important}}
+
+@keyframes open{0%{clip-path:inset(8px calc(50% - 126px) calc(100% - 56px) calc(50% - 126px) round 24px)}16%,90%{clip-path:inset(0 0 0 0 round 0 0 44px 44px)}100%{clip-path:inset(8px calc(50% - 126px) calc(100% - 56px) calc(50% - 126px) round 24px)}}
+.open{animation:open 7s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes drop{0%{transform:translateY(-300px) scale(.3);opacity:0}14%{opacity:1}26%{transform:translateY(0) scale(1.1)}32%{transform:scale(.97)}38%,90%{transform:none;opacity:1}100%{transform:translateY(-300px) scale(.3);opacity:0}}
+.drop{animation:drop 7s infinite}
+@keyframes cin{0%,28%{opacity:0;transform:translateY(12px)}40%,90%{opacity:1;transform:none}100%{opacity:0}}
+.cin{animation:cin 7s infinite}
+@keyframes dimk{0%{opacity:0}16%,90%{opacity:1}100%{opacity:0}}
+.dimk{animation:dimk 7s infinite}
+@keyframes plr{0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,.55)}50%{box-shadow:0 0 0 8px rgba(255,82,82,0)}}
+.plr{animation:plr 1.4s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-26px)}55%{transform:translateY(0)}70%{transform:translateY(-8px)}}
+.bnc2{animation:bounce 2.4s ease-out infinite}
+@keyframes cd{from{stroke-dashoffset:0}to{stroke-dashoffset:100}}
+.cd{animation:cd 30s linear infinite}
+</style>
+
+<style>html,body{background:#000}</style>
+</head>
+<body>
+
+<main style="width:390px;height:844px;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;padding:56px 20px 28px;background:radial-gradient(75% 42% at 50% 20%,rgba(255,107,36,0.2),rgba(255,107,36,0) 72%),#101010"><svg width="390" height="844" style="position:absolute;inset:0;opacity:.07;mix-blend-mode:screen;pointer-events:none" aria-hidden="true"><filter id="nz"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/></filter><rect width="390" height="844" filter="url(#nz)"/></svg><div style="display:flex;justify-content:space-between;align-items:center;position:relative"><span class="jk" style="font-weight:800;font-size:28px;letter-spacing:-.5px">Trends</span><span style="font:800 10.5px Inter,sans-serif;color:#101010;background:#FFC15A;border-radius:8px;padding:3px 7px;letter-spacing:.5px">PRO</span></div>
+<div style="margin-top:14px;position:relative"><div style="display:flex;background:#1A1A1A;border:1px solid #2A2A2A;border-radius:22px;padding:4px;position:relative"><span style="flex:1;text-align:center;height:36px;border-radius:18px;font:700 13px/36px Inter,sans-serif;background:#FF6B24;color:#101010">3 months</span><span style="flex:1;text-align:center;height:36px;border-radius:18px;font:700 13px/36px Inter,sans-serif;color:#A3A3A3">6 months</span><span style="flex:1;text-align:center;height:36px;border-radius:18px;font:700 13px/36px Inter,sans-serif;color:#A3A3A3">Year</span></div></div>
+<section class="gl" style="margin-top:12px;padding:14px;position:relative"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="jk tn" style="font-weight:800;font-size:34px">1,046</span><span style="font:700 13px Inter,sans-serif;color:#36C98F">18% fewer than October</span></div><div style="display:flex;align-items:flex-end;gap:14px;height:96px;margin-top:10px"><div style="flex:1;text-align:center"><i class="gr" style="display:block;height:80px;border-radius:8px;background:#3A3A3A"></i><div style="font:600 11.5px Inter,sans-serif;color:#A3A3A3;margin-top:6px">Sep</div></div><div style="flex:1;text-align:center"><i class="gr" style="display:block;height:76px;border-radius:8px;background:#3A3A3A"></i><div style="font:600 11.5px Inter,sans-serif;color:#A3A3A3;margin-top:6px">Oct</div></div><div style="flex:1;text-align:center"><i class="gr" style="display:block;height:62px;border-radius:8px;background:#FF6B24"></i><div style="font:600 11.5px Inter,sans-serif;color:#A3A3A3;margin-top:6px">Nov</div></div></div></section>
+<section class="gl" style="margin-top:12px;padding:14px;position:relative"><div style="font:700 14px Inter,sans-serif;margin-bottom:10px">When you scroll</div><div style="display:flex;flex-direction:column;gap:3px"><div style="display:flex;gap:3px;align-items:center"><span style="width:26px;font:600 10.5px Inter,sans-serif;color:#A3A3A3">Mon</span><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i></div><div style="display:flex;gap:3px;align-items:center"><span style="width:26px;font:600 10.5px Inter,sans-serif;color:#A3A3A3">Tue</span><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i></div><div style="display:flex;gap:3px;align-items:center"><span style="width:26px;font:600 10.5px Inter,sans-serif;color:#A3A3A3">Wed</span><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i></div><div style="display:flex;gap:3px;align-items:center"><span style="width:26px;font:600 10.5px Inter,sans-serif;color:#A3A3A3">Thu</span><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.68)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i></div><div style="display:flex;gap:3px;align-items:center"><span style="width:26px;font:600 10.5px Inter,sans-serif;color:#A3A3A3">Fri</span><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.68)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.68)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i></div><div style="display:flex;gap:3px;align-items:center"><span style="width:26px;font:600 10.5px Inter,sans-serif;color:#A3A3A3">Sat</span><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.68)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.68)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i></div><div style="display:flex;gap:3px;align-items:center"><span style="width:26px;font:600 10.5px Inter,sans-serif;color:#A3A3A3">Sun</span><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.08)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.18)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.28)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.48)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.68)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.58)"></i><i style="flex:1;height:18px;border-radius:5px;background:rgba(255,107,36,0.38)"></i></div></div><div style="display:flex;justify-content:space-between;font:600 10.5px Inter,sans-serif;color:#A3A3A3;margin:6px 0 0 29px"><span>12 am</span><span>6 am</span><span>12 pm</span><span>6 pm</span><span>11 pm</span></div></section>
+<section class="gl" style="margin-top:12px;padding:2px 16px;position:relative"><div style="display:flex;align-items:center;gap:12px;height:48px"><span style="width:34px;height:34px;border-radius:11px;background:#E1306C;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="4"/><path d="M10.5 9.5l3.5 2.5-3.5 2.5z"/></svg></span><span style="flex:1;font:600 14.5px Inter,sans-serif">Instagram</span><span class="tn" style="font:700 13.5px Inter,sans-serif;color:#36C98F">22% less</span></div><div style="height:1px;background:#2A2A2A"></div><div style="display:flex;align-items:center;gap:12px;height:48px"><span style="width:34px;height:34px;border-radius:11px;background:#E5222B;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="4"/><path d="M10.5 9.5l3.5 2.5-3.5 2.5z"/></svg></span><span style="flex:1;font:600 14.5px Inter,sans-serif">YouTube</span><span class="tn" style="font:700 13.5px Inter,sans-serif;color:#FFC15A">8% more</span></div></section><div style="position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(180deg,rgba(16,16,16,0),#101010 70%);z-index:4"></div><nav style="position:absolute;left:16px;right:16px;bottom:22px;height:68px;border-radius:34px;background:rgba(28,28,28,.92);border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 40px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-around;padding:0 8px;z-index:5"><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></span><span style="width:48px;height:48px;border-radius:24px;background:linear-gradient(135deg,#FF8A4C,#FF6B24);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(255,107,36,.45)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#101010" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-7"/></svg></span><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM12 13v4M8 20h8M4 5h4M16 5h4"/></svg></span><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7a3 3 0 0 0-3 3 3 3 0 0 0 1 5 3 3 0 0 0 5 2V7a3 3 0 0 0-3 0zM15 7a3 3 0 0 1 3 3 3 3 0 0 1-1 5 3 3 0 0 1-5 2"/></svg></span><span style="width:44px;height:48px;border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;box-shadow:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A3A3A3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span></nav></main>
+
+</body>
+</html>

@@ -68,6 +68,9 @@ class AuthService extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       return _mapFirebaseAuthError(e);
     } catch (e) {
+      if (e.toString().toUpperCase().contains('CONFIGURATION_NOT_FOUND')) {
+        return 'Firebase Authentication is not enabled yet in your Firebase Console (scrola-111). Under "Authentication" -> "Sign-in method", turn ON "Email/Password". You can also continue offline as Guest!';
+      }
       return 'An unexpected error occurred: $e';
     }
   }
@@ -105,6 +108,9 @@ class AuthService extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       return _mapFirebaseAuthError(e);
     } catch (e) {
+      if (e.toString().toUpperCase().contains('CONFIGURATION_NOT_FOUND')) {
+        return 'Firebase Authentication is not enabled yet in your Firebase Console (scrola-111). Under "Authentication" -> "Sign-in method", turn ON "Email/Password". You can also continue offline as Guest!';
+      }
       return 'An unexpected error occurred: $e';
     }
   }
@@ -149,12 +155,13 @@ class AuthService extends ChangeNotifier {
   }
 
   String _mapFirebaseAuthError(FirebaseAuthException e) {
-    final msg = e.message ?? '';
+    final msg = (e.message ?? '').toUpperCase();
     final code = e.code.toLowerCase();
 
-    if (code == 'configuration-not-found' ||
+    if (code.contains('configuration-not-found') ||
+        code.contains('configuration_not_found') ||
         msg.contains('CONFIGURATION_NOT_FOUND')) {
-      return 'Firebase Email/Password sign-in is not enabled in Firebase Console. Please enable Email/Password under Authentication > Sign-in method, or continue as a Guest.';
+      return 'Firebase Email/Password sign-in is not enabled yet in your Firebase Console (scrola-111). Under "Authentication" -> "Sign-in method", turn ON "Email/Password". You can also tap below to save your profile locally!';
     }
 
     switch (code) {

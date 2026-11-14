@@ -152,26 +152,65 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: AppColors.error.withValues(alpha: 0.4),
                             ),
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const Icon(
-                                Icons.error_outline_rounded,
-                                color: AppColors.error,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _error!,
-                                  style: AppTypography.caption(
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline_rounded,
                                     color: AppColors.error,
-                                  ).copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.4,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _error!,
+                                      style: AppTypography.caption(
+                                        color: AppColors.error,
+                                      ).copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (_error!.contains('Firebase') ||
+                                  _error!.contains('CONFIGURATION_NOT_FOUND') ||
+                                  _error!.contains('Guest') ||
+                                  _error!.contains('locally')) ...[
+                                const SizedBox(height: 12),
+                                GestureDetector(
+                                  onTap: () async {
+                                    await _auth.signInAsGuest();
+                                    if (!context.mounted) return;
+                                    Navigator.of(context).pop(true);
+                                  },
+                                  child: Container(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryAccent
+                                          .withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: AppColors.primaryAccent
+                                            .withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Continue Offline as Guest',
+                                      style: AppTypography.caption(
+                                        color: AppColors.primaryAccent,
+                                        weight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
@@ -315,6 +354,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Center(
+                        child: GestureDetector(
+                          onTap: () async {
+                            HapticService.light();
+                            await _auth.signInAsGuest();
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop(true);
+                          },
+                          child: Text(
+                            'Continue as Guest',
+                            style: AppTypography.caption(
+                              color: AppColors.secondaryText,
+                            ).copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.secondaryText,
                             ),
                           ),
                         ),
