@@ -386,11 +386,13 @@ class ScrolaAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Show interactive Limit Reached Modal overlay directly over reel app!
-        ScrolaOverlayService.showLimitModal(this, platform)
-
-        // Perform Back action to exit the feed
-        performGlobalAction(GLOBAL_ACTION_BACK)
+        // Show interactive Limit Reached Modal overlay directly over reel app if permission is granted!
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || android.provider.Settings.canDrawOverlays(this)) {
+            ScrolaOverlayService.showLimitModal(this, platform)
+        } else {
+            // Fallback: If overlay permission is not granted, kick out of feed
+            performGlobalAction(GLOBAL_ACTION_BACK)
+        }
 
         val intent = Intent(BROADCAST_REEL_EVENT).apply {
             setPackage(packageName)

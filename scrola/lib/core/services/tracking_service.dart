@@ -731,6 +731,7 @@ class TrackingService extends ChangeNotifier {
       workBlockEnabled: storage.workBlockEnabled,
       strictBlocking: storage.strictBlocking,
       detoxActive: storage.isDetoxActive,
+      emergencyUnlocksUsed: storage.emergencyUnlocksUsedToday,
     );
   }
 
@@ -763,6 +764,11 @@ class TrackingService extends ChangeNotifier {
       if (event.eventType == 'limit_block_enforced') {
         _limitReachedController.add(null);
       }
+      notifyListeners();
+    } else if (event.eventType == 'emergency_unlock_used') {
+      final storage = await _ensureStorage();
+      await storage.incrementEmergencyUnlocksUsed();
+      await HapticService.medium();
       notifyListeners();
     } else if (event.eventType == 'overlay_dismissed') {
       final storage = await _ensureStorage();

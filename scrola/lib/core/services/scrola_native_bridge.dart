@@ -116,6 +116,7 @@ class ScrolaNativeBridge {
     bool? workBlockEnabled,
     bool? strictBlocking,
     bool? detoxActive,
+    int? emergencyUnlocksUsed,
   }) async {
     await _invoke<void>('syncLimits', {
       'totalLimit': totalLimit,
@@ -137,6 +138,7 @@ class ScrolaNativeBridge {
       'workBlockEnabled': ?workBlockEnabled,
       'strictBlocking': ?strictBlocking,
       'detoxActive': ?detoxActive,
+      'emergencyUnlocksUsed': ?emergencyUnlocksUsed,
     });
   }
 

@@ -35,6 +35,8 @@ class ScrolaDataManager private constructor(context: Context) {
         private const val KEY_DETOX_ACTIVE = "detox_active"
         private const val KEY_LAST_PLATFORM = "last_platform"
         private const val KEY_EMERGENCY_UNLOCK_UNTIL = "emergency_unlock_until"
+        private const val KEY_EMERGENCY_UNLOCKS_USED = "emergency_unlocks_used"
+        const val MAX_DAILY_EMERGENCY_UNLOCKS = 3
 
         @Volatile
         private var instance: ScrolaDataManager? = null
@@ -93,6 +95,8 @@ class ScrolaDataManager private constructor(context: Context) {
             .putInt(KEY_TOTAL_TODAY, 0)
             .putInt(KEY_SESSION_COUNT, 0)
             .putString(KEY_LAST_PLATFORM, "")
+            .putInt(KEY_EMERGENCY_UNLOCKS_USED, 0)
+            .remove(KEY_EMERGENCY_UNLOCK_UNTIL)
         for (platform in SUPPORTED_PLATFORMS) {
             editor.putInt("reels_$platform", 0)
         }
@@ -244,9 +248,36 @@ class ScrolaDataManager private constructor(context: Context) {
             .apply()
     }
 
-    fun grantEmergencyUnlock(minutes: Int = 5) {
+    fun getEmergencyUnlocksUsed(): Int = prefs.getInt(KEY_EMERGENCY_UNLOCKS_USED, 0)
+
+    fun getEmergencyUnlocksLeft(): Int =
+        (MAX_DAILY_EMERGENCY_UNLOCKS - getEmergencyUnlocksUsed()).coerceAtLeast(0)
+
+    fun canEmergencyUnlock(): Boolean = getEmergencyUnlocksLeft() > 0
+
+    fun setEmergencyUnlocksUsed(used: Int) {
+        prefs.edit().putInt(KEY_EMERGENCY_UNLOCKS_USED, used).apply()
+    }
+
+    fun grantEmergencyUnlock(minutes: Int = 5, context: Context? = null): Boolean {
+        if (!canEmergencyUnlock()) return false
         val until = System.currentTimeMillis() + (minutes * 60 * 1000L)
-        prefs.edit().putLong(KEY_EMERGENCY_UNLOCK_UNTIL, until).apply()
+        val currentUsed = getEmergencyUnlocksUsed() + 1
+        prefs.edit()
+            .putLong(KEY_EMERGENCY_UNLOCK_UNTIL, until)
+            .putInt(KEY_EMERGENCY_UNLOCKS_USED, currentUsed)
+            .apply()
+
+        if (context != null) {
+            val intent = android.content.Intent(ScrolaAccessibilityService.BROADCAST_REEL_EVENT).apply {
+                setPackage(context.packageName)
+                putExtra(ScrolaAccessibilityService.EXTRA_EVENT_TYPE, "emergency_unlock_used")
+                putExtra(ScrolaAccessibilityService.EXTRA_COUNT, currentUsed)
+                putExtra(ScrolaAccessibilityService.EXTRA_TOTAL, getEmergencyUnlocksLeft())
+            }
+            context.sendBroadcast(intent)
+        }
+        return true
     }
 
     fun isEmergencyUnlocked(): Boolean {

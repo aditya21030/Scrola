@@ -144,6 +144,11 @@ class MainActivity : FlutterActivity() {
                     val detoxActive = call.argument<Boolean>("detoxActive")
                     if (detoxActive != null) dataManager.setDetoxActive(detoxActive)
 
+                    val emergencyUnlocksUsed = call.argument<Int>("emergencyUnlocksUsed")
+                    if (emergencyUnlocksUsed != null) {
+                        dataManager.setEmergencyUnlocksUsed(emergencyUnlocksUsed)
+                    }
+
                     if (ScrolaOverlayService.isServiceRunning) {
                         ScrolaOverlayService.refreshConfig(this)
                     }
@@ -191,8 +196,8 @@ class MainActivity : FlutterActivity() {
                 }
                 "grantEmergencyUnlock" -> {
                     val minutes = call.argument<Int>("minutes") ?: 5
-                    dataManager.grantEmergencyUnlock(minutes)
-                    result.success(true)
+                    val granted = dataManager.grantEmergencyUnlock(minutes, this)
+                    result.success(granted)
                 }
                 else -> result.notImplemented()
             }

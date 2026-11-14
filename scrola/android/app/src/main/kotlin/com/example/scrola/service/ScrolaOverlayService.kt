@@ -28,6 +28,7 @@ import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsets
@@ -296,7 +297,7 @@ class ScrolaOverlayService : Service() {
         val dm = ScrolaDataManager.getInstance(this)
         if (intent == null) {
             // START_STICKY process restart: only re-attach if Scrola overlay should be visible
-            if (!dm.isOverlayEnabled() || (!dm.isTrackingEnabled() && !dm.isFocusModeActive())) {
+            if (!dm.isOverlayEnabled() || (!dm.isTrackingEnabled() && !dm.isFocusModeActive() && !dm.isDetoxActive())) {
                 isStopping = true
                 stopSelf()
                 return START_NOT_STICKY
@@ -347,14 +348,14 @@ class ScrolaOverlayService : Service() {
     }
 
     private fun shouldDisplayOverlay(dm: ScrolaDataManager): Boolean {
-        return dm.isOverlayEnabled() && (dm.isTrackingEnabled() || dm.isFocusModeActive())
+        return dm.isOverlayEnabled() && (dm.isTrackingEnabled() || dm.isFocusModeActive() || dm.isDetoxActive())
     }
 
     private fun handleStartOrRefresh(animateEntrance: Boolean) {
         receivedStartCommand = true
         mainHandler.removeCallbacks(stickyAttachFallbackRunnable)
         val dm = ScrolaDataManager.getInstance(this)
-        if (!shouldDisplayOverlay(dm)) {
+        if (!shouldDisplayOverlay(dm) && limitModalContainer == null) {
             isStopping = true
             stopSelf()
             return
@@ -471,7 +472,7 @@ class ScrolaOverlayService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Scrola Active")
             .setContentText("Brainy is guarding your feed (long-press pill to hide)")
-            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setSmallIcon(com.example.scrola.R.drawable.ic_launcher_monochrome)
             .setContentIntent(pendingIntent)
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
@@ -1139,6 +1140,23 @@ class ScrolaOverlayService : Service() {
             setBackgroundColor(Color.parseColor("#B3000000")) // 70% dark scrim over reel app
             clipChildren = false
             clipToPadding = false
+            isClickable = true
+            isFocusable = true
+            isFocusableInTouchMode = true
+            setOnTouchListener { _, _ -> true } // Trap all touches so reels below cannot be swiped
+            setOnKeyListener { _, keyCode, event ->
+                if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                    handleHideLimitModal()
+                    val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                        addCategory(Intent.CATEGORY_HOME)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(homeIntent)
+                    true
+                } else {
+                    false
+                }
+            }
         }
 
         // Center card matching 080-3-limit-reached-animated.html
@@ -1283,8 +1301,10 @@ class ScrolaOverlayService : Service() {
             isClickable = true
             setOnClickListener {
                 handleHideLimitModal()
-                val launchIntent = Intent(this@ScrolaOverlayService, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                } ?: Intent(this@ScrolaOverlayService, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 }
                 startActivity(launchIntent)
             }
@@ -1316,16 +1336,20 @@ class ScrolaOverlayService : Service() {
                 startActivity(homeIntent)
             }
         }
+        val unlocksLeft = dm.getEmergencyUnlocksLeft()
+        val canUnlock = dm.canEmergencyUnlock()
         val unlockBtn = TextView(this).apply {
-            text = "Unlock for 5 min"
-            setTextColor(Color.parseColor("#FF8A4C"))
+            text = if (canUnlock) "Unlock 5 min ($unlocksLeft left)" else "No unlocks left"
+            setTextColor(if (canUnlock) Color.parseColor("#FF8A4C") else Color.parseColor("#666666"))
             textSize = 13.5f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
             setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8))
-            isClickable = true
-            setOnClickListener {
-                dm.grantEmergencyUnlock(5)
-                handleHideLimitModal()
+            isClickable = canUnlock
+            if (canUnlock) {
+                setOnClickListener {
+                    dm.grantEmergencyUnlock(5, this@ScrolaOverlayService)
+                    handleHideLimitModal()
+                }
             }
         }
         actionsRow.addView(exitBtn)
