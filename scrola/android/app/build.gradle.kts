@@ -1,3 +1,5 @@
+import java.io.FileInputStream
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,6 +8,12 @@ plugins {
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+}
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 kotlin {
@@ -32,14 +40,21 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val keyPropFile = keystoreProperties.getProperty("storeFile") ?: "scrola-upload-keystore.jks"
+            keyAlias = keystoreProperties.getProperty("keyAlias") ?: "scrola_upload"
+            keyPassword = keystoreProperties.getProperty("keyPassword") ?: "scrola2026"
+            storeFile = file(keyPropFile)
+            storePassword = keystoreProperties.getProperty("storePassword") ?: "scrola2026"
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
     buildTypes {
         release {
-            // Sign with debug keys for testing so sideloading works out of the box;
-            // enable both v1 (JAR) and v2 signing for broad device installer compatibility.
-            signingConfig = signingConfigs.getByName("debug").apply {
-                enableV1Signing = true
-                enableV2Signing = true
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
