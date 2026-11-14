@@ -127,7 +127,7 @@ class TrackingService extends ChangeNotifier {
 
   // Gamification
   int get streakDays => _storage?.streakDays ?? 0;
-  int get xpTotal => _storage?.xpTotal ?? 320;
+  int get xpTotal => _storage?.xpTotal ?? 0;
   int get currentLevel =>
       _storage?.currentLevel ?? GamificationEngine.getLevelForXP(xpTotal).level;
   BrainySkin get equippedSkin => _storage?.equippedSkin ?? BrainySkin.classic;

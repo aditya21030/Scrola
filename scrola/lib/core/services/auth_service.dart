@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'firebase_sync_service.dart';
 import 'tracking_service.dart';
 
 class AuthService extends ChangeNotifier {
@@ -26,7 +27,8 @@ class AuthService extends ChangeNotifier {
     try {
       _auth = FirebaseAuth.instance;
       _currentUser = _auth?.currentUser;
-      _authSubscription = _auth?.authStateChanges().listen((user) {
+      await FirebaseSyncService().initialize();
+      _authSubscription = _auth?.authStateChanges().listen((user) async {
         _currentUser = user;
         if (user != null && !user.isAnonymous) {
           final tracking = TrackingService();
@@ -34,6 +36,7 @@ class AuthService extends ChangeNotifier {
             displayName: user.displayName ?? tracking.displayName,
             email: user.email ?? tracking.email,
           );
+          await FirebaseSyncService().pullFromCloud();
         }
         notifyListeners();
       });
@@ -62,6 +65,7 @@ class AuthService extends ChangeNotifier {
           displayName: _currentUser!.displayName ?? tracking.displayName,
           email: _currentUser!.email ?? tracking.email,
         );
+        await FirebaseSyncService().pullFromCloud();
       }
       notifyListeners();
       return null; // Success
@@ -102,6 +106,7 @@ class AuthService extends ChangeNotifier {
           username: username ?? tracking.username,
           email: user.email ?? tracking.email,
         );
+        await FirebaseSyncService().pushToCloud();
       }
       notifyListeners();
       return null; // Success

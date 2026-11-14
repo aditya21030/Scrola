@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'firebase_sync_service.dart';
 import 'haptic_service.dart';
 import 'gamification_engine.dart';
 
@@ -23,8 +24,21 @@ class StorageService {
       _instance!._ensureJoinedDate();
       _instance!._checkDailyReset();
       _instance!._applySavedHaptics();
+      _instance!._sanitizeInitialState();
     }
     return _instance!;
+  }
+
+  void _sanitizeInitialState() {
+    final savedXp = _prefs?.getInt(_keyXPTotal);
+    // Remove legacy mockup artifact (320 XP) so new user starts at Level 1 (0 XP)
+    if (savedXp == null ||
+        (savedXp == 320 &&
+            (_prefs?.getInt(_keyStreakDays) ?? 0) == 0 &&
+            (_prefs?.getInt(_keyTotalToday) ?? 0) == 0)) {
+      _prefs?.setInt(_keyXPTotal, 0);
+      _prefs?.setInt(_keyCurrentLevel, 1);
+    }
   }
 
   static const List<String> supportedPlatformIds = [
@@ -445,7 +459,7 @@ class StorageService {
   // Gamification
   int get streakDays => _prefs?.getInt(_keyStreakDays) ?? 0;
   String get lastStreakDate => _prefs?.getString(_keyLastStreakDate) ?? '';
-  int get xpTotal => _prefs?.getInt(_keyXPTotal) ?? 320;
+  int get xpTotal => _prefs?.getInt(_keyXPTotal) ?? 0;
   int get currentLevel => GamificationEngine.getLevelForXP(xpTotal).level;
 
   BrainySkin get equippedSkin {
@@ -455,12 +469,14 @@ class StorageService {
 
   Future<void> setEquippedSkin(BrainySkin skin) async {
     await _prefs?.setInt(_keyEquippedSkin, skin.index);
+    FirebaseSyncService().schedulePush();
   }
 
   Future<void> addXP(int xp) async {
     final newXP = (xpTotal + xp).clamp(0, 1 << 30);
     await _prefs?.setInt(_keyXPTotal, newXP);
     await _prefs?.setInt(_keyCurrentLevel, GamificationEngine.getLevelForXP(newXP).level);
+    FirebaseSyncService().schedulePush();
   }
 
   bool get isDailyXpCollectedToday =>
@@ -491,6 +507,7 @@ class StorageService {
   Future<void> updateStreak(int days) async {
     await _prefs?.setInt(_keyStreakDays, days);
     await _prefs?.setString(_keyLastStreakDate, _getTodayString());
+    FirebaseSyncService().schedulePush();
   }
 
   // Focus Session State
