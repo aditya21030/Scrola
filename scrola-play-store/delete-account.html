@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Deletion & Data Removal - Scrola App</title>
+  <style>
+    :root {
+      --bg: #101010;
+      --card-bg: #181818;
+      --border: #262626;
+      --accent: #FF6B24;
+      --danger: #EF4444;
+      --text: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --success: #10B981;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      padding: 32px 16px 80px;
+    }
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    h1 {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .highlight-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--danger);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    .highlight-card h3 {
+      color: #FFFFFF;
+      font-size: 17px;
+      margin-bottom: 8px;
+    }
+    section {
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    p {
+      color: #D1D5DB;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    ol, ul {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      color: #D1D5DB;
+      font-size: 15px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    strong {
+      color: #FFFFFF;
+    }
+    .method-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .method-box h3 {
+      font-size: 17px;
+      color: var(--accent);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .email-btn {
+      display: inline-block;
+      background: var(--accent);
+      color: #FFFFFF;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      margin-top: 10px;
+      transition: opacity 0.2s;
+    }
+    .email-btn:hover {
+      opacity: 0.9;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: rgba(255, 255, 255, 0.04);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+    td {
+      color: #D1D5DB;
+    }
+    .tag-deleted {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.12);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tag-retained {
+      color: #FBBF24;
+      background: rgba(245, 158, 11, 0.12);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    footer {
+      text-align: center;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Google Play Data Safety Compliance</div>
+      <h1>Account & Data Deletion Request</h1>
+      <p class="subtitle">Scrola: Reel & Shorts Blocker &bull; Support: yousfulstudio@gmail.com</p>
+    </header>
+
+    <div class="highlight-card">
+      <h3>Your Privacy & Data Rights</h3>
+      <p>In full compliance with Google Play's User Data & Account Deletion Policy, Scrola gives every user complete authority to delete their account and associated personal data at any time — either directly within the app or online via email.</p>
+    </div>
+
+    <section>
+      <h2>How to Request Account & Data Deletion</h2>
+      <p>You can delete your account and personal data using either of the following two methods:</p>
+
+      <div class="method-box">
+        <h3>Method 1: In-App Instant Deletion (Recommended)</h3>
+        <p>If you currently have the Scrola app installed on your Android device:</p>
+        <ol>
+          <li>Open the <strong>Scrola</strong> application.</li>
+          <li>Navigate to the <strong>Profile</strong> tab (bottom right icon).</li>
+          <li>Tap on <strong>Privacy & Security</strong> (or <em>Privacy Controls</em>).</li>
+          <li>Scroll to the <strong>Data Management</strong> section.</li>
+          <li>Tap <strong>Delete Account & Cloud Data</strong>.</li>
+          <li>Confirm your choice by tapping <strong>Permanently Delete</strong>.</li>
+        </ol>
+        <p style="margin-bottom: 0;"><em>Your Firebase authentication record, profile, and cloud statistics are deleted immediately.</em></p>
+      </div>
+
+      <div class="method-box">
+        <h3>Method 2: Email Request (If App is Uninstalled)</h3>
+        <p>If you have uninstalled Scrola or cannot access the application, submit an email deletion request to our support team:</p>
+        <ul>
+          <li><strong>To:</strong> <a href="mailto:yousfulstudio@gmail.com?subject=Scrola%20App%20-%20Delete%20Account" style="color: var(--accent);">yousfulstudio@gmail.com</a></li>
+          <li><strong>Subject:</strong> <code>Scrola App - Delete Account</code></li>
+          <li><strong>Body Details:</strong> Please include the registered email address used in Scrola.</li>
+        </ul>
+        <a class="email-btn" href="mailto:yousfulstudio@gmail.com?subject=Scrola%20App%20-%20Delete%20Account&body=Hello%20Scrola%20Team%2C%0A%0APlease%20permanently%20delete%20my%20Scrola%20account%20and%20all%20associated%20data.%0A%0ARegistered%20Email%3A%20%5BInsert%20your%20registered%20email%20here%5D%0A%0AThank%20you.">Send Deletion Request Email</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>What Data is Deleted vs. Retained</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Data Type</th>
+              <th>Status</th>
+              <th>Details & Retention Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Account Credentials</strong> (Email, User ID)</td>
+              <td><span class="tag-deleted">DELETED</span></td>
+              <td>Permanently deleted from Firebase Auth immediately.</td>
+            </tr>
+            <tr>
+              <td><strong>Cloud Stats & Game Progress</strong> (XP, Streaks, Skins)</td>
+              <td><span class="tag-deleted">DELETED</span></td>
+              <td>Permanently purged from Cloud Firestore immediately.</td>
+            </tr>
+            <tr>
+              <td><strong>Local Usage Metrics</strong> (Reel counters, timers)</td>
+              <td><span class="tag-deleted">DELETED</span></td>
+              <td>Erased when in-app deletion is triggered, or on app uninstall.</td>
+            </tr>
+            <tr>
+              <td><strong>Google Play In-App Purchase Records</strong></td>
+              <td><span class="tag-retained">RETAINED</span></td>
+              <td>Google Play Billing token history is retained by Google for accounting, tax, and refund compliance as required by applicable laws (up to 90 days or statutory period). Scrola does not store credit card details.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Deletion Processing Timeline</h2>
+      <ul>
+        <li><strong>In-App Deletion:</strong> Processed <strong>instantaneously</strong> in real time upon confirmation.</li>
+        <li><strong>Email Requests:</strong> Verified and executed within <strong>7 business days</strong>. A confirmation email will be sent once deletion is complete.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Guest Mode Users</h2>
+      <p>If you used Scrola without creating an account (Guest Mode), your reel tracking statistics are stored <strong>100% locally on your device</strong>. No data was ever transmitted to our cloud servers. You can clear your local data anytime in the app under <em>Settings &gt; Reset Local Data</em>, or simply by clearing the app data in Android system settings or uninstalling the app.</p>
+    </section>
+
+    <section>
+      <h2>Contact Developer</h2>
+      <p>For any questions regarding your account or data deletion, reach out to:</p>
+      <ul>
+        <li><strong>Support Email:</strong> <a href="mailto:yousfulstudio@gmail.com?subject=Scrola%20App" style="color: var(--accent);">yousfulstudio@gmail.com</a></li>
+        <li><strong>Subject Line:</strong> Scrola App</li>
+        <li><strong>Developer:</strong> Yousful / Scrola Team</li>
+        <li><strong>Privacy Policy:</strong> <a href="privacy-policy.html" style="color: var(--accent);">View Full Privacy Policy</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>&copy; 2026 Scrola Team. All rights reserved. &bull; <a href="privacy-policy.html">Privacy Policy</a></p>
+    </footer>
+  </div>
+</body>
+</html>
