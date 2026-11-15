@@ -20,6 +20,7 @@ import '../../../onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import '../../../overlay/presentation/screens/floating_overlay_settings_screen.dart';
 import '../widgets/delete_account_modal.dart';
 import '../widgets/log_out_modal.dart';
+import 'privacy_controls_screen.dart';
 import 'subscription_pro_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -327,6 +328,53 @@ class SettingsScreen extends StatelessWidget {
                                     ),
                                   );
                                 },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'PRIVACY & LEGAL',
+                          style: AppTypography.label(
+                            color: AppColors.secondaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ScrolaCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 2,
+                          ),
+                          child: Column(
+                            children: [
+                              _SettingLinkRow(
+                                title: 'Privacy Policy & Controls',
+                                value: '100% Private',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PrivacyControlsScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                color: AppColors.borderSubtle,
+                                height: 1,
+                              ),
+                              _SettingLinkRow(
+                                title: 'Accessibility Service Disclosure',
+                                value: tracking.isAccessibilityGranted
+                                    ? 'Active'
+                                    : 'Not granted',
+                                valueColor: tracking.isAccessibilityGranted
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PrivacyControlsScreen(),
+                                  ),
+                                ),
                               ),
                             ],
                           ),

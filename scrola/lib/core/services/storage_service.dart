@@ -136,6 +136,7 @@ class StorageService {
   static const String _keyIsProSubscribed = 'scrola_pro_subscribed';
   static const String _keyProPlan = 'scrola_pro_plan';
   static const String _keyFreeNotchSessionsUsed = 'scrola_free_notch_sessions_used';
+  static const String _keyAnonymousDiagnostics = 'scrola_anonymous_diagnostics';
 
   static const String _keyNotifWarnNearLimit = 'scrola_notif_warn_near_limit';
   static const String _keyNotifThresholds = 'scrola_notif_thresholds';
@@ -802,5 +803,12 @@ class StorageService {
     if (displayName != null) await _prefs?.setString(_keyDisplayName, displayName);
     if (username != null) await _prefs?.setString(_keyUsername, username);
     if (email != null) await _prefs?.setString(_keyEmail, email);
+  }
+
+  bool get anonymousDiagnosticsEnabled =>
+      _prefs?.getBool(_keyAnonymousDiagnostics) ?? true;
+
+  Future<void> setAnonymousDiagnostics(bool enabled) async {
+    await _prefs?.setBool(_keyAnonymousDiagnostics, enabled);
   }
 }

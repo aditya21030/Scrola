@@ -12,6 +12,7 @@ import '../../../auth/presentation/widgets/registration_prompt_modal.dart';
 import '../../../home/presentation/screens/in_app_guide_screen.dart';
 import 'edit_profile_screen.dart';
 import 'notifications_settings_screen.dart';
+import 'privacy_controls_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_pro_screen.dart';
 
@@ -358,6 +359,19 @@ class ProfileScreen extends StatelessWidget {
                                   MaterialPageRoute(
                                     builder: (_) =>
                                         const NotificationsSettingsScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _MenuRow(
+                                icon: Icons.shield_outlined,
+                                title: 'Privacy & Data Controls',
+                                trailing: '100% Private',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PrivacyControlsScreen(),
                                   ),
                                 ),
                               ),

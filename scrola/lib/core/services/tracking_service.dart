@@ -663,6 +663,15 @@ class TrackingService extends ChangeNotifier {
     return buffer.toString();
   }
 
+  bool get anonymousDiagnosticsEnabled =>
+      _storage?.anonymousDiagnosticsEnabled ?? true;
+
+  Future<void> setAnonymousDiagnostics(bool enabled) async {
+    final storage = await _ensureStorage();
+    await storage.setAnonymousDiagnostics(enabled);
+    notifyListeners();
+  }
+
   Future<void> updateHapticsConfig({
     bool? enabled,
     HapticIntensity? intensity,

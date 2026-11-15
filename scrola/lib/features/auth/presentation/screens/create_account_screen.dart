@@ -8,6 +8,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
+import '../../../profile/presentation/screens/privacy_controls_screen.dart';
 import 'login_screen.dart';
 
 class CreateAccountScreen extends StatefulWidget {
@@ -457,10 +458,44 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Text(
-                                'I agree to the Terms of Service & Privacy Policy',
-                                style: AppTypography.caption(
-                                  color: AppColors.secondaryText,
+                              child: GestureDetector(
+                                onTap: () {
+                                  HapticService.subtle();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const PrivacyControlsScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Text.rich(
+                                  TextSpan(
+                                    text: 'I agree to the ',
+                                    style: AppTypography.caption(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Terms of Service',
+                                        style: AppTypography.caption(
+                                          color: AppColors.primaryAccent,
+                                        ).copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                      const TextSpan(text: ' & '),
+                                      TextSpan(
+                                        text: 'Privacy Policy',
+                                        style: AppTypography.caption(
+                                          color: AppColors.primaryAccent,
+                                        ).copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

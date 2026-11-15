@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Scrola: Reel & Shorts Blocker</title>
+  <style>
+    :root {
+      --bg: #101010;
+      --card-bg: #181818;
+      --border: #262626;
+      --accent: #FF6B24;
+      --text: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --success: #10B981;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      padding: 32px 16px 80px;
+    }
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255, 107, 36, 0.15);
+      color: var(--accent);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 107, 36, 0.3);
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .updated {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .highlight-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    .highlight-card h3 {
+      color: var(--accent);
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    section {
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 21px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    p {
+      color: #D1D5DB;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    ul {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      color: #D1D5DB;
+      font-size: 15px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    strong {
+      color: #FFFFFF;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .grid-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .grid-card h4 {
+      font-size: 15px;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+    .grid-card p {
+      font-size: 13.5px;
+      margin-bottom: 0;
+      color: var(--text-muted);
+    }
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">OFFICIAL PRIVACY POLICY</div>
+      <h1>Scrola Privacy Policy</h1>
+      <p class="updated">Effective Date: November 15, 2026 &bull; Version 1.0.0</p>
+    </header>
+
+    <div class="highlight-card">
+      <h3>🔒 Privacy Summary & Commitment</h3>
+      <p>Scrola is designed around digital wellbeing and strict user privacy. We do not sell your personal information, we do not track your personal chats, photos, or browsing history, and we do not use third-party behavioral advertising networks.</p>
+    </div>
+
+    <section>
+      <h2>1. Introduction</h2>
+      <p>Scrola ("we", "our", or "us") provides the mobile application <strong>Scrola: Reel & Shorts Blocker</strong>. This Privacy Policy informs you of our policies regarding the collection, use, and disclosure of personal data when you use our app and the choices you have associated with that data.</p>
+    </section>
+
+    <section>
+      <h2>2. Android Accessibility Service API (Prominent Disclosure)</h2>
+      <p>Scrola utilizes Android's <code>AccessibilityService</code> API exclusively for its core functionality: detecting vertical short-form video feeds and enforcing user-configured screen time limits.</p>
+      
+      <div class="grid">
+        <div class="grid-card">
+          <h4>✅ What Scrola Accesses</h4>
+          <p>Scrola detects active foreground package names (e.g., Instagram, YouTube) and the UI node layout representing short-form video players (e.g., Reels or Shorts tabs) and vertical swipe interactions.</p>
+        </div>
+        <div class="grid-card">
+          <h4>🚫 What Scrola NEVER Accesses</h4>
+          <p>Scrola <strong>never</strong> reads, inspects, or logs your text messages, chats, searches, photos, financial transactions, passwords, or keystrokes.</p>
+        </div>
+      </div>
+
+      <p><strong>100% On-Device Ephemeral Processing:</strong> All accessibility inspection is executed locally in device memory (RAM) in real time and is discarded immediately. No raw screen content or personal interactions are stored, saved, or uploaded to any remote server.</p>
+      <p>You can enable or revoke the Accessibility Service permission at any time directly through Android system settings (Settings &gt; Accessibility &gt; Scrola).</p>
+    </section>
+
+    <section>
+      <h2>3. Information We Collect and How We Use It</h2>
+      <ul>
+        <li><strong>Local Usage Metrics:</strong> Daily count of reels watched, remaining reel limits, focus timer history, and Brainy companion XP and evolutions. This data is stored strictly locally on your device via Android private storage (<code>SharedPreferences</code>).</li>
+        <li><strong>Optional Account Data:</strong> If you voluntarily create an account to synchronize your progress across devices, we collect your email address, chosen username, and game progress (streak count, level, equipped mascot skin) through Google Firebase Authentication and Cloud Firestore.</li>
+        <li><strong>Guest Mode:</strong> You can use all core features of Scrola as a Guest without creating an account or providing any personal details.</li>
+        <li><strong>Payment & Subscription Data:</strong> In-app purchases and subscriptions are handled securely by Google Play Billing. Scrola never collects, receives, or stores your credit card or financial credentials.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Data Sharing and Third-Party Services</h2>
+      <p>We do <strong>not</strong> sell, rent, or trade your personal data. We only interact with trusted infrastructure providers necessary to operate the service:</p>
+      <ul>
+        <li><strong>Google Play Services / Billing:</strong> For subscription management and app distribution.</li>
+        <li><strong>Google Firebase:</strong> For secure authentication and cloud backup (only if you create an account).</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Data Retention, Export & Deletion Controls</h2>
+      <p>You have full ownership and control of your data:</p>
+      <ul>
+        <li><strong>Data Export:</strong> You can export your complete daily usage history to CSV at any time from within the app settings.</li>
+        <li><strong>Reset Local Stats:</strong> You can clear all local tracking statistics directly in Settings &gt; Reset Local Data.</li>
+        <li><strong>Account & Cloud Deletion:</strong> You can permanently delete your account, authentication record, and all associated cloud data directly within the app (Settings &gt; Delete Account) or by emailing us at <a href="mailto:privacy@scrola.app">privacy@scrola.app</a>. Deletion takes effect immediately.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>6. Security of Your Data</h2>
+      <p>We implement industry-standard security safeguards. All communications with Google Firebase use Transport Layer Security (TLS/HTTPS). Local metrics are sandboxed within the app's private directory and inaccessible to other applications.</p>
+    </section>
+
+    <section>
+      <h2>7. Children's Privacy</h2>
+      <p>Scrola does not knowingly collect personally identifiable information from children under the age of 13. If you become aware that a child has provided us with personal information, please contact us immediately.</p>
+    </section>
+
+    <section>
+      <h2>8. Contact Us</h2>
+      <p>If you have any questions or feedback regarding this Privacy Policy or your data, please contact us at:</p>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:privacy@scrola.app">privacy@scrola.app</a></li>
+        <li><strong>Developer:</strong> Yousful / Scrola Team</li>
+        <li><strong>Website:</strong> <a href="https://github.com/aditya21030/Scrola" target="_blank" rel="noopener">https://github.com/aditya21030/Scrola</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>&copy; 2026 Scrola Team. All rights reserved.</p>
+    </footer>
+  </div>
+</body>
+</html>
