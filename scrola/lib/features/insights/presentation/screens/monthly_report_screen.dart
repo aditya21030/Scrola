@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
@@ -237,13 +239,16 @@ class MonthlyReportScreen extends StatelessWidget {
                   color: AppColors.primaryBackground,
                   size: 20,
                 ),
-                onTap: () {
+                onPressed: () {
                   HapticService.medium();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Scrola Pro report exported to Downloads!'),
+                      behavior: SnackBarBehavior.floating,
+                      content: Text('Monthly data & CSV copied to clipboard!'),
                     ),
                   );
+                  final csv = TrackingService().buildCsvExport();
+                  Clipboard.setData(ClipboardData(text: csv)).catchError((_) {});
                 },
               ),
               const SizedBox(height: 10),

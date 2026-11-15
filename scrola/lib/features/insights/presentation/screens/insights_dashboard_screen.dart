@@ -7,6 +7,7 @@ import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import 'daily_scroll_history_screen.dart';
 import 'monthly_report_screen.dart';
+import 'platform_breakdown_screen.dart';
 import 'weekly_report_screen.dart';
 
 class InsightsDashboardScreen extends StatefulWidget {
@@ -96,21 +97,28 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         if (widget.showBack)
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Insights',
-                style: AppTypography.title().copyWith(fontSize: 26),
-              ),
-            ],
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'Insights',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.title().copyWith(fontSize: 24),
+                  ),
+                ),
+              ],
+            ),
           )
         else
           Text(
@@ -118,7 +126,7 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
             style: AppTypography.title().copyWith(fontSize: 28),
           ),
         Container(
-          width: 160,
+          width: 148,
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: const Color(0xFF1A1A1A),
@@ -195,23 +203,30 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
           style: AppTypography.label(color: AppColors.secondaryText),
         ),
         const SizedBox(height: 4),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 10,
+          runSpacing: 4,
           children: [
-            Text(
-              '$dailyAvg',
-              style: AppTypography.numeric(
-                fontSize: 54,
-                fontWeight: FontWeight.w800,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '$dailyAvg',
+                  style: AppTypography.numeric(
+                    fontSize: 44,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'reels',
+                  style: AppTypography.body(color: AppColors.secondaryText),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            Text(
-              'reels',
-              style: AppTypography.body(color: AppColors.secondaryText),
-            ),
-            const SizedBox(width: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -239,11 +254,17 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '7-Day Scroll Trend',
-                style: AppTypography.subheading(color: AppColors.secondaryText),
+              Expanded(
+                child: Text(
+                  '7-Day Scroll Trend',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.subheading(color: AppColors.secondaryText),
+                ),
               ),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: 14,
@@ -304,10 +325,15 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'When you scroll',
-                style: AppTypography.subheading().copyWith(fontSize: 18),
+              Expanded(
+                child: Text(
+                  'When you scroll',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.subheading().copyWith(fontSize: 18),
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '24h Heatmap',
                 style: AppTypography.caption(color: AppColors.primaryAccent)
@@ -341,15 +367,15 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('12 am',
+              Text('12a',
                   style: AppTypography.caption(color: AppColors.secondaryText)),
-              Text('6 am',
+              Text('6a',
                   style: AppTypography.caption(color: AppColors.secondaryText)),
-              Text('12 pm',
+              Text('12p',
                   style: AppTypography.caption(color: AppColors.secondaryText)),
-              Text('6 pm',
+              Text('6p',
                   style: AppTypography.caption(color: AppColors.secondaryText)),
-              Text('11 pm',
+              Text('11p',
                   style: AppTypography.caption(color: AppColors.secondaryText)),
             ],
           ),
@@ -375,19 +401,44 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
   Widget _buildPlatformBreakdown() {
     return ScrolaCard(
       padding: const EdgeInsets.all(16),
+      onTap: () {
+        HapticService.light();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const PlatformBreakdownScreen(),
+          ),
+        );
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Platform share',
-                style: AppTypography.subheading().copyWith(fontSize: 16),
+              Expanded(
+                child: Text(
+                  'Platform share',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.subheading().copyWith(fontSize: 16),
+                ),
               ),
-              Text(
-                'This week',
-                style: AppTypography.caption(color: AppColors.secondaryText),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Details',
+                    style: AppTypography.caption(color: AppColors.primaryAccent)
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: AppColors.primaryAccent,
+                    size: 12,
+                  ),
+                ],
               ),
             ],
           ),
@@ -417,8 +468,9 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
             children: [
               _PlatformBadge(
                 dotColor: AppColors.primaryAccent,
@@ -523,13 +575,15 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Text(
                             'Monthly Report',
                             style: AppTypography.subheading(),
                           ),
-                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),

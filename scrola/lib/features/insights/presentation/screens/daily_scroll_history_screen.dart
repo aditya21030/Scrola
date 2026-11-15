@@ -276,7 +276,7 @@ class DailyScrollHistoryScreen extends StatelessWidget {
                               final hFrac =
                                   (bar.count / maxBar).clamp(0.08, 1.0);
                               final over = bar.count > limit;
-                              final isToday = i == bars.length - 1;
+                              final isToday = i == (now.weekday - 1);
                               return Expanded(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.end,

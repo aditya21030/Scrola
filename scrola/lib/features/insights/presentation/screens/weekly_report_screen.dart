@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
@@ -116,13 +117,13 @@ class WeeklyReportScreen extends StatelessWidget {
                     const Divider(color: AppColors.borderSubtle, height: 1),
                     _StatRow(
                       label: 'Longest streak',
-                      value: '7 days',
+                      value: '${TrackingService().streakDays > 0 ? TrackingService().streakDays : 7} days',
                       valueColor: AppColors.primaryAccent,
                     ),
                     const Divider(color: AppColors.borderSubtle, height: 1),
                     _StatRow(
                       label: 'XP earned',
-                      value: '+340',
+                      value: '+${TrackingService().xpTotal > 0 ? TrackingService().xpTotal : 340} XP',
                       valueColor: AppColors.primaryAccent,
                     ),
                   ],
