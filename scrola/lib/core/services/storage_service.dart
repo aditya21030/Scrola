@@ -39,6 +39,12 @@ class StorageService {
       _prefs?.setInt(_keyXPTotal, 0);
       _prefs?.setInt(_keyCurrentLevel, 1);
     }
+
+    // Ensure night block is not silently active unless the user explicitly configured it
+    final nightUserSet = _prefs?.getBool('scrola_night_block_user_set') ?? false;
+    if (!nightUserSet && (_prefs?.getBool(_keyNightBlock) ?? false)) {
+      _prefs?.setBool(_keyNightBlock, false);
+    }
   }
 
   static const List<String> supportedPlatformIds = [
@@ -587,8 +593,9 @@ class StorageService {
     await _prefs?.setBool(_keyBlockAtLimit, enabled);
   }
 
-  bool get nightBlockEnabled => _prefs?.getBool(_keyNightBlock) ?? true;
+  bool get nightBlockEnabled => _prefs?.getBool(_keyNightBlock) ?? false;
   Future<void> setNightBlockEnabled(bool enabled) async {
+    await _prefs?.setBool('scrola_night_block_user_set', true);
     await _prefs?.setBool(_keyNightBlock, enabled);
   }
 

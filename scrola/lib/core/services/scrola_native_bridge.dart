@@ -112,6 +112,7 @@ class ScrolaNativeBridge {
     bool? overlayExpanded,
     String? overlaySize,
     int? skinIndex,
+    bool? blockAtLimitEnabled,
     bool? nightBlockEnabled,
     bool? workBlockEnabled,
     bool? strictBlocking,
@@ -134,6 +135,7 @@ class ScrolaNativeBridge {
       'overlayExpanded': ?overlayExpanded,
       'overlaySize': ?overlaySize,
       'skinIndex': ?skinIndex,
+      'blockAtLimitEnabled': ?blockAtLimitEnabled,
       'nightBlockEnabled': ?nightBlockEnabled,
       'workBlockEnabled': ?workBlockEnabled,
       'strictBlocking': ?strictBlocking,
@@ -184,8 +186,11 @@ class ScrolaNativeBridge {
   }
 
   /// Show the native Limit Reached modal directly over the current app (Instagram, TikTok, etc.)
-  static Future<bool> showLimitModal([String platform = '']) async {
-    return (await _invoke<bool>('showLimitModal', {'platform': platform})) ?? false;
+  static Future<bool> showLimitModal([String platform = '', String reason = 'limit']) async {
+    return (await _invoke<bool>('showLimitModal', {
+      'platform': platform,
+      'reason': reason,
+    })) ?? false;
   }
 
   /// Grant emergency 5-minute unlock in native DataManager

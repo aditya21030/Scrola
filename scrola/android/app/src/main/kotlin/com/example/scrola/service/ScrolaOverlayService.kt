@@ -96,6 +96,7 @@ class ScrolaOverlayService : Service() {
         const val EXTRA_PLATFORM = "EXTRA_PLATFORM"
         const val EXTRA_IS_FOCUS = "EXTRA_IS_FOCUS"
         const val EXTRA_ANIMATE_ENTRANCE = "EXTRA_ANIMATE_ENTRANCE"
+        const val EXTRA_BLOCK_REASON = "EXTRA_BLOCK_REASON"
 
         private const val CHANNEL_ID = "scrola_overlay_channel"
         private const val NOTIFICATION_ID = 1001
@@ -202,7 +203,7 @@ class ScrolaOverlayService : Service() {
             startCompat(context, intent)
         }
 
-        fun showLimitModal(context: Context, platform: String = "") {
+        fun showLimitModal(context: Context, platform: String = "", reason: String = "limit") {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
                 return
             }
@@ -210,7 +211,7 @@ class ScrolaOverlayService : Service() {
             if (isServiceRunning && instance != null && !instance.isStopping) {
                 instance.mainHandler.post {
                     if (!instance.isStopping) {
-                        instance.handleShowLimitModal(platform)
+                        instance.handleShowLimitModal(platform, reason)
                     }
                 }
                 return
@@ -218,6 +219,7 @@ class ScrolaOverlayService : Service() {
             val intent = Intent(context, ScrolaOverlayService::class.java).apply {
                 action = ACTION_SHOW_LIMIT_MODAL
                 putExtra(EXTRA_PLATFORM, platform)
+                putExtra(EXTRA_BLOCK_REASON, reason)
             }
             startCompat(context, intent)
         }
@@ -338,7 +340,8 @@ class ScrolaOverlayService : Service() {
             }
             ACTION_SHOW_LIMIT_MODAL -> {
                 val platform = intent.getStringExtra(EXTRA_PLATFORM) ?: lastPlatform
-                handleShowLimitModal(platform)
+                val reason = intent.getStringExtra(EXTRA_BLOCK_REASON) ?: "limit"
+                handleShowLimitModal(platform, reason)
             }
             ACTION_HIDE_LIMIT_MODAL -> {
                 handleHideLimitModal()
@@ -1107,7 +1110,22 @@ class ScrolaOverlayService : Service() {
 
     private var limitModalContainer: FrameLayout? = null
 
-    private fun handleShowLimitModal(platform: String = "") {
+    private data class BlockModalConfig(
+        val badgeText: String,
+        val badgeBgColor: String,
+        val badgeTextColor: String,
+        val badgeBorderColor: String,
+        val title: String,
+        val subtitle: String,
+        val chip1Text: String,
+        val chip2Text: String,
+        val chip2BgColor: String,
+        val chip2TextColor: String,
+        val strokeColor: String,
+        val mood: String
+    )
+
+    private fun handleShowLimitModal(platform: String = "", reason: String = "limit") {
         if (limitModalContainer != null) return
         val wm = windowManager ?: getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
 
@@ -1120,6 +1138,79 @@ class ScrolaOverlayService : Service() {
 
         val dm = ScrolaDataManager.getInstance(this)
         val limit = dm.getTotalLimit()
+
+        val config = when (reason) {
+            "night" -> BlockModalConfig(
+                badgeText = "Night schedule",
+                badgeBgColor = "#142033",
+                badgeTextColor = "#60A5FA",
+                badgeBorderColor = "#1E3A8A",
+                title = "Night block active",
+                subtitle = "Reels stay locked until 7:00 am to protect your sleep schedule.",
+                chip1Text = "Unlocks at 7:00 am",
+                chip2Text = "Bedtime rule",
+                chip2BgColor = "#101D2E",
+                chip2TextColor = "#93C5FD",
+                strokeColor = "#3B82F6",
+                mood = "tired"
+            )
+            "work" -> BlockModalConfig(
+                badgeText = "Work hours",
+                badgeBgColor = "#261D10",
+                badgeTextColor = "#FBBF24",
+                badgeBorderColor = "#78350F",
+                title = "Work block active",
+                subtitle = "Reels stay locked until 5:00 pm to keep your workday focused.",
+                chip1Text = "Unlocks at 5:00 pm",
+                chip2Text = "Deep work",
+                chip2BgColor = "#2B1A0E",
+                chip2TextColor = "#FCD34D",
+                strokeColor = "#F59E0B",
+                mood = "focused"
+            )
+            "focus" -> BlockModalConfig(
+                badgeText = "Focus mode",
+                badgeBgColor = "#2A180E",
+                badgeTextColor = "#FF8A4C",
+                badgeBorderColor = "#5C250A",
+                title = "Focus session active",
+                subtitle = "Reels stay locked until your focus session timer ends.",
+                chip1Text = "Focus in progress",
+                chip2Text = "Stay mindful",
+                chip2BgColor = "#2B170D",
+                chip2TextColor = "#FF8A4C",
+                strokeColor = "#FF6B24",
+                mood = "focused"
+            )
+            "detox" -> BlockModalConfig(
+                badgeText = "Digital detox",
+                badgeBgColor = "#0F261B",
+                badgeTextColor = "#34D399",
+                badgeBorderColor = "#064E3B",
+                title = "Detox mode active",
+                subtitle = "Reels stay locked during your digital detox period.",
+                chip1Text = "Detox active",
+                chip2Text = "Deep reset",
+                chip2BgColor = "#0D2117",
+                chip2TextColor = "#6EE7B7",
+                strokeColor = "#10B981",
+                mood = "neutral"
+            )
+            else -> BlockModalConfig(
+                badgeText = "Limit reached",
+                badgeBgColor = "#2B1414",
+                badgeTextColor = "#FF7A8A",
+                badgeBorderColor = "#4A2020",
+                title = "That's your limit for today",
+                subtitle = "You reached your limit of $limit reels.\nReels stay locked until midnight.",
+                chip1Text = "Resets at midnight",
+                chip2Text = "Streak active",
+                chip2BgColor = "#2A180E",
+                chip2TextColor = "#FF8A4C",
+                strokeColor = "#FF5252",
+                mood = "sad"
+            )
+        }
 
         val modalParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -1168,7 +1259,7 @@ class ScrolaOverlayService : Service() {
             val bg = GradientDrawable().apply {
                 setColor(Color.parseColor("#141414"))
                 cornerRadius = dpToPx(28).toFloat()
-                setStroke(dpToPx(2), Color.parseColor("#FF5252"))
+                setStroke(dpToPx(2), Color.parseColor(config.strokeColor))
             }
             background = bg
             elevation = dpToPx(16).toFloat()
@@ -1183,27 +1274,27 @@ class ScrolaOverlayService : Service() {
             setMargins(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20))
         }
 
-        // 1. Brainy Mascot (Sad mood)
+        // 1. Brainy Mascot (Mood matches block condition)
         val mascotView = BrainyOverlayView(this).apply {
             setSkinIndex(dm.getSkinIndex())
-            setMood("sad")
+            setMood(config.mood)
         }
         val mascotLp = LinearLayout.LayoutParams(dpToPx(88), dpToPx(88)).apply {
             bottomMargin = dpToPx(12)
         }
         card.addView(mascotView, mascotLp)
 
-        // 2. "Limit reached" pill badge
+        // 2. Pill badge
         val badge = TextView(this).apply {
-            text = "Limit reached"
-            setTextColor(Color.parseColor("#FF7A8A"))
+            text = config.badgeText
+            setTextColor(Color.parseColor(config.badgeTextColor))
             textSize = 12f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
             setPadding(dpToPx(12), dpToPx(5), dpToPx(12), dpToPx(5))
             background = GradientDrawable().apply {
-                setColor(Color.parseColor("#2B1414"))
+                setColor(Color.parseColor(config.badgeBgColor))
                 cornerRadius = dpToPx(12).toFloat()
-                setStroke(dpToPx(1), Color.parseColor("#4A2020"))
+                setStroke(dpToPx(1), Color.parseColor(config.badgeBorderColor))
             }
         }
         val badgeLp = LinearLayout.LayoutParams(
@@ -1214,9 +1305,9 @@ class ScrolaOverlayService : Service() {
         }
         card.addView(badge, badgeLp)
 
-        // 3. Title: "That's your limit for today"
+        // 3. Title
         val titleView = TextView(this).apply {
-            text = "That's your limit for today"
+            text = config.title
             setTextColor(Color.WHITE)
             textSize = 21f
             gravity = Gravity.CENTER
@@ -1230,9 +1321,9 @@ class ScrolaOverlayService : Service() {
         }
         card.addView(titleView, titleLp)
 
-        // 4. Subtitle: "You reached your limit of $limit reels. Reels stay locked until midnight."
+        // 4. Subtitle
         val subtitleView = TextView(this).apply {
-            text = "You reached your limit of $limit reels.\nReels stay locked until midnight."
+            text = config.subtitle
             setTextColor(Color.parseColor("#A3A3A3"))
             textSize = 13.5f
             gravity = Gravity.CENTER
@@ -1251,8 +1342,8 @@ class ScrolaOverlayService : Service() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
-        val resetChip = TextView(this).apply {
-            text = "Resets at midnight"
+        val chip1 = TextView(this).apply {
+            text = config.chip1Text
             setTextColor(Color.parseColor("#E0E0E0"))
             textSize = 11.5f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
@@ -1262,14 +1353,14 @@ class ScrolaOverlayService : Service() {
                 cornerRadius = dpToPx(12).toFloat()
             }
         }
-        val streakChip = TextView(this).apply {
-            text = "Streak active"
-            setTextColor(Color.parseColor("#FF8A4C"))
+        val chip2 = TextView(this).apply {
+            text = config.chip2Text
+            setTextColor(Color.parseColor(config.chip2TextColor))
             textSize = 11.5f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
             setPadding(dpToPx(10), dpToPx(6), dpToPx(10), dpToPx(6))
             background = GradientDrawable().apply {
-                setColor(Color.parseColor("#2A180E"))
+                setColor(Color.parseColor(config.chip2BgColor))
                 cornerRadius = dpToPx(12).toFloat()
             }
         }
@@ -1277,8 +1368,8 @@ class ScrolaOverlayService : Service() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { rightMargin = dpToPx(8) }
-        chipsRow.addView(resetChip, chipLp1)
-        chipsRow.addView(streakChip)
+        chipsRow.addView(chip1, chipLp1)
+        chipsRow.addView(chip2)
         val chipsLp = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT

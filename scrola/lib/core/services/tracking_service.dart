@@ -727,6 +727,7 @@ class TrackingService extends ChangeNotifier {
       overlayExpanded: storage.overlayExpanded,
       overlaySize: storage.overlaySize,
       skinIndex: storage.equippedSkin.index,
+      blockAtLimitEnabled: storage.blockAtLimitEnabled,
       nightBlockEnabled: storage.nightBlockEnabled,
       workBlockEnabled: storage.workBlockEnabled,
       strictBlocking: storage.strictBlocking,

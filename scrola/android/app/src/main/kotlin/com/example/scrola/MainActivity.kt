@@ -132,6 +132,9 @@ class MainActivity : FlutterActivity() {
                     val skinIndex = call.argument<Int>("skinIndex")
                     if (skinIndex != null) dataManager.setSkinIndex(skinIndex)
 
+                    val blockAtLimitEnabled = call.argument<Boolean>("blockAtLimitEnabled")
+                    if (blockAtLimitEnabled != null) dataManager.setBlockAtLimitEnabled(blockAtLimitEnabled)
+
                     val nightBlockEnabled = call.argument<Boolean>("nightBlockEnabled")
                     if (nightBlockEnabled != null) dataManager.setNightBlockEnabled(nightBlockEnabled)
 
@@ -191,7 +194,8 @@ class MainActivity : FlutterActivity() {
                 }
                 "showLimitModal" -> {
                     val platform = call.argument<String>("platform") ?: ""
-                    ScrolaOverlayService.showLimitModal(this, platform)
+                    val reason = call.argument<String>("reason") ?: "limit"
+                    ScrolaOverlayService.showLimitModal(this, platform, reason)
                     result.success(true)
                 }
                 "grantEmergencyUnlock" -> {

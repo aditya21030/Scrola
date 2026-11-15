@@ -29,7 +29,9 @@ class ScrolaDataManager private constructor(context: Context) {
         private const val KEY_SKIN_INDEX = "skin_index"
         private const val KEY_FREE_X = "overlay_free_x"
         private const val KEY_FREE_Y = "overlay_free_y"
+        private const val KEY_BLOCK_AT_LIMIT = "block_at_limit_enabled"
         private const val KEY_NIGHT_BLOCK = "night_block_enabled"
+        private const val KEY_NIGHT_BLOCK_USER_SET = "night_block_user_set"
         private const val KEY_WORK_BLOCK = "work_block_enabled"
         private const val KEY_STRICT_BLOCKING = "strict_blocking_enabled"
         private const val KEY_DETOX_ACTIVE = "detox_active"
@@ -75,6 +77,11 @@ class ScrolaDataManager private constructor(context: Context) {
 
     init {
         checkAndResetDaily()
+        // If night block was never explicitly configured by the user, default it strictly to false.
+        // Prevents users from getting unexpectedly locked out during night hours (e.g. 10:00 pm).
+        if (!prefs.contains(KEY_NIGHT_BLOCK_USER_SET)) {
+            prefs.edit().putBoolean(KEY_NIGHT_BLOCK, false).apply()
+        }
     }
 
     private fun getTodayDateString(): String {
@@ -285,27 +292,57 @@ class ScrolaDataManager private constructor(context: Context) {
         return System.currentTimeMillis() < until
     }
 
+    fun isBlockAtLimitEnabled(): Boolean {
+        return prefs.getBoolean(KEY_BLOCK_AT_LIMIT, true)
+    }
+
+    fun setBlockAtLimitEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_BLOCK_AT_LIMIT, enabled).apply()
+    }
+
     fun isPlatformLimitReached(platform: String): Boolean {
         if (isEmergencyUnlocked()) return false
         val totalCount = getTotalReelsToday()
         val totalLimit = getTotalLimit()
-        if (totalCount >= totalLimit) return true
+
+        // Critical safety: If total reels watched is 0, limit can NEVER be reached
+        if (totalCount <= 0) return false
+        if (totalLimit > 0 && totalCount >= totalLimit) return true
         if (!isPlatformLimitsEnabled()) return false
 
         val count = getPlatformReels(platform)
+        if (count <= 0) return false
+
         val limit = getPlatformLimit(
             platform,
             getDefaultPlatformLimit(platform, totalLimit)
         )
+        if (limit <= 0) return false
         return count >= limit
     }
 
+    fun getActiveBlockReason(platform: String): String? {
+        if (isEmergencyUnlocked()) return null
+        if (isFocusModeActive()) return "focus"
+        if (isDetoxActive()) return "detox"
+        val cal = Calendar.getInstance()
+        if (isTrackingEnabled()) {
+            if (isNightBlockWindowNow(cal)) return "night"
+            if (isWorkBlockWindowNow(cal)) return "work"
+            if (isBlockAtLimitEnabled() && isPlatformLimitReached(platform)) return "limit"
+        }
+        return null
+    }
+
     fun isNightBlockEnabled(): Boolean {
-        return prefs.getBoolean(KEY_NIGHT_BLOCK, true)
+        return prefs.getBoolean(KEY_NIGHT_BLOCK, false)
     }
 
     fun setNightBlockEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_NIGHT_BLOCK, enabled).apply()
+        prefs.edit()
+            .putBoolean(KEY_NIGHT_BLOCK, enabled)
+            .putBoolean(KEY_NIGHT_BLOCK_USER_SET, true)
+            .apply()
     }
 
     fun isWorkBlockEnabled(): Boolean {

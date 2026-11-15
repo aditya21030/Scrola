@@ -350,18 +350,15 @@ class ScrolaAccessibilityService : AccessibilityService() {
     }
 
     private fun checkAndEnforceLimits(platform: String): Boolean {
-        val isBlockingMode = dataManager.isBlockingActiveNow()
-        val isLimitReached = dataManager.isTrackingEnabled() &&
-            dataManager.isPlatformLimitReached(platform)
-
-        if (isBlockingMode || isLimitReached) {
-            triggerBlockAction(platform, isBlockingMode)
+        val blockReason = dataManager.getActiveBlockReason(platform)
+        if (blockReason != null) {
+            triggerBlockAction(platform, blockReason)
             return true
         }
         return false
     }
 
-    private fun triggerBlockAction(platform: String, isFocus: Boolean) {
+    private fun triggerBlockAction(platform: String, reason: String) {
         val now = System.currentTimeMillis()
         val cooldownMs = if (dataManager.isStrictBlocking()) 800L else 2000L
         // Cooldown protection: Prevent multi-back press spam within cooldown window
@@ -386,9 +383,9 @@ class ScrolaAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Show interactive Limit Reached Modal overlay directly over reel app if permission is granted!
+        // Show interactive Limit / Block Reached Modal overlay directly over reel app if permission is granted!
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || android.provider.Settings.canDrawOverlays(this)) {
-            ScrolaOverlayService.showLimitModal(this, platform)
+            ScrolaOverlayService.showLimitModal(this, platform, reason)
         } else {
             // Fallback: If overlay permission is not granted, kick out of feed
             performGlobalAction(GLOBAL_ACTION_BACK)
@@ -396,7 +393,7 @@ class ScrolaAccessibilityService : AccessibilityService() {
 
         val intent = Intent(BROADCAST_REEL_EVENT).apply {
             setPackage(packageName)
-            putExtra(EXTRA_EVENT_TYPE, if (isFocus) "focus_block_enforced" else "limit_block_enforced")
+            putExtra(EXTRA_EVENT_TYPE, if (reason == "limit") "limit_block_enforced" else "focus_block_enforced")
             putExtra(EXTRA_PLATFORM, platform)
         }
         sendBroadcast(intent)
