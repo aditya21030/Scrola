@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
@@ -173,6 +174,72 @@ class _RewardsScreenState extends State<RewardsScreen> {
                         await HapticService.celebratory();
                       }
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  ScrolaCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryAccent
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.bolt_rounded,
+                                color: AppColors.primaryAccent,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Daily Evolution XP Boost',
+                                    style: AppTypography.subheading()
+                                        .copyWith(fontSize: 15),
+                                  ),
+                                  Text(
+                                    _tracking.isProSubscribed
+                                        ? 'Pro Member · Unlimited ad-free evolution bonus'
+                                        : 'Watch a short video to earn +50 instant XP',
+                                    style: AppTypography.caption(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        ScrolaSecondaryButton(
+                          label: _tracking.isProSubscribed
+                              ? 'Claim +50 Pro Bonus XP'
+                              : 'Watch Video for +50 XP Boost',
+                          leadingIcon: Icon(
+                            _tracking.isProSubscribed
+                                ? Icons.workspace_premium_rounded
+                                : Icons.play_circle_filled_rounded,
+                            color: AppColors.primaryAccent,
+                            size: 20,
+                          ),
+                          onPressed: () async {
+                            await AdService().showRewardedAd(
+                              context: context,
+                              placement: ScrolaAdPlacement.bonusXp,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 22),
                   Text(

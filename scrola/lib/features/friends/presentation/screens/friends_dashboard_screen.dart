@@ -318,7 +318,8 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Container(
+                                    Flexible(
+                                      child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: AppColors.primaryAccent.withValues(alpha: 0.15),
@@ -332,15 +333,18 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                                         children: [
                                           const Icon(Icons.flash_on_rounded, size: 14, color: AppColors.primaryAccent),
                                           const SizedBox(width: 4),
-                                          Text(
+                                          Flexible(
+                                            child: Text(
                                             'VS ${liveBattle.opponent.name.toUpperCase()}',
                                             style: AppTypography.caption(
                                               color: AppColors.primaryAccent,
                                               weight: FontWeight.w800,
                                             ),
+                                            ),
                                           ),
                                         ],
                                       ),
+                                    ),
                                     ),
                                     Text(
                                       liveBattle.durationLabel,
@@ -542,9 +546,11 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          Expanded(
+                            child: Text(
                             'GROUP CHALLENGES',
                             style: AppTypography.label(color: AppColors.secondaryText),
+                          ),
                           ),
                           GestureDetector(
                             onTap: () {
@@ -617,16 +623,21 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
+                                    Flexible(
+                                      child: Text(
                                       '${_social.challenges.first.currentReels} / ${_social.challenges.first.targetLimit} reels',
                                       style: AppTypography.caption(
                                         color: AppColors.primaryAccent,
                                         weight: FontWeight.w600,
                                       ),
+                                      ),
                                     ),
-                                    Text(
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
                                       '${_social.challenges.first.participantsCount} participants',
                                       style: AppTypography.caption(color: AppColors.secondaryText, size: 11),
+                                    ),
                                     ),
                                   ],
                                 ),

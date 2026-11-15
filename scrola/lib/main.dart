@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'core/services/ad_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_typography.dart';
@@ -14,6 +15,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     await AuthService().initialize();
+    await AdService().init();
   } catch (e) {
     debugPrint('Firebase initialization notice: $e');
   }

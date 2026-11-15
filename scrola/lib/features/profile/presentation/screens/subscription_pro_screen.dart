@@ -220,7 +220,10 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Row(
+                                          Wrap(
+                                            crossAxisAlignment: WrapCrossAlignment.center,
+                                            spacing: 6,
+                                            runSpacing: 4,
                                             children: [
                                               Text(
                                                 tier.title,

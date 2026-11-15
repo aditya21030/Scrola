@@ -136,6 +136,7 @@ class StorageService {
   static const String _keyIsProSubscribed = 'scrola_pro_subscribed';
   static const String _keyProPlan = 'scrola_pro_plan';
   static const String _keyFreeNotchSessionsUsed = 'scrola_free_notch_sessions_used';
+  static const String _keyBonusNotchSessions = 'scrola_bonus_notch_sessions';
   static const String _keyAnonymousDiagnostics = 'scrola_anonymous_diagnostics';
 
   static const String _keyNotifWarnNearLimit = 'scrola_notif_warn_near_limit';
@@ -770,17 +771,31 @@ class StorageService {
   String get proPlan => _prefs?.getString(_keyProPlan) ?? 'yearly';
 
   /// Free users get exactly 1 free session with the floating notch counter.
-  /// Subsequent usage is locked behind Scrola Pro.
+  /// Subsequent usage is locked behind Scrola Pro (or unlocked 1-by-1 via rewarded ads).
   int get freeNotchSessionsUsed => _prefs?.getInt(_keyFreeNotchSessionsUsed) ?? 0;
-  bool get canUseNotch => isProSubscribed || freeNotchSessionsUsed < 1;
+  int get bonusNotchSessions => _prefs?.getInt(_keyBonusNotchSessions) ?? 0;
+  bool get canUseNotch =>
+      isProSubscribed || (freeNotchSessionsUsed - bonusNotchSessions) < 1;
 
   Future<void> consumeFreeNotchSession() async {
     if (isProSubscribed) return;
     await _prefs?.setInt(_keyFreeNotchSessionsUsed, freeNotchSessionsUsed + 1);
   }
 
+  Future<void> grantBonusNotchSession() async {
+    await _prefs?.setInt(_keyBonusNotchSessions, bonusNotchSessions + 1);
+  }
+
+  Future<void> restoreBrokenStreak({int defaultDays = 1}) async {
+    final current = streakDays;
+    final newStreak = current > 0 ? current : defaultDays;
+    await _prefs?.setInt(_keyStreakDays, newStreak);
+    await _prefs?.setString(_keyLastStreakDate, _getTodayString());
+  }
+
   Future<void> resetFreeNotchForTest() async {
     await _prefs?.setInt(_keyFreeNotchSessionsUsed, 0);
+    await _prefs?.setInt(_keyBonusNotchSessions, 0);
   }
 
   Future<void> setProSubscription({

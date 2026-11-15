@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
+import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 
 class StreakCalendarScreen extends StatelessWidget {
@@ -293,6 +295,72 @@ class StreakCalendarScreen extends StatelessWidget {
                               color: AppColors.primaryAccent,
                             ).copyWith(fontWeight: FontWeight.w700),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ScrolaCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryAccent
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.shield_rounded,
+                                color: AppColors.primaryAccent,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Streak Freeze & Protection',
+                                    style: AppTypography.subheading()
+                                        .copyWith(fontSize: 15),
+                                  ),
+                                  Text(
+                                    tracking.isProSubscribed
+                                        ? 'Pro protection active · Streak protected'
+                                        : 'Protect your streak with a freeze shield',
+                                    style: AppTypography.caption(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        ScrolaSecondaryButton(
+                          label: tracking.isProSubscribed
+                              ? 'Streak Shield Active (Ad-Free)'
+                              : 'Watch Video to Shield Streak',
+                          leadingIcon: Icon(
+                            tracking.isProSubscribed
+                                ? Icons.verified_user_rounded
+                                : Icons.play_circle_filled_rounded,
+                            color: AppColors.primaryAccent,
+                            size: 20,
+                          ),
+                          onPressed: () async {
+                            await AdService().showRewardedAd(
+                              context: context,
+                              placement: ScrolaAdPlacement.streakRepair,
+                            );
+                          },
                         ),
                       ],
                     ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -241,11 +242,29 @@ class _EmergencyUnlockModalState extends State<EmergencyUnlockModal> {
           ),
           const SizedBox(height: 10),
 
+          // Rewarded Ad Option: Instant 5 min unlock without cooldown
+          ScrolaSecondaryButton(
+            label: 'Watch Video for Instant 5-Min Pass',
+            leadingIcon: const Icon(
+              Icons.play_circle_filled_rounded,
+              color: AppColors.primaryAccent,
+              size: 20,
+            ),
+            onPressed: () async {
+              Navigator.of(context).pop(true);
+              await AdService().showRewardedAd(
+                context: context,
+                placement: ScrolaAdPlacement.emergencyUnlock,
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+
           // Secondary: Unlock anyway
           ScrolaSecondaryButton(
             label: _secondsLeft > 0
                 ? 'Wait $_secondsLeft seconds...'
-                : 'Unlock anyway',
+                : 'Unlock anyway ($unlocksLeft left)',
             onPressed: _secondsLeft > 0 || unlocksLeft <= 0
                 ? null
                 : _handleUnlockAnyway,

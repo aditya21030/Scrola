@@ -610,6 +610,12 @@ class TrackingService extends ChangeNotifier {
     return true;
   }
 
+  Future<bool> grantBonusEmergencyUnlock([int minutes = 5]) async {
+    await ScrolaNativeBridge.grantEmergencyUnlock(minutes);
+    notifyListeners();
+    return true;
+  }
+
   Future<void> updateNotificationConfig({
     bool? warnNearLimit,
     List<String>? thresholds,
@@ -639,6 +645,19 @@ class TrackingService extends ChangeNotifier {
     final storage = await _ensureStorage();
     await storage.setProSubscription(subscribed: subscribed, plan: plan);
     await syncLimitsWithNative();
+    notifyListeners();
+  }
+
+  Future<void> grantBonusNotchSession() async {
+    final storage = await _ensureStorage();
+    await storage.grantBonusNotchSession();
+    await syncLimitsWithNative();
+    notifyListeners();
+  }
+
+  Future<void> restoreBrokenStreak({int defaultDays = 1}) async {
+    final storage = await _ensureStorage();
+    await storage.restoreBrokenStreak(defaultDays: defaultDays);
     notifyListeners();
   }
 

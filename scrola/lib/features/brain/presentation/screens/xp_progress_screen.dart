@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
@@ -202,6 +203,25 @@ class _XpProgressScreenState extends State<XpProgressScreen> {
                               await HapticService.celebratory();
                             }
                           },
+                  ),
+                  const SizedBox(height: 10),
+                  ScrolaSecondaryButton(
+                    label: _tracking.isProSubscribed
+                        ? 'Claim +50 Pro Bonus XP'
+                        : 'Watch Video for +50 Bonus XP',
+                    leadingIcon: Icon(
+                      _tracking.isProSubscribed
+                          ? Icons.workspace_premium_rounded
+                          : Icons.play_circle_filled_rounded,
+                      color: AppColors.primaryAccent,
+                      size: 20,
+                    ),
+                    onPressed: () async {
+                      await AdService().showRewardedAd(
+                        context: context,
+                        placement: ScrolaAdPlacement.bonusXp,
+                      );
+                    },
                   ),
                 ],
               ),

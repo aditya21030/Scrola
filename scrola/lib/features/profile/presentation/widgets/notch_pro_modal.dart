@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -31,10 +32,11 @@ class NotchProModal extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // Drag handle
           Center(
             child: Container(
@@ -166,6 +168,24 @@ class NotchProModal extends StatelessWidget {
           ),
           const SizedBox(height: 18),
 
+          // Rewarded Ad Option: Watch short video for 1 free notch session
+          ScrolaSecondaryButton(
+            label: 'Watch Video for +1 Free Session',
+            leadingIcon: const Icon(
+              Icons.play_circle_filled_rounded,
+              color: AppColors.primaryAccent,
+              size: 20,
+            ),
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await AdService().showRewardedAd(
+                context: context,
+                placement: ScrolaAdPlacement.notchSession,
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+
           // Primary CTA -> Pushes SubscriptionProScreen
           ScrolaPrimaryButton(
             label: 'View Scrola Pro Plans',
@@ -187,6 +207,7 @@ class NotchProModal extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
+      ),
       ),
     );
   }
