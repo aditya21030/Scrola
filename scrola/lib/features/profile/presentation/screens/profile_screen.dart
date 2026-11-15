@@ -307,8 +307,8 @@ class ProfileScreen extends StatelessWidget {
                                     const SizedBox(height: 2),
                                     Text(
                                       tracking.isProSubscribed
-                                          ? '${tracking.proPlan == 'yearly' ? 'Yearly' : 'Monthly'} preview active'
-                                          : 'Monthly reports and cloud backup',
+                                          ? '${tracking.proPlan == 'yearly' ? 'Yearly' : tracking.proPlan == 'lifetime' ? 'Lifetime' : 'Monthly'} active · Unlimited notch'
+                                          : 'Unlimited notch, analytics & 40+ skins',
                                       style: AppTypography.caption(
                                         color: AppColors.secondaryText,
                                       ),

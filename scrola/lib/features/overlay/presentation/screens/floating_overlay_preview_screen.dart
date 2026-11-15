@@ -10,6 +10,7 @@ import '../../../../shared/widgets/scrola_segmented_control.dart';
 import '../../../../shared/widgets/scrola_toggle.dart';
 import '../widgets/notch_pill_preview.dart';
 import 'floating_overlay_setup_screen.dart';
+import '../../../profile/presentation/widgets/notch_pro_modal.dart';
 
 class FloatingOverlayPreviewScreen extends StatefulWidget {
   const FloatingOverlayPreviewScreen({super.key});
@@ -283,6 +284,11 @@ class _FloatingOverlayPreviewScreenState
                                       label: 'Show floating mascot',
                                       useMediumHaptic: true,
                                       onPressed: () async {
+                                        if (!_tracking.canUseNotch) {
+                                          HapticService.warning();
+                                          await NotchProModal.show(context);
+                                          return;
+                                        }
                                         final navigator = Navigator.of(context);
                                         final messenger =
                                             ScaffoldMessenger.of(context);

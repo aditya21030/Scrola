@@ -38,6 +38,8 @@ class ScrolaDataManager private constructor(context: Context) {
         private const val KEY_LAST_PLATFORM = "last_platform"
         private const val KEY_EMERGENCY_UNLOCK_UNTIL = "emergency_unlock_until"
         private const val KEY_EMERGENCY_UNLOCKS_USED = "emergency_unlocks_used"
+        private const val KEY_PRO_SUBSCRIBED = "pro_subscribed"
+        private const val KEY_CAN_USE_NOTCH = "can_use_notch"
         const val MAX_DAILY_EMERGENCY_UNLOCKS = 3
 
         @Volatile
@@ -175,11 +177,28 @@ class ScrolaDataManager private constructor(context: Context) {
     }
 
     fun isOverlayEnabled(): Boolean {
+        if (!canUseNotch()) return false
         return prefs.getBoolean(KEY_OVERLAY_ENABLED, true)
     }
 
     fun setOverlayEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_OVERLAY_ENABLED, enabled).apply()
+    }
+
+    fun isProSubscribed(): Boolean {
+        return prefs.getBoolean(KEY_PRO_SUBSCRIBED, false)
+    }
+
+    fun setProSubscribed(pro: Boolean) {
+        prefs.edit().putBoolean(KEY_PRO_SUBSCRIBED, pro).apply()
+    }
+
+    fun canUseNotch(): Boolean {
+        return isProSubscribed() || prefs.getBoolean(KEY_CAN_USE_NOTCH, true)
+    }
+
+    fun setCanUseNotch(allowed: Boolean) {
+        prefs.edit().putBoolean(KEY_CAN_USE_NOTCH, allowed).apply()
     }
 
     fun isTrackingEnabled(): Boolean {

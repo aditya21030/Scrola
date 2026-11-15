@@ -17,6 +17,7 @@ class HeroGaugeSection extends StatefulWidget {
   final bool stickToNotch;
   final bool isOverlayEnabled;
   final bool isOverlayGranted;
+  final bool canUseNotch;
   final bool isLaunchingToNotch;
   final Key? mascotKey;
   final VoidCallback? onToggleScrola;
@@ -35,6 +36,7 @@ class HeroGaugeSection extends StatefulWidget {
     this.stickToNotch = true,
     this.isOverlayEnabled = true,
     this.isOverlayGranted = true,
+    this.canUseNotch = true,
     this.isLaunchingToNotch = false,
     this.mascotKey,
     this.onToggleScrola,
@@ -289,6 +291,7 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                   _FloatingMascotQuickChip(
                     isOverlayEnabled: widget.isOverlayEnabled,
                     isOverlayGranted: widget.isOverlayGranted,
+                    canUseNotch: widget.canUseNotch,
                     isTracking: widget.isTracking,
                     isEnabled: !widget.isLaunchingToNotch,
                     onTap: widget.onToggleOverlay!,
@@ -306,6 +309,7 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
 class _FloatingMascotQuickChip extends StatelessWidget {
   final bool isOverlayEnabled;
   final bool isOverlayGranted;
+  final bool canUseNotch;
   final bool isTracking;
   final bool isEnabled;
   final VoidCallback onTap;
@@ -313,6 +317,7 @@ class _FloatingMascotQuickChip extends StatelessWidget {
   const _FloatingMascotQuickChip({
     required this.isOverlayEnabled,
     required this.isOverlayGranted,
+    this.canUseNotch = true,
     required this.isTracking,
     this.isEnabled = true,
     required this.onTap,
@@ -321,19 +326,25 @@ class _FloatingMascotQuickChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool needsPermission = !isOverlayGranted;
+    final bool isProLocked = !canUseNotch && !isOverlayEnabled;
+
     final String label = needsPermission
         ? 'Allow display over apps for mascot'
         : isOverlayEnabled
             ? (isTracking
                 ? 'Remove floating mascot'
                 : 'Floating mascot enabled · Tap to remove')
-            : 'Floating mascot removed · Tap to restore';
+            : isProLocked
+                ? 'Floating notch · Unlock Pro'
+                : 'Floating mascot removed · Tap to restore';
 
     final Color borderColor = needsPermission
         ? AppColors.warning.withValues(alpha: 0.45)
         : isOverlayEnabled
             ? AppColors.borderSubtle
-            : AppColors.primaryAccent.withValues(alpha: 0.35);
+            : isProLocked
+                ? AppColors.primaryAccent.withValues(alpha: 0.6)
+                : AppColors.primaryAccent.withValues(alpha: 0.35);
 
     final Color fgColor = needsPermission
         ? AppColors.warning
@@ -364,7 +375,9 @@ class _FloatingMascotQuickChip extends StatelessWidget {
                   ? Icons.layers_rounded
                   : isOverlayEnabled
                       ? Icons.visibility_off_rounded
-                      : Icons.visibility_rounded,
+                      : isProLocked
+                          ? Icons.workspace_premium_rounded
+                          : Icons.visibility_rounded,
               size: 15,
               color: fgColor,
             ),

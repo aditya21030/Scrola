@@ -20,6 +20,7 @@ import '../../../insights/presentation/screens/tracking_status_screen.dart';
 import '../../../overlay/presentation/screens/floating_overlay_settings_screen.dart';
 import '../../../overlay/presentation/screens/floating_overlay_setup_screen.dart';
 import '../../../profile/presentation/screens/notifications_settings_screen.dart';
+import '../../../profile/presentation/widgets/notch_pro_modal.dart';
 import '../widgets/brain_level_card.dart';
 import '../widgets/focus_banner_card.dart';
 import '../widgets/hero_gauge_section.dart';
@@ -147,6 +148,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (tracking.isOverlayEnabled) {
       HapticService.light();
       await tracking.toggleOverlay(false);
+      return;
+    }
+
+    if (!tracking.canUseNotch) {
+      HapticService.warning();
+      await NotchProModal.show(context);
       return;
     }
 
@@ -289,6 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           stickToNotch: tracking.overlayStickToNotch,
                           isOverlayEnabled: tracking.isOverlayEnabled,
                           isOverlayGranted: tracking.isOverlayGranted,
+                          canUseNotch: tracking.canUseNotch,
                           isLaunchingToNotch: _isLaunchingToNotch,
                           mascotKey: _mascotKey,
                           onToggleScrola: () => _handleToggleScrola(tracking),

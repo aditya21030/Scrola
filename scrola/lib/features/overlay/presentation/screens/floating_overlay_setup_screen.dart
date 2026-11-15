@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/gamification_engine.dart';
+import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -10,6 +11,7 @@ import '../../../../shared/widgets/scrola_card.dart';
 import '../../../../shared/widgets/scrola_toggle.dart';
 import '../widgets/notch_pill_preview.dart';
 import 'floating_overlay_preview_screen.dart';
+import '../../../profile/presentation/widgets/notch_pro_modal.dart';
 
 class FloatingOverlaySetupScreen extends StatefulWidget {
   const FloatingOverlaySetupScreen({super.key});
@@ -298,6 +300,11 @@ class _FloatingOverlaySetupScreenState extends State<FloatingOverlaySetupScreen>
                                 ScrolaToggle(
                                   value: tracking.isOverlayEnabled,
                                   onChanged: (v) async {
+                                    if (v && !tracking.canUseNotch) {
+                                      HapticService.warning();
+                                      await NotchProModal.show(context);
+                                      return;
+                                    }
                                     final messenger =
                                         ScaffoldMessenger.of(context);
                                     final ok = await tracking.toggleOverlay(v);

@@ -351,7 +351,9 @@ class ScrolaOverlayService : Service() {
     }
 
     private fun shouldDisplayOverlay(dm: ScrolaDataManager): Boolean {
-        return dm.isOverlayEnabled() && (dm.isTrackingEnabled() || dm.isFocusModeActive() || dm.isDetoxActive())
+        return dm.canUseNotch() &&
+            dm.isOverlayEnabled() &&
+            (dm.isTrackingEnabled() || dm.isFocusModeActive() || dm.isDetoxActive())
     }
 
     private fun handleStartOrRefresh(animateEntrance: Boolean) {

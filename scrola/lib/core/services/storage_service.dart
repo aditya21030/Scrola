@@ -135,6 +135,7 @@ class StorageService {
   static const String _keyJoinedDate = 'scrola_joined_date';
   static const String _keyIsProSubscribed = 'scrola_pro_subscribed';
   static const String _keyProPlan = 'scrola_pro_plan';
+  static const String _keyFreeNotchSessionsUsed = 'scrola_free_notch_sessions_used';
 
   static const String _keyNotifWarnNearLimit = 'scrola_notif_warn_near_limit';
   static const String _keyNotifThresholds = 'scrola_notif_thresholds';
@@ -766,6 +767,20 @@ class StorageService {
 
   bool get isProSubscribed => _prefs?.getBool(_keyIsProSubscribed) ?? false;
   String get proPlan => _prefs?.getString(_keyProPlan) ?? 'yearly';
+
+  /// Free users get exactly 1 free session with the floating notch counter.
+  /// Subsequent usage is locked behind Scrola Pro.
+  int get freeNotchSessionsUsed => _prefs?.getInt(_keyFreeNotchSessionsUsed) ?? 0;
+  bool get canUseNotch => isProSubscribed || freeNotchSessionsUsed < 1;
+
+  Future<void> consumeFreeNotchSession() async {
+    if (isProSubscribed) return;
+    await _prefs?.setInt(_keyFreeNotchSessionsUsed, freeNotchSessionsUsed + 1);
+  }
+
+  Future<void> resetFreeNotchForTest() async {
+    await _prefs?.setInt(_keyFreeNotchSessionsUsed, 0);
+  }
 
   Future<void> setProSubscription({
     bool? subscribed,

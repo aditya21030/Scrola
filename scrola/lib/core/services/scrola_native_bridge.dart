@@ -118,6 +118,8 @@ class ScrolaNativeBridge {
     bool? strictBlocking,
     bool? detoxActive,
     int? emergencyUnlocksUsed,
+    bool? isPro,
+    bool? canUseNotch,
   }) async {
     await _invoke<void>('syncLimits', {
       'totalLimit': totalLimit,
@@ -141,6 +143,8 @@ class ScrolaNativeBridge {
       'strictBlocking': ?strictBlocking,
       'detoxActive': ?detoxActive,
       'emergencyUnlocksUsed': ?emergencyUnlocksUsed,
+      'isPro': ?isPro,
+      'canUseNotch': ?canUseNotch,
     });
   }
 

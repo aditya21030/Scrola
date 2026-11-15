@@ -40,6 +40,8 @@ class TrackingService extends ChangeNotifier {
   String get joinedMonthYear => _storage?.joinedMonthYear ?? 'Nov 2026';
   bool get isProSubscribed => _storage?.isProSubscribed ?? false;
   String get proPlan => _storage?.proPlan ?? 'yearly';
+  int get freeNotchSessionsUsed => _storage?.freeNotchSessionsUsed ?? 0;
+  bool get canUseNotch => _storage?.canUseNotch ?? true;
 
   // Onboarding & Goal
   bool get isOnboardingComplete => _storage?.isOnboardingComplete ?? false;
@@ -448,14 +450,21 @@ class TrackingService extends ChangeNotifier {
     await syncLimitsWithNative();
     if (enabled) {
       if (startOverlayNow && storage.isOverlayEnabled) {
-        if (!_isOverlayGranted) {
-          _isOverlayGranted =
-              await ScrolaNativeBridge.isOverlayPermissionGranted();
-        }
-        if (_isOverlayGranted) {
-          await ScrolaNativeBridge.startOverlayService(
-            animateEntrance: animateOverlayEntrance,
-          );
+        if (!storage.canUseNotch) {
+          await storage.setOverlayEnabled(false);
+        } else {
+          if (!_isOverlayGranted) {
+            _isOverlayGranted =
+                await ScrolaNativeBridge.isOverlayPermissionGranted();
+          }
+          if (_isOverlayGranted) {
+            if (!storage.isProSubscribed && storage.freeNotchSessionsUsed == 0) {
+              await storage.consumeFreeNotchSession();
+            }
+            await ScrolaNativeBridge.startOverlayService(
+              animateEntrance: animateOverlayEntrance,
+            );
+          }
         }
       }
     } else if (!FocusModeService().isActive && !storage.isDetoxActive) {
@@ -466,6 +475,12 @@ class TrackingService extends ChangeNotifier {
 
   Future<bool> startOverlayIfActive({bool animateEntrance = true}) async {
     final storage = await _ensureStorage();
+    if (!storage.canUseNotch) {
+      if (storage.isOverlayEnabled) {
+        await storage.setOverlayEnabled(false);
+      }
+      return false;
+    }
     final shouldShowOverlay = storage.isTrackingEnabled ||
         FocusModeService().isActive ||
         storage.isDetoxActive;
@@ -477,6 +492,9 @@ class TrackingService extends ChangeNotifier {
       notifyListeners();
     }
     if (!_isOverlayGranted) return false;
+    if (!storage.isProSubscribed && storage.freeNotchSessionsUsed == 0) {
+      await storage.consumeFreeNotchSession();
+    }
     return ScrolaNativeBridge.startOverlayService(
       animateEntrance: animateEntrance,
     );
@@ -487,6 +505,9 @@ class TrackingService extends ChangeNotifier {
     bool animateEntrance = true,
   }) async {
     final storage = await _ensureStorage();
+    if (enabled && !storage.canUseNotch) {
+      return false;
+    }
     await storage.setOverlayEnabled(enabled);
     var overlayStarted = true;
     if (enabled) {
@@ -499,6 +520,9 @@ class TrackingService extends ChangeNotifier {
       } else if (storage.isTrackingEnabled ||
           FocusModeService().isActive ||
           storage.isDetoxActive) {
+        if (!storage.isProSubscribed && storage.freeNotchSessionsUsed == 0) {
+          await storage.consumeFreeNotchSession();
+        }
         overlayStarted = await ScrolaNativeBridge.startOverlayService(
           animateEntrance: animateEntrance,
         );
@@ -614,6 +638,14 @@ class TrackingService extends ChangeNotifier {
   }) async {
     final storage = await _ensureStorage();
     await storage.setProSubscription(subscribed: subscribed, plan: plan);
+    await syncLimitsWithNative();
+    notifyListeners();
+  }
+
+  Future<void> resetFreeNotchForTest() async {
+    final storage = await _ensureStorage();
+    await storage.resetFreeNotchForTest();
+    await syncLimitsWithNative();
     notifyListeners();
   }
 
@@ -733,6 +765,8 @@ class TrackingService extends ChangeNotifier {
       strictBlocking: storage.strictBlocking,
       detoxActive: storage.isDetoxActive,
       emergencyUnlocksUsed: storage.emergencyUnlocksUsedToday,
+      isPro: storage.isProSubscribed,
+      canUseNotch: storage.canUseNotch,
     );
   }
 

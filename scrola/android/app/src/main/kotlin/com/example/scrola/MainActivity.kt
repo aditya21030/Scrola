@@ -152,6 +152,12 @@ class MainActivity : FlutterActivity() {
                         dataManager.setEmergencyUnlocksUsed(emergencyUnlocksUsed)
                     }
 
+                    val isPro = call.argument<Boolean>("isPro")
+                    if (isPro != null) dataManager.setProSubscribed(isPro)
+
+                    val canUseNotch = call.argument<Boolean>("canUseNotch")
+                    if (canUseNotch != null) dataManager.setCanUseNotch(canUseNotch)
+
                     if (ScrolaOverlayService.isServiceRunning) {
                         ScrolaOverlayService.refreshConfig(this)
                     }

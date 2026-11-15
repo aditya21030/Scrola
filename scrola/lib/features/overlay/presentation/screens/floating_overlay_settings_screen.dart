@@ -12,6 +12,7 @@ import '../../../../shared/widgets/scrola_toggle.dart';
 import '../widgets/notch_pill_preview.dart';
 import 'floating_overlay_preview_screen.dart';
 import 'floating_overlay_setup_screen.dart';
+import '../../../profile/presentation/widgets/notch_pro_modal.dart';
 
 class FloatingOverlaySettingsScreen extends StatefulWidget {
   const FloatingOverlaySettingsScreen({super.key});
@@ -37,6 +38,11 @@ class _FloatingOverlaySettingsScreenState
   }
 
   Future<void> _setOverlayEnabled(bool enabled) async {
+    if (enabled && !_tracking.canUseNotch) {
+      HapticService.warning();
+      await NotchProModal.show(context);
+      return;
+    }
     final started = await _tracking.toggleOverlay(enabled);
     if (!mounted || !enabled) {
       return;
