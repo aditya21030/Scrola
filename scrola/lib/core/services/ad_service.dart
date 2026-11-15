@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'haptic_service.dart';
@@ -44,14 +45,30 @@ class AdService {
   AdService._internal();
 
   RewardedAd? _rewardedAd;
+  InterstitialAd? _interstitialAd;
   bool _isLoadingAd = false;
+  bool _isLoadingInterstitial = false;
   bool _isInitialized = false;
   @visibleForTesting
   static bool isTesting = false;
 
-  /// Official Google Sample Test Rewarded Ad Unit ID for Android
+  /// Production Google AdMob Unit IDs
+  static const String _prodRewardedAdUnitId =
+      'ca-app-pub-8510502760785545/9023978234';
+  static const String _prodInterstitialAdUnitId =
+      'ca-app-pub-8510502760785545/6074381264';
+
+  /// Official Google Sample Test Unit IDs (used during debug & testing to safeguard AdMob account)
   static const String _testRewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
+  static const String _testInterstitialAdUnitId =
+      'ca-app-pub-3940256099942544/1033173712';
+
+  static String get rewardedAdUnitId =>
+      kReleaseMode ? _prodRewardedAdUnitId : _testRewardedAdUnitId;
+
+  static String get interstitialAdUnitId =>
+      kReleaseMode ? _prodInterstitialAdUnitId : _testInterstitialAdUnitId;
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -59,6 +76,7 @@ class AdService {
       await MobileAds.instance.initialize();
       _isInitialized = true;
       _preloadRewardedAd();
+      _preloadInterstitialAd();
     } catch (e) {
       debugPrint('AdService: MobileAds.initialize failed or test env: $e');
     }
@@ -73,13 +91,13 @@ class AdService {
     _isLoadingAd = true;
 
     RewardedAd.load(
-      adUnitId: _testRewardedAdUnitId,
+      adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           _rewardedAd = ad;
           _isLoadingAd = false;
-          debugPrint('AdService: RewardedAd preloaded successfully.');
+          debugPrint('AdService: RewardedAd ($rewardedAdUnitId) preloaded successfully.');
 
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
@@ -101,6 +119,75 @@ class AdService {
         },
       ),
     );
+  }
+
+  void _preloadInterstitialAd() {
+    if (isTesting ||
+        WidgetsBinding.instance.runtimeType.toString().contains('Test')) {
+      return;
+    }
+    if (_interstitialAd != null || _isLoadingInterstitial) return;
+    _isLoadingInterstitial = true;
+
+    InterstitialAd.load(
+      adUnitId: interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+          _isLoadingInterstitial = false;
+          debugPrint('AdService: InterstitialAd ($interstitialAdUnitId) preloaded successfully.');
+
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _interstitialAd = null;
+              _preloadInterstitialAd();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              _interstitialAd = null;
+              _preloadInterstitialAd();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) {
+          _interstitialAd = null;
+          _isLoadingInterstitial = false;
+          debugPrint('AdService: InterstitialAd failed to load: $error');
+        },
+      ),
+    );
+  }
+
+  /// Show Interstitial Ad (Pro users get 0 ads / instant bypass)
+  Future<bool> showInterstitialAd({required BuildContext context}) async {
+    final tracking = TrackingService();
+    if (tracking.isProSubscribed) return true;
+
+    if (_interstitialAd == null) {
+      _preloadInterstitialAd();
+      return true;
+    }
+
+    final completer = Completer<bool>();
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _interstitialAd = null;
+        _preloadInterstitialAd();
+        completer.complete(true);
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _interstitialAd = null;
+        _preloadInterstitialAd();
+        completer.complete(true);
+      },
+    );
+
+    _interstitialAd!.show();
+    return completer.future;
   }
 
   /// Show Rewarded Ad.

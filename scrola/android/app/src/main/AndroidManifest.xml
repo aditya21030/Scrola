@@ -53,10 +53,10 @@
                 android:value="Displays a floating screen time overlay for short-form video wellbeing tracking." />
         </service>
 
-        <!-- Google AdMob Application ID (Official Google Test App ID for Scrola) -->
+        <!-- Google AdMob Production Application ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-8510502760785545~5363934822"/>
 
         <meta-data
             android:name="flutterEmbedding"
