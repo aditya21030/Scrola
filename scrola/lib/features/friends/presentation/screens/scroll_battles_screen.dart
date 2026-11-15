@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/social_service.dart';
+import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
@@ -191,6 +192,12 @@ class _ScrollBattlesScreenState extends State<ScrollBattlesScreen> {
   }
 
   Widget _buildActiveBattleCard(ScrollBattle battle) {
+    final tracking = TrackingService();
+    final userReels = tracking.totalReelsToday;
+    final opponentReels = battle.opponentReels;
+    final isWinning = userReels < opponentReels;
+    final isTied = userReels == opponentReels;
+
     return GestureDetector(
       onTap: () {
         HapticService.light();
@@ -247,7 +254,7 @@ class _ScrollBattlesScreenState extends State<ScrollBattlesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${battle.userReels} reels',
+                      '$userReels reels',
                       style: AppTypography.heading(size: 20),
                     ),
                     Text(
@@ -259,15 +266,19 @@ class _ScrollBattlesScreenState extends State<ScrollBattlesScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: battle.isUserWinning
-                        ? AppColors.success.withValues(alpha: 0.15)
-                        : AppColors.error.withValues(alpha: 0.15),
+                    color: isTied
+                        ? AppColors.accentHighlight.withValues(alpha: 0.15)
+                        : (isWinning
+                            ? AppColors.success.withValues(alpha: 0.15)
+                            : AppColors.error.withValues(alpha: 0.15)),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    battle.isUserWinning ? 'Winning' : 'Trailing',
+                    isTied ? 'Tied' : (isWinning ? 'Winning' : 'Trailing'),
                     style: AppTypography.caption(
-                      color: battle.isUserWinning ? AppColors.success : AppColors.error,
+                      color: isTied
+                          ? AppColors.accentHighlight
+                          : (isWinning ? AppColors.success : AppColors.error),
                       weight: FontWeight.w700,
                     ),
                   ),
@@ -291,7 +302,7 @@ class _ScrollBattlesScreenState extends State<ScrollBattlesScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: battle.userReels / (battle.userReels + battle.opponentReels).clamp(1, 999),
+                value: userReels / ((userReels + battle.opponentReels).clamp(1, 999)),
                 backgroundColor: AppColors.elevatedSurface,
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
                 minHeight: 6,

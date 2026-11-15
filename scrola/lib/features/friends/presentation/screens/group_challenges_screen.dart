@@ -36,6 +36,14 @@ class _GroupChallengesScreenState extends State<GroupChallengesScreen> {
                   listenable: _social,
                   builder: (context, _) {
                     final challenges = _social.challenges;
+                    if (challenges.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No active challenges at the moment.',
+                          style: AppTypography.body(color: AppColors.secondaryText),
+                        ),
+                      );
+                    }
                     final activeTeamChallenge = challenges.firstWhere(
                       (c) => c.isJoined,
                       orElse: () => challenges.first,
@@ -92,20 +100,23 @@ class _GroupChallengesScreenState extends State<GroupChallengesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'TEAM GOAL · 2 DAYS LEFT',
-                    style: AppTypography.label(color: AppColors.secondaryText),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    challenge.title,
-                    style: AppTypography.heading(size: 20),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TEAM GOAL · ${challenge.daysLeft} DAYS LEFT',
+                      style: AppTypography.label(color: AppColors.secondaryText),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      challenge.title,
+                      style: AppTypography.heading(size: 20),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,

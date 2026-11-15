@@ -122,7 +122,7 @@ class FriendProfileScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: ScrolaCard(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                               radius: 18,
                               child: Column(
                                 children: [
@@ -133,16 +133,18 @@ class FriendProfileScreen extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     'Reels today',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: AppTypography.caption(color: AppColors.secondaryText, size: 11),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: ScrolaCard(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                               radius: 18,
                               child: Column(
                                 children: [
@@ -153,16 +155,18 @@ class FriendProfileScreen extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     'Daily limit',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: AppTypography.caption(color: AppColors.secondaryText, size: 11),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: ScrolaCard(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                               radius: 18,
                               child: Column(
                                 children: [
@@ -173,6 +177,8 @@ class FriendProfileScreen extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     'Battle wins',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: AppTypography.caption(color: AppColors.secondaryText, size: 11),
                                   ),
                                 ],

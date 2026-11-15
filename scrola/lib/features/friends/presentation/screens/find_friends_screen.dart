@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/social_service.dart';
+import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
@@ -148,7 +149,7 @@ class _FindFriendsScreenState extends State<FindFriendsScreen> {
                         children: [
                           Text('Invite Friends to Scrola', style: AppTypography.body(weight: FontWeight.w700)),
                           Text(
-                            'scrola.app/join/@alex.scrolls',
+                            'scrola.app/join/@${TrackingService().username}',
                             style: AppTypography.caption(color: AppColors.secondaryText),
                           ),
                         ],
@@ -156,8 +157,9 @@ class _FindFriendsScreenState extends State<FindFriendsScreen> {
                     ),
                     GestureDetector(
                       onTap: () async {
+                        final myHandle = TrackingService().username;
                         await Clipboard.setData(
-                          const ClipboardData(text: 'https://scrola.app/join/@alex.scrolls'),
+                          ClipboardData(text: 'https://scrola.app/join/@$myHandle'),
                         );
                         await HapticService.medium();
                         if (context.mounted) {
@@ -193,11 +195,35 @@ class _FindFriendsScreenState extends State<FindFriendsScreen> {
               const SizedBox(height: 12),
 
               Expanded(
-                child: ListView.separated(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const BrainyMascot(
+                              mood: BrainyMood.neutral,
+                              skin: BrainySkin.classic,
+                              size: 70,
+                              animate: false,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No friends found',
+                              style: AppTypography.heading(size: 18),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Try searching by full name or username',
+                              style: AppTypography.caption(color: AppColors.secondaryText),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
                     final friend = filtered[index];
                     final isAlreadyFriend = _social.friends.any((f) => f.id == friend.id);
 

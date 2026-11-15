@@ -25,7 +25,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen> {
   @override
   Widget build(BuildContext context) {
     final friends = _social.friends;
-    // Construct leaderboard entries: You + friends sorted by XP / low reels
+    // Construct leaderboard entries: You + friends
     final allEntries = <_LeaderboardItem>[
       _LeaderboardItem(
         id: 'me',
@@ -35,6 +35,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen> {
         xp: _tracking.xpTotal,
         reels: _tracking.totalReelsToday,
         dailyLimit: _tracking.totalLimit,
+        streak: _tracking.streakDays,
         isMe: true,
       ),
       for (final f in friends)
@@ -46,11 +47,25 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen> {
           xp: f.level * 180 + f.streak * 45,
           reels: f.reelsToday,
           dailyLimit: f.dailyLimit,
+          streak: f.streak,
           isMe: false,
         ),
     ];
 
-    allEntries.sort((a, b) => b.xp.compareTo(a.xp));
+    if (_selectedFilter == 0) {
+      // Today: Lowest reel consumption ratio ranks #1.
+      allEntries.sort((a, b) {
+        final cmp = a.reelRatio.compareTo(b.reelRatio);
+        if (cmp != 0) return cmp;
+        return a.reels.compareTo(b.reels);
+      });
+    } else if (_selectedFilter == 1) {
+      // Week: Highest streak & low reel consistency score ranks #1.
+      allEntries.sort((a, b) => b.weeklyScore.compareTo(a.weeklyScore));
+    } else {
+      // All time: Highest lifetime XP ranks #1.
+      allEntries.sort((a, b) => b.xp.compareTo(a.xp));
+    }
 
     final top3 = allEntries.take(3).toList();
     final remaining = allEntries.skip(3).toList();
@@ -126,7 +141,11 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen> {
                       ],
 
                       Text(
-                        'Ranked by how little of your reel limit you consumed.',
+                        _selectedFilter == 0
+                            ? 'Ranked by lowest % of daily reel limit consumed today.'
+                            : _selectedFilter == 1
+                                ? 'Ranked by streak consistency and low reel days this week.'
+                                : 'Ranked by total lifetime XP and evolution tier.',
                         textAlign: TextAlign.center,
                         style: AppTypography.caption(
                           color: AppColors.secondaryText,
@@ -333,7 +352,11 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen> {
           ),
           const SizedBox(width: 14),
           Text(
-            '${item.xp} XP',
+            _selectedFilter == 0
+                ? '${item.reels}/${item.dailyLimit}'
+                : _selectedFilter == 1
+                    ? '${item.streak}d 🔥'
+                    : '${item.xp} XP',
             style: AppTypography.caption(
               color: AppColors.secondaryText,
               weight: FontWeight.w700,
@@ -353,6 +376,7 @@ class _LeaderboardItem {
   final int xp;
   final int reels;
   final int dailyLimit;
+  final int streak;
   final bool isMe;
 
   const _LeaderboardItem({
@@ -363,6 +387,10 @@ class _LeaderboardItem {
     required this.xp,
     required this.reels,
     required this.dailyLimit,
+    required this.streak,
     required this.isMe,
   });
+
+  double get reelRatio => reels / (dailyLimit > 0 ? dailyLimit : 1);
+  int get weeklyScore => streak * 60 + (reels <= dailyLimit ? 120 : 0) + (xp ~/ 10);
 }

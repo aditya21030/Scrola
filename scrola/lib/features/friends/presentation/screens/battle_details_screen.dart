@@ -17,6 +17,31 @@ class BattleDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tracking = TrackingService();
+    final isHistory = battle.status == BattleStatus.won || battle.status == BattleStatus.lost;
+    final userReels = isHistory ? battle.userReels : tracking.totalReelsToday;
+    final opponentReels = battle.opponentReels;
+    final diff = (userReels - opponentReels).abs();
+    final isWinning = userReels < opponentReels;
+    final isTied = userReels == opponentReels;
+
+    final String statusText;
+    final Color bannerColor;
+    if (battle.status == BattleStatus.won) {
+      statusText = 'Victory! You finished with fewer reels.';
+      bannerColor = AppColors.success;
+    } else if (battle.status == BattleStatus.lost) {
+      statusText = 'Battle ended. ${battle.opponent.name} won this round.';
+      bannerColor = AppColors.error;
+    } else if (isTied) {
+      statusText = 'You and ${battle.opponent.name} are tied at $userReels reels!';
+      bannerColor = AppColors.accentHighlight;
+    } else if (isWinning) {
+      statusText = 'You are currently leading by $diff fewer reel${diff == 1 ? '' : 's'}!';
+      bannerColor = AppColors.success;
+    } else {
+      statusText = 'You are trailing by $diff reel${diff == 1 ? '' : 's'}. Stay focused!';
+      bannerColor = AppColors.error;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
@@ -73,7 +98,7 @@ class BattleDetailsScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '${tracking.totalReelsToday} reels',
+                                      '$userReels reels',
                                       style: AppTypography.title(
                                         size: 32,
                                         color: AppColors.primaryAccent,
@@ -142,18 +167,14 @@ class BattleDetailsScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: battle.isUserWinning
-                                    ? AppColors.success.withValues(alpha: 0.15)
-                                    : AppColors.error.withValues(alpha: 0.15),
+                                color: bannerColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                battle.isUserWinning
-                                    ? 'You are currently leading by ${battle.opponentReels - tracking.totalReelsToday} fewer reels!'
-                                    : 'You are trailing by ${tracking.totalReelsToday - battle.opponentReels} reels.',
+                                statusText,
                                 textAlign: TextAlign.center,
                                 style: AppTypography.caption(
-                                  color: battle.isUserWinning ? AppColors.success : AppColors.error,
+                                  color: bannerColor,
                                   weight: FontWeight.w700,
                                 ),
                               ),

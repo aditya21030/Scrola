@@ -121,6 +121,7 @@ class SocialService extends ChangeNotifier {
   List<FriendUser> _friends = [];
   List<ScrollBattle> _battles = [];
   List<GroupChallenge> _challenges = [];
+  final Set<String> _claimedBattleIds = {};
 
   List<FriendUser> get friends => List.unmodifiable(_friends);
   List<ScrollBattle> get battles => List.unmodifiable(_battles);
@@ -129,6 +130,7 @@ class SocialService extends ChangeNotifier {
   List<ScrollBattle> get battleHistory =>
       _battles.where((b) => b.status == BattleStatus.won || b.status == BattleStatus.lost).toList();
   List<GroupChallenge> get challenges => List.unmodifiable(_challenges);
+  bool isBattleClaimed(String battleId) => _claimedBattleIds.contains(battleId);
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -309,6 +311,13 @@ class SocialService extends ChangeNotifier {
     _battles.insert(0, battle);
     await HapticService.celebratory();
     notifyListeners();
+  }
+
+  Future<bool> claimBattleReward(String battleId) async {
+    if (_claimedBattleIds.contains(battleId)) return false;
+    _claimedBattleIds.add(battleId);
+    notifyListeners();
+    return true;
   }
 
   Future<void> toggleJoinChallenge(String challengeId) async {

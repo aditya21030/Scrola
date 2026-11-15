@@ -18,7 +18,9 @@ class BattleResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWon = battle.status == BattleStatus.won;
+    final social = SocialService();
     final tracking = TrackingService();
+    final isClaimed = social.isBattleClaimed(battle.id);
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
@@ -111,16 +113,25 @@ class BattleResultsScreen extends StatelessWidget {
                 ),
               ),
               ScrolaPrimaryButton(
-                label: isWon ? 'Collect +${battle.xpStakes} XP' : 'Done',
+                label: isWon
+                    ? (isClaimed ? 'Reward Claimed' : 'Collect +${battle.xpStakes} XP')
+                    : 'Done',
                 leadingIcon: Icon(
-                  isWon ? Icons.stars_rounded : Icons.check_rounded,
+                  isWon
+                      ? (isClaimed ? Icons.check_circle_rounded : Icons.stars_rounded)
+                      : Icons.check_rounded,
                   color: AppColors.primaryBackground,
                   size: 20,
                 ),
                 onPressed: () async {
-                  if (isWon) {
-                    await tracking.addXP(battle.xpStakes);
-                    await HapticService.celebratory();
+                  if (isWon && !isClaimed) {
+                    final claimed = await social.claimBattleReward(battle.id);
+                    if (claimed) {
+                      await tracking.addXP(battle.xpStakes);
+                      await HapticService.celebratory();
+                    }
+                  } else {
+                    await HapticService.light();
                   }
                   if (context.mounted) {
                     Navigator.of(context).pop();
