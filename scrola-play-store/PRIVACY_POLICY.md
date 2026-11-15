@@ -2,7 +2,7 @@
 
 **Effective Date:** November 15, 2026  
 **Version:** 1.0.0  
-**Contact:** privacy@scrola.app  
+**Contact:** yousfulstudio@gmail.com (Subject: Scrola App)  
 
 ---
 
@@ -60,7 +60,7 @@ All subscriptions and purchases (Monthly, Yearly, Lifetime) are processed secure
 In full compliance with Google Play Data Safety policies:
 - **Export Data:** You can export your full daily tracking history to CSV at any time from Settings > Export My Data.
 - **Reset Stats:** You can wipe local tracking stats in Settings > Reset Local Data.
-- **Delete Account & All Data:** You can permanently purge your cloud account, authentication credentials, and all associated database records directly in Settings > Delete Account, or by emailing `privacy@scrola.app`.
+- **Delete Account & All Data:** You can permanently purge your cloud account, authentication credentials, and all associated database records directly in Settings > Delete Account, or by emailing `yousfulstudio@gmail.com` with the subject **"Scrola App"**.
 
 ---
 
@@ -71,6 +71,7 @@ Scrola is not directed to individuals under 13. We do not knowingly collect pers
 
 ## 5. Contact Information
 For privacy questions, compliance requests, or data deletion inquiries:
-- **Email:** privacy@scrola.app
+- **Email:** yousfulstudio@gmail.com
+- **Subject Line:** Scrola App
 - **Developer / Publisher:** Yousful / Scrola Team
 - **Repository:** https://github.com/aditya21030/Scrola

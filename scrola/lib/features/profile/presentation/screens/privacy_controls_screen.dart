@@ -432,7 +432,7 @@ class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
                               const _PolicyTextSection(
                                 title: '4. Data Deletion Rights',
                                 body:
-                                    'Under GDPR, CCPA, and Google Play Data Safety standards, you may export your data or delete your account at any time with immediate effect. Contact privacy@scrola.app for inquiries.',
+                                    'Under GDPR, CCPA, and Google Play Data Safety standards, you may export your data or delete your account at any time with immediate effect. Contact yousfulstudio@gmail.com with subject "Scrola App" for inquiries.',
                               ),
                             ],
                           ],
@@ -445,7 +445,7 @@ class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
                         child: Column(
                           children: [
                             Text(
-                              'Have questions? Contact privacy@scrola.app',
+                              'Support: yousfulstudio@gmail.com (Subject: Scrola App)',
                               style: AppTypography.caption(
                                 color: AppColors.mutedText,
                               ),

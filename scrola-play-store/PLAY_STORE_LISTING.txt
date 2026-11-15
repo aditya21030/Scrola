@@ -72,3 +72,10 @@ Scrola uses the Android Accessibility Service API to detect when a short video f
 Scrola never reads your chats, passwords, keystrokes, personal photos, or bank details. All detection happens 100% on device in real time and never leaves your phone.
 
 Take back your hours. Protect your brain. Stop doomscrolling with Scrola today 🚀
+
+--------------------------------------------------------------------------------
+
+[ DEVELOPER CONTACT & PRIVACY DETAILS FOR PLAY CONSOLE ]
+Support Email: yousfulstudio@gmail.com
+Email Subject: Scrola App
+Privacy Policy URL: https://github.com/aditya21030/Scrola/blob/main/scrola-play-store/privacy-policy.html
