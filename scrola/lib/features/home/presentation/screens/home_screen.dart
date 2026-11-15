@@ -20,6 +20,7 @@ import '../../../insights/presentation/screens/tracking_status_screen.dart';
 import '../../../overlay/presentation/screens/floating_overlay_settings_screen.dart';
 import '../../../overlay/presentation/screens/floating_overlay_setup_screen.dart';
 import '../../../profile/presentation/screens/notifications_settings_screen.dart';
+import '../../../profile/presentation/screens/subscription_pro_screen.dart';
 import '../../../profile/presentation/widgets/notch_pro_modal.dart';
 import '../widgets/brain_level_card.dart';
 import '../widgets/focus_banner_card.dart';
@@ -87,10 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (!mounted) return;
 
-    if (!tracking.isOverlayEnabled || !tracking.isOverlayGranted) {
+    if (!tracking.isOverlayGranted) {
       HapticService.medium();
       await tracking.toggleTracking(true, startOverlayNow: false);
-      if (mounted && tracking.isOverlayEnabled && !tracking.isOverlayGranted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.surfaceSolid,
@@ -109,6 +110,40 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       return;
     }
+
+    if (!tracking.canUseNotch) {
+      HapticService.warning();
+      await NotchProModal.show(context);
+      if (!mounted) return;
+      if (!tracking.canUseNotch) {
+        // User dismissed without purchasing Pro or watching rewarded ad:
+        // Start tracking in standard background mode (without floating mascot)
+        HapticService.medium();
+        await tracking.toggleTracking(true, startOverlayNow: false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.surfaceSolid,
+              content: Text(
+                'Scrola is ON in background mode. Get Pro to unlock the floating mascot!',
+                style: AppTypography.caption(color: AppColors.primaryText),
+              ),
+              action: SnackBarAction(
+                label: 'Get Pro',
+                textColor: AppColors.primaryAccent,
+                onPressed: () => _push(context, const SubscriptionProScreen()),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (!tracking.isOverlayEnabled) {
+      await tracking.toggleOverlay(true, animateEntrance: false);
+    }
+    if (!mounted) return;
 
     setState(() => _isLaunchingToNotch = true);
 
@@ -154,7 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!tracking.canUseNotch) {
       HapticService.warning();
       await NotchProModal.show(context);
-      return;
+      if (!mounted) return;
+      if (!tracking.canUseNotch) return;
     }
 
     if (!tracking.isTrackingEnabled) {

@@ -208,6 +208,7 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                               child: ScrolaSelectableCard(
                                 isSelected: isSelected,
                                 checkPosition: ScrolaCheckPosition.topRight,
+                                checkBadgeSize: 16,
                                 onTap: () {
                                   HapticService.subtle();
                                   setState(() => _selectedTier = tier);
@@ -233,62 +234,45 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                                                   fontWeight: FontWeight.w700,
                                                 ),
                                               ),
-                                              if (tier.badge != null) ...[
-                                                const SizedBox(width: 8),
+                                              if (tier.badge != null)
                                                 Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
+                                                  padding: const EdgeInsets.symmetric(
                                                     horizontal: 7,
                                                     vertical: 2.5,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color:
-                                                        AppColors.primaryAccent,
-                                                    borderRadius:
-                                                        BorderRadius.circular(8),
+                                                    color: AppColors.primaryAccent,
+                                                    borderRadius: BorderRadius.circular(8),
                                                   ),
                                                   child: Text(
                                                     tier.badge!,
                                                     style: AppTypography.caption(
-                                                      color: AppColors
-                                                          .textOnAccent,
+                                                      color: AppColors.textOnAccent,
                                                     ).copyWith(
                                                       fontSize: 9.5,
-                                                      fontWeight:
-                                                          FontWeight.w800,
+                                                      fontWeight: FontWeight.w800,
                                                     ),
                                                   ),
                                                 ),
-                                              ],
-                                              if (isCurrentActive) ...[
-                                                const SizedBox(width: 8),
+                                              if (isCurrentActive)
                                                 Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
+                                                  padding: const EdgeInsets.symmetric(
                                                     horizontal: 7,
                                                     vertical: 2.5,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: AppColors.success
-                                                        .withValues(alpha: 0.2),
-                                                    borderRadius:
-                                                        BorderRadius.circular(8),
-                                                    border: Border.all(
-                                                      color: AppColors.success,
-                                                    ),
+                                                    color: AppColors.success.withValues(alpha: 0.2),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    border: Border.all(color: AppColors.success),
                                                   ),
                                                   child: Text(
                                                     'ACTIVE',
-                                                    style: AppTypography.caption(
-                                                      color: AppColors.success,
-                                                    ).copyWith(
+                                                    style: AppTypography.caption(color: AppColors.success).copyWith(
                                                       fontSize: 9,
-                                                      fontWeight:
-                                                          FontWeight.w800,
+                                                      fontWeight: FontWeight.w800,
                                                     ),
                                                   ),
                                                 ),
-                                              ],
                                             ],
                                           ),
                                           const SizedBox(height: 4),
@@ -301,10 +285,10 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 8),
                                     Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.baseline,
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
                                       textBaseline: TextBaseline.alphabetic,
                                       children: [
                                         Text(
@@ -326,23 +310,29 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(width: 28),
+                                    const SizedBox(width: 14),
                                   ],
                                 ),
                               ),
                             );
                           }),
                           const SizedBox(height: 8),
-
                           // Comparison Table Card
                           ScrolaCard(
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               children: [
                                 Row(
-                                  children: [
-                                    const Expanded(
-                                        flex: 5, child: SizedBox()),
+                                    children: [
+                                      Expanded(
+                                        flex: 5,
+                                        child: Text(
+                                          'Features',
+                                          style: AppTypography.caption(
+                                            color: AppColors.secondaryText,
+                                          ).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
+                                        ),
+                                      ),
                                     Expanded(
                                       flex: 3,
                                       child: Center(
@@ -432,12 +422,53 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                         : () => _handleContinue(tracking),
                   ),
                   const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Privacy Policy: All reel tracking data is stored locally on your device.'),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Privacy Policy',
+                          style: AppTypography.caption(color: AppColors.secondaryText)
+                              .copyWith(fontSize: 11, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '·',
+                          style: AppTypography.caption(color: AppColors.mutedText),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Terms of Service: Subscriptions managed via Google Play Store.'),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Terms of Service',
+                          style: AppTypography.caption(color: AppColors.secondaryText)
+                              .copyWith(fontSize: 11, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Center(
                     child: Text(
-                      'Cancel any time in Google Play. Your data is always private and never sold.',
+                      'Recurring billing. Cancel any time in Google Play.',
                       textAlign: TextAlign.center,
                       style: AppTypography.caption(color: AppColors.mutedText)
-                          .copyWith(fontSize: 11),
+                          .copyWith(fontSize: 10.5),
                     ),
                   ),
                 ],
@@ -482,6 +513,7 @@ class _CompareRow extends StatelessWidget {
             child: Center(
               child: Text(
                 freeVal,
+                textAlign: TextAlign.center,
                 style: AppTypography.caption(color: AppColors.secondaryText)
                     .copyWith(fontWeight: FontWeight.w600, fontSize: 11.5),
               ),
@@ -492,6 +524,7 @@ class _CompareRow extends StatelessWidget {
             child: Center(
               child: Text(
                 proVal,
+                textAlign: TextAlign.center,
                 style: AppTypography.caption(
                   color: highlightPro
                       ? AppColors.primaryAccent

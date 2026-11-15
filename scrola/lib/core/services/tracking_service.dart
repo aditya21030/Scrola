@@ -458,9 +458,6 @@ class TrackingService extends ChangeNotifier {
                 await ScrolaNativeBridge.isOverlayPermissionGranted();
           }
           if (_isOverlayGranted) {
-            if (!storage.isProSubscribed && storage.freeNotchSessionsUsed == 0) {
-              await storage.consumeFreeNotchSession();
-            }
             await ScrolaNativeBridge.startOverlayService(
               animateEntrance: animateOverlayEntrance,
             );
@@ -492,9 +489,6 @@ class TrackingService extends ChangeNotifier {
       notifyListeners();
     }
     if (!_isOverlayGranted) return false;
-    if (!storage.isProSubscribed && storage.freeNotchSessionsUsed == 0) {
-      await storage.consumeFreeNotchSession();
-    }
     return ScrolaNativeBridge.startOverlayService(
       animateEntrance: animateEntrance,
     );
@@ -520,9 +514,6 @@ class TrackingService extends ChangeNotifier {
       } else if (storage.isTrackingEnabled ||
           FocusModeService().isActive ||
           storage.isDetoxActive) {
-        if (!storage.isProSubscribed && storage.freeNotchSessionsUsed == 0) {
-          await storage.consumeFreeNotchSession();
-        }
         overlayStarted = await ScrolaNativeBridge.startOverlayService(
           animateEntrance: animateEntrance,
         );
@@ -813,6 +804,10 @@ class TrackingService extends ChangeNotifier {
       if (totalReelsToday == totalLimit) {
         await HapticService.warning();
         _limitReachedController.add(null);
+        if (!storage.isProSubscribed && storage.canUseNotch) {
+          await storage.consumeFreeNotchSession();
+          await syncLimitsWithNative();
+        }
       } else if (totalReelsToday > totalLimit) {
         await HapticService.error();
       }
@@ -826,6 +821,10 @@ class TrackingService extends ChangeNotifier {
       await HapticService.error();
       if (event.eventType == 'limit_block_enforced') {
         _limitReachedController.add(null);
+        if (!storage.isProSubscribed && storage.canUseNotch) {
+          await storage.consumeFreeNotchSession();
+          await syncLimitsWithNative();
+        }
       }
       notifyListeners();
     } else if (event.eventType == 'emergency_unlock_used') {

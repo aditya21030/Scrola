@@ -192,6 +192,9 @@ class StorageService {
             _prefs?.setInt(_keyStreakDays, 0);
           }
         }
+        if (prevTotal > 0 && freeNotchSessionsUsed == 0) {
+          _prefs?.setInt(_keyFreeNotchSessionsUsed, 1);
+        }
       }
       _prefs?.setString(_keyLastDate, today);
       _prefs?.setInt(_keyTotalToday, 0);
@@ -781,12 +784,23 @@ class StorageService {
   bool get isProSubscribed => _prefs?.getBool(_keyIsProSubscribed) ?? false;
   String get proPlan => _prefs?.getString(_keyProPlan) ?? 'yearly';
 
-  /// Free users get exactly 1 free session with the floating notch counter.
+  /// Free users get 1 free session with the floating notch counter.
   /// Subsequent usage is locked behind Scrola Pro (or unlocked 1-by-1 via rewarded ads).
   int get freeNotchSessionsUsed => _prefs?.getInt(_keyFreeNotchSessionsUsed) ?? 0;
   int get bonusNotchSessions => _prefs?.getInt(_keyBonusNotchSessions) ?? 0;
-  bool get canUseNotch =>
-      isProSubscribed || (freeNotchSessionsUsed - bonusNotchSessions) < 1;
+  bool get canUseNotch {
+    if (isProSubscribed) return true;
+    final netUsed = freeNotchSessionsUsed - bonusNotchSessions;
+    if (netUsed < 1) return true;
+    // Grace period for active trial session: if net used is 1,
+    // and today they have watched fewer reels than their daily limit, let them finish their session!
+    if (netUsed == 1 &&
+        totalReelsToday > 0 &&
+        totalReelsToday < totalLimit) {
+      return true;
+    }
+    return false;
+  }
 
   Future<void> consumeFreeNotchSession() async {
     if (isProSubscribed) return;

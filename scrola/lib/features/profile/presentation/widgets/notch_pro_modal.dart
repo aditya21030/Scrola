@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
@@ -23,6 +24,9 @@ class NotchProModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tracking = TrackingService();
+    final bool hasRemainingTrial = tracking.canUseNotch;
+
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.cardSurface,
@@ -109,7 +113,9 @@ class NotchProModal extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'You have used your 1 free trial session. Upgrade to Scrola Pro to enjoy unlimited floating counter across Instagram, YouTube, and all apps.',
+            hasRemainingTrial
+                ? 'Dock Brainy in your notch for real-time reel tracking and instant alerts across Instagram, YouTube, and all apps.'
+                : 'You have used your 1 free trial session. Upgrade to Scrola Pro to enjoy unlimited floating counter across Instagram, YouTube, and all apps.',
             textAlign: TextAlign.center,
             style: AppTypography.body(
               color: AppColors.secondaryText,
@@ -233,27 +239,32 @@ class _PlanPreviewItem extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (badge != null)
-          Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-            decoration: BoxDecoration(
-              color: isHighlight
-                  ? AppColors.primaryAccent
-                  : AppColors.warning.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              badge!,
-              style: AppTypography.caption(
-                color: isHighlight ? AppColors.textOnAccent : AppColors.warning,
-              ).copyWith(fontSize: 8, fontWeight: FontWeight.w800),
-            ),
-          )
-        else
-          const SizedBox(height: 16),
+        SizedBox(
+          height: 18,
+          child: Center(
+            child: badge != null
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: isHighlight
+                          ? AppColors.primaryAccent
+                          : AppColors.warning.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: AppTypography.caption(
+                        color: isHighlight ? AppColors.textOnAccent : AppColors.warning,
+                      ).copyWith(fontSize: 8, fontWeight: FontWeight.w800),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
+        const SizedBox(height: 2),
         Text(
           label,
+          textAlign: TextAlign.center,
           style: AppTypography.caption(color: AppColors.secondaryText)
               .copyWith(fontSize: 11),
         ),
