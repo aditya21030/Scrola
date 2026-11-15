@@ -394,6 +394,17 @@ class StorageService {
     await _recordTodayHistory();
   }
 
+  Future<void> clearAllUserData() async {
+    await _prefs?.remove(_keyDisplayName);
+    await _prefs?.remove(_keyUsername);
+    await _prefs?.remove(_keyEmail);
+    await _prefs?.remove(_keyXPTotal);
+    await _prefs?.remove(_keyStreakDays);
+    await _prefs?.remove(_keyEquippedSkin);
+    await _prefs?.remove(_keyDailyHistory);
+    await resetDailyStats();
+  }
+
   // Limits
   int get totalLimit => _prefs?.getInt(_keyTotalLimit) ?? 40;
   int limitForPlatform(String platformId) {

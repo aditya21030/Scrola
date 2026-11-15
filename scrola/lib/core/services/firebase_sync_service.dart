@@ -188,4 +188,18 @@ class FirebaseSyncService {
       pushToCloud();
     });
   }
+
+  /// Permanently delete user data document from Firestore
+  Future<bool> deleteUserCloudData() async {
+    final user = _auth?.currentUser;
+    if (_firestore == null || user == null) return false;
+    try {
+      await _firestore!.collection('users').doc(user.uid).delete();
+      debugPrint('FirebaseSyncService: Successfully deleted user data doc from Firestore.');
+      return true;
+    } catch (e) {
+      debugPrint('FirebaseSyncService: Error deleting user data doc: $e');
+      return false;
+    }
+  }
 }

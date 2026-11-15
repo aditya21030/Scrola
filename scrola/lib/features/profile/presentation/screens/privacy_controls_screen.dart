@@ -354,8 +354,20 @@ class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
                                 DeleteAccountModal.show(
                                   context,
                                   onConfirmDelete: () async {
-                                    await AuthService().signOut();
-                                    await tracking.resetDailyStats();
+                                    final err = await AuthService().deleteAccount();
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: err != null
+                                              ? AppColors.error
+                                              : AppColors.success,
+                                          content: Text(
+                                            err ??
+                                                'Account and all associated data have been permanently deleted.',
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   },
                                 );
                               },

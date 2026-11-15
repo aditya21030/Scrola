@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'firebase_sync_service.dart';
+import 'storage_service.dart';
 import 'tracking_service.dart';
 
 class AuthService extends ChangeNotifier {
@@ -156,6 +157,37 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Sign out error: $e');
+    }
+  }
+
+  /// Permanently delete account, cloud user document, and wipe local data
+  Future<String?> deleteAccount() async {
+    try {
+      final user = _currentUser;
+      if (user != null) {
+        // 1. Delete cloud database records in Firestore
+        await FirebaseSyncService().deleteUserCloudData();
+        // 2. Delete Firebase auth user
+        await user.delete();
+      }
+      _currentUser = null;
+
+      // 3. Clear local profile and tracking stats
+      final tracking = TrackingService();
+      await tracking.updateProfile(displayName: 'Guest User', username: '', email: '');
+      final storage = await StorageService.getInstance();
+      await storage.clearAllUserData();
+
+      notifyListeners();
+      return null; // Success
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return 'For security, please sign in again before deleting your account.';
+      }
+      return _mapFirebaseAuthError(e);
+    } catch (e) {
+      debugPrint('deleteAccount error: $e');
+      return 'Failed to delete account: $e';
     }
   }
 

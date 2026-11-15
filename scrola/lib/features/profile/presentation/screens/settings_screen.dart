@@ -478,8 +478,19 @@ class SettingsScreen extends StatelessWidget {
                                         DeleteAccountModal.show(
                                           context,
                                           onConfirmDelete: () async {
-                                            await auth.signOut();
+                                            final err = await auth.deleteAccount();
                                             if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: err != null
+                                                      ? AppColors.error
+                                                      : AppColors.success,
+                                                  content: Text(
+                                                    err ??
+                                                        'Account and data permanently deleted.',
+                                                  ),
+                                                ),
+                                              );
                                               Navigator.of(context).pop();
                                             }
                                           },
