@@ -95,7 +95,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    'Last updated: November 16, 2026 · Version 1.0.0 (Build 3)',
+                                    'Last updated: November 16, 2026 · Version 1.0.0 (Build 4)',
                                     style: AppTypography.caption(
                                       color: AppColors.secondaryText,
                                     ),
@@ -200,7 +200,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                         child: Column(
                           children: [
                             Text(
-                              'Scrola v1.0.0 (Build 3)',
+                              'Scrola v1.0.0 (Build 4)',
                               style: AppTypography.caption(
                                 color: AppColors.secondaryText.withValues(alpha: 0.7),
                               ).copyWith(fontWeight: FontWeight.w600),

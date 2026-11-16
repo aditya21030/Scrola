@@ -46,7 +46,7 @@ void main() {
     expect(find.text('v0.2'), findsNothing);
 
     // 5. Updated version number at down centre
-    final versionFinder = find.text('Scrola v1.0.0 (Build 3)');
+    final versionFinder = find.text('Scrola v1.0.0 (Build 4)');
     expect(versionFinder, findsOneWidget);
     final versionCenter = tester.getCenter(versionFinder);
     expect((versionCenter.dx - 195.0).abs(), lessThan(2.0),
@@ -66,7 +66,7 @@ void main() {
     expect(find.text('Mindful Short-Video Counter & Focus Guard'), findsOneWidget);
     expect(find.text('Our Mission'), findsOneWidget);
     expect(find.text('How Scrola Works'), findsOneWidget);
-    expect(find.textContaining('Version 1.0.0 (Build 3)'), findsWidgets);
+    expect(find.textContaining('Version 1.0.0 (Build 4)'), findsWidgets);
     expect(find.textContaining('Yousful Studio'), findsWidgets);
   });
 
@@ -84,6 +84,6 @@ void main() {
     expect(find.text('Permitted Use & Purpose'), findsOneWidget);
     expect(find.text('Subscriptions & Google Play Billing'), findsOneWidget);
     expect(find.text('Intellectual Property'), findsOneWidget);
-    expect(find.textContaining('Version 1.0.0 (Build 3)'), findsOneWidget);
+    expect(find.textContaining('Version 1.0.0 (Build 4)'), findsOneWidget);
   });
 }

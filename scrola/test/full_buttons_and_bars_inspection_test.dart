@@ -471,7 +471,7 @@ void main() {
     expect(find.text('Support: yousfulstudio@gmail.com'), findsOneWidget);
 
     // 9. Centered version number and publisher branding at bottom
-    final versionFinder = find.text('Scrola v1.0.0 (Build 3)');
+    final versionFinder = find.text('Scrola v1.0.0 (Build 4)');
     await tester.ensureVisible(versionFinder);
     expect(versionFinder, findsOneWidget);
     expect(find.text('Made with ❤️ by Yousful Studio'), findsOneWidget);

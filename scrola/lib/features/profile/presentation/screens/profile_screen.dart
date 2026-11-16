@@ -447,7 +447,7 @@ class ProfileScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               Text(
-                                'Scrola v1.0.0 (Build 3)',
+                                'Scrola v1.0.0 (Build 4)',
                                 style: AppTypography.caption(
                                   color: AppColors.secondaryText.withValues(alpha: 0.7),
                                 ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),

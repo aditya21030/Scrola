@@ -108,7 +108,7 @@ class AboutScrolaScreen extends StatelessWidget {
                                 ),
                               ),
                               child: Text(
-                                'Version 1.0.0 (Build 3)',
+                                'Version 1.0.0 (Build 4)',
                                 style: AppTypography.caption(
                                   color: AppColors.primaryAccent,
                                 ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
@@ -263,7 +263,7 @@ class AboutScrolaScreen extends StatelessWidget {
                         child: Column(
                           children: [
                             Text(
-                              'Scrola v1.0.0 (Build 3)',
+                              'Scrola v1.0.0 (Build 4)',
                               style: AppTypography.caption(
                                 color: AppColors.secondaryText.withValues(alpha: 0.8),
                               ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),

@@ -559,7 +559,7 @@ class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Scrola Team · Version 1.0.0 (Build 3)',
+                              'Scrola Team · Version 1.0.0 (Build 4)',
                               style: AppTypography.caption(
                                 color: AppColors.secondaryText.withValues(
                                   alpha: 0.6,
