@@ -207,8 +207,12 @@ class StorageService {
       _prefs?.setInt(_keyFocusSessionsToday, 0);
       _prefs?.setInt(_keyDailyBlocksCount, 0);
       _prefs?.setInt(_keyEmergencyUnlocksUsedToday, 0);
+      _prefs?.setInt(_keyFreeNotchSessionsUsed, 0);
+      _prefs?.setInt(_keyBonusNotchSessions, 0);
     }
   }
+
+  void checkDailyReset() => _checkDailyReset();
 
   // Onboarding
   bool get isOnboardingComplete => _prefs?.getBool(_keyOnboardingComplete) ?? false;
@@ -394,6 +398,8 @@ class StorageService {
     await _prefs?.setInt(_keyFocusSessionsToday, 0);
     await _prefs?.setInt(_keyDailyBlocksCount, 0);
     await _prefs?.setInt(_keyEmergencyUnlocksUsedToday, 0);
+    await _prefs?.setInt(_keyFreeNotchSessionsUsed, 0);
+    await _prefs?.setInt(_keyBonusNotchSessions, 0);
     await _recordTodayHistory();
   }
 
@@ -790,6 +796,8 @@ class StorageService {
   int get bonusNotchSessions => _prefs?.getInt(_keyBonusNotchSessions) ?? 0;
   bool get canUseNotch {
     if (isProSubscribed) return true;
+    // In free mode, once the daily limit is reached, notch tracking is blocked
+    if (totalLimit > 0 && totalReelsToday >= totalLimit) return false;
     final netUsed = freeNotchSessionsUsed - bonusNotchSessions;
     if (netUsed < 1) return true;
     // Grace period for active trial session: if net used is 1,
@@ -843,6 +851,7 @@ class StorageService {
     if (displayName != null) await _prefs?.setString(_keyDisplayName, displayName);
     if (username != null) await _prefs?.setString(_keyUsername, username);
     if (email != null) await _prefs?.setString(_keyEmail, email);
+    FirebaseSyncService().schedulePush();
   }
 
   bool get anonymousDiagnosticsEnabled =>

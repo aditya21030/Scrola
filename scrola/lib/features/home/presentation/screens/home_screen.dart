@@ -111,31 +111,26 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (!tracking.canUseNotch) {
+    if (!tracking.canUseNotch && !tracking.isProSubscribed) {
       HapticService.warning();
       await NotchProModal.show(context);
       if (!mounted) return;
-      if (!tracking.canUseNotch) {
-        // User dismissed without purchasing Pro or watching rewarded ad:
-        // Start tracking in standard background mode (without floating mascot)
-        HapticService.medium();
-        await tracking.toggleTracking(true, startOverlayNow: false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: AppColors.surfaceSolid,
-              content: Text(
-                'Scrola is ON in background mode. Get Pro to unlock the floating mascot!',
-                style: AppTypography.caption(color: AppColors.primaryText),
-              ),
-              action: SnackBarAction(
-                label: 'Get Pro',
-                textColor: AppColors.primaryAccent,
-                onPressed: () => _push(context, const SubscriptionProScreen()),
-              ),
+      if (!tracking.canUseNotch && !tracking.isProSubscribed) {
+        // Without Brainy notch mascot, free mode tracking is halted - prompt user to upgrade
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.surfaceSolid,
+            content: Text(
+              'Daily limit reached. Upgrade to Scrola Pro to launch Brainy and track reels!',
+              style: AppTypography.caption(color: AppColors.primaryText),
             ),
-          );
-        }
+            action: SnackBarAction(
+              label: 'Upgrade',
+              textColor: AppColors.primaryAccent,
+              onPressed: () => _push(context, const SubscriptionProScreen()),
+            ),
+          ),
+        );
         return;
       }
     }
@@ -186,11 +181,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (!tracking.canUseNotch) {
+    if (!tracking.canUseNotch && !tracking.isProSubscribed) {
       HapticService.warning();
       await NotchProModal.show(context);
       if (!mounted) return;
-      if (!tracking.canUseNotch) return;
+      if (!tracking.canUseNotch && !tracking.isProSubscribed) return;
     }
 
     if (!tracking.isTrackingEnabled) {

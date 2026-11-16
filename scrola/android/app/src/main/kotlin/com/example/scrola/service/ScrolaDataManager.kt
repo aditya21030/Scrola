@@ -106,6 +106,7 @@ class ScrolaDataManager private constructor(context: Context) {
             .putString(KEY_LAST_PLATFORM, "")
             .putInt(KEY_EMERGENCY_UNLOCKS_USED, 0)
             .remove(KEY_EMERGENCY_UNLOCK_UNTIL)
+            .putBoolean(KEY_CAN_USE_NOTCH, true)
         for (platform in SUPPORTED_PLATFORMS) {
             editor.putInt("reels_$platform", 0)
         }

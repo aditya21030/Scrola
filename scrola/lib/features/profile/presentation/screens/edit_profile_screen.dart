@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/firebase_sync_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
@@ -87,12 +88,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         username: username,
         email: email,
       );
+      await FirebaseSyncService().pushToCloud();
       final skinReq = GamificationEngine.unlockLevelForSkin(_selectedSkin);
       if (_tracking.currentLevel >= skinReq &&
           _selectedSkin != _tracking.equippedSkin) {
         await _tracking.equipSkin(_selectedSkin);
       }
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: AppColors.success,
+            content: Text('Profile and username saved successfully!'),
+          ),
+        );
         Navigator.of(context).pop();
       }
     } finally {

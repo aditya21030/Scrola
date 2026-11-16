@@ -5,6 +5,7 @@ import 'gamification_engine.dart';
 import 'haptic_service.dart';
 import 'scrola_native_bridge.dart';
 import '../../shared/widgets/platform_icon.dart';
+import 'firebase_sync_service.dart';
 import 'storage_service.dart';
 
 class TrackingService extends ChangeNotifier {
@@ -446,6 +447,15 @@ class TrackingService extends ChangeNotifier {
     bool animateOverlayEntrance = true,
   }) async {
     final storage = await _ensureStorage();
+    if (enabled && !storage.isProSubscribed && !storage.canUseNotch) {
+      // In free mode, tracking cannot be enabled once limit or free notch session is over
+      await storage.setTrackingEnabled(false);
+      await storage.setOverlayEnabled(false);
+      await ScrolaNativeBridge.stopOverlayService();
+      await syncLimitsWithNative();
+      notifyListeners();
+      return;
+    }
     await storage.setTrackingEnabled(enabled);
     await syncLimitsWithNative();
     if (enabled) {
@@ -710,6 +720,7 @@ class TrackingService extends ChangeNotifier {
       username: username,
       email: email,
     );
+    await FirebaseSyncService().pushToCloud();
     notifyListeners();
   }
 
@@ -801,11 +812,17 @@ class TrackingService extends ChangeNotifier {
 
       // Design spec Section 6: "Never vibrate while counting reels."
       // Only fire warning/error haptics when hitting 80% or 100% thresholds
-      if (totalReelsToday == totalLimit) {
+      if (totalReelsToday >= totalLimit) {
         await HapticService.warning();
         _limitReachedController.add(null);
-        if (!storage.isProSubscribed && storage.canUseNotch) {
-          await storage.consumeFreeNotchSession();
+        if (!storage.isProSubscribed) {
+          if (storage.canUseNotch) {
+            await storage.consumeFreeNotchSession();
+          }
+          // Free mode limit reached: without notch mascot, tracking halts and prompts upgrade
+          await storage.setTrackingEnabled(false);
+          await storage.setOverlayEnabled(false);
+          await ScrolaNativeBridge.stopOverlayService();
           await syncLimitsWithNative();
         }
       } else if (totalReelsToday > totalLimit) {
@@ -821,8 +838,13 @@ class TrackingService extends ChangeNotifier {
       await HapticService.error();
       if (event.eventType == 'limit_block_enforced') {
         _limitReachedController.add(null);
-        if (!storage.isProSubscribed && storage.canUseNotch) {
-          await storage.consumeFreeNotchSession();
+        if (!storage.isProSubscribed) {
+          if (storage.canUseNotch) {
+            await storage.consumeFreeNotchSession();
+          }
+          await storage.setTrackingEnabled(false);
+          await storage.setOverlayEnabled(false);
+          await ScrolaNativeBridge.stopOverlayService();
           await syncLimitsWithNative();
         }
       }

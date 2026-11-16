@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/platform_selection_modal.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
@@ -238,7 +240,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        Text('ACCOUNT',
+                        Text('DATA MANAGEMENT',
                             style: AppTypography.label(
                                 color: AppColors.secondaryText)),
                         const SizedBox(height: 10),
@@ -249,19 +251,6 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
-                              _SettingLinkRow(
-                                title: 'Subscription',
-                                value:
-                                    tracking.isProSubscribed ? 'Pro' : 'Free',
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const SubscriptionProScreen(),
-                                  ),
-                                ),
-                              ),
-                              const Divider(
-                                  color: AppColors.borderSubtle, height: 1),
                               _SettingLinkRow(
                                 title: 'Replay setup walkthrough',
                                 onTap: () => Navigator.of(context).push(
@@ -395,12 +384,112 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'ACCOUNT',
+                          'ACCOUNT & SUBSCRIPTION',
                           style: AppTypography.label(
                             color: AppColors.secondaryText,
                           ),
                         ),
                         const SizedBox(height: 10),
+                        // Pro Mascot Hero Card in Settings
+                        ScrolaCard(
+                          padding: const EdgeInsets.all(16),
+                          borderColor:
+                              AppColors.primaryAccent.withValues(alpha: 0.45),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primaryAccent.withValues(alpha: 0.22),
+                              AppColors.surfaceSolid,
+                            ],
+                          ),
+                          onTap: () {
+                            HapticService.light();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SubscriptionProScreen(),
+                              ),
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFFFF9E40),
+                                      Color(0xFFFF6D00),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFF6D00)
+                                          .withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: const Center(
+                                  child: BrainyMascot(
+                                    mood: BrainyMood.celebrating,
+                                    skin: BrainySkin.golden,
+                                    size: 44,
+                                    animate: false,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tracking.isProSubscribed
+                                          ? 'Scrola Pro Active'
+                                          : 'Upgrade to Scrola Pro',
+                                      style: AppTypography.subheading()
+                                          .copyWith(fontSize: 16),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      tracking.isProSubscribed
+                                          ? '${tracking.proPlan == 'yearly' ? 'Yearly' : tracking.proPlan == 'lifetime' ? 'Lifetime' : 'Monthly'} active · Unlimited notch'
+                                          : 'Unlimited notch, analytics & 40+ skins',
+                                      style: AppTypography.caption(
+                                        color: AppColors.secondaryText,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryAccent,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  tracking.isProSubscribed ? 'Manage' : 'Upgrade',
+                                  style: AppTypography.caption(
+                                    color: AppColors.textOnAccent,
+                                  ).copyWith(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         ListenableBuilder(
                           listenable: AuthService(),
                           builder: (context, _) {
@@ -416,8 +505,33 @@ class SettingsScreen extends StatelessWidget {
                                 children: [
                                   if (isGuest) ...[
                                     _SettingLinkRow(
-                                      title: 'Status',
-                                      value: 'Guest Mode',
+                                      title: 'Subscription Status',
+                                      value: tracking.isProSubscribed
+                                          ? 'Pro Active (Device)'
+                                          : 'Free Plan',
+                                      valueColor: tracking.isProSubscribed
+                                          ? AppColors.success
+                                          : AppColors.secondaryText,
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const SubscriptionProScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const Divider(
+                                      color: AppColors.borderSubtle,
+                                      height: 1,
+                                    ),
+                                    _SettingLinkRow(
+                                      title: tracking.isProSubscribed
+                                          ? 'Sync Pro across devices'
+                                          : 'Create account',
+                                      value: tracking.isProSubscribed
+                                          ? 'Link email'
+                                          : 'Sync stats',
                                       valueColor: AppColors.primaryAccent,
                                       onTap: () {
                                         Navigator.of(context).push(
@@ -433,23 +547,10 @@ class SettingsScreen extends StatelessWidget {
                                       height: 1,
                                     ),
                                     _SettingLinkRow(
-                                      title: 'Create account',
-                                      value: 'Sync stats',
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const CreateAccountScreen(),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    const Divider(
-                                      color: AppColors.borderSubtle,
-                                      height: 1,
-                                    ),
-                                    _SettingLinkRow(
                                       title: 'Log in',
+                                      value: tracking.isProSubscribed
+                                          ? 'Restore account'
+                                          : null,
                                       onTap: () {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(

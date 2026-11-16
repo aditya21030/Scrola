@@ -113,8 +113,12 @@ class FirebaseSyncService {
       }
 
       await storage.setProfile(
-        displayName: remoteDisplayName,
-        username: remoteUsername,
+        displayName: (remoteDisplayName != null && remoteDisplayName.trim().isNotEmpty)
+            ? remoteDisplayName.trim()
+            : null,
+        username: (remoteUsername != null && remoteUsername.trim().isNotEmpty)
+            ? remoteUsername.trim()
+            : null,
         email: user.email,
       );
 

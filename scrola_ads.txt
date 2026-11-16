@@ -1,0 +1,10 @@
+Inter_App ID : ca-app-pub-8510502760785545~5363934822
+
+Inter_Ad Unit ID : ca-app-pub-8510502760785545/6074381264
+
+
+--------------------------------------
+
+Rewarded_APP_ID : ca-app-pub-8510502760785545~5363934822
+
+Rewarded_Ad_UNIT_ID : ca-app-pub-8510502760785545/9023978234

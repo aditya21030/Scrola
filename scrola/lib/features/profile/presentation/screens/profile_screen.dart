@@ -64,7 +64,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (AuthService().isGuest) ...[
+                        if (AuthService().isGuest && !tracking.isProSubscribed) ...[
                           ScrolaCard(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -284,26 +284,33 @@ class ProfileScreen extends StatelessWidget {
                             children: [
                               // Pro Mascot (replacing generic badge)
                               Container(
-                                width: 48,
-                                height: 48,
+                                width: 52,
+                                height: 52,
                                 decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                     colors: [
-                                      AppColors.primaryAccent.withValues(alpha: 0.35),
-                                      AppColors.cardSurface,
+                                      Color(0xFFFF9E40),
+                                      Color(0xFFFF6D00),
                                     ],
                                   ),
-                                  border: Border.all(
-                                    color: AppColors.primaryAccent,
-                                    width: 1.8,
-                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFF6D00)
+                                          .withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
                                 ),
+                                clipBehavior: Clip.antiAlias,
                                 child: const Center(
                                   child: BrainyMascot(
-                                    mood: BrainyMood.happy,
+                                    mood: BrainyMood.celebrating,
                                     skin: BrainySkin.golden,
-                                    size: 38,
+                                    size: 44,
                                     animate: false,
                                   ),
                                 ),
