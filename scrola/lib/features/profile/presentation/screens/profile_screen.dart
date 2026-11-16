@@ -9,12 +9,13 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import '../../../auth/presentation/widgets/registration_prompt_modal.dart';
-import '../../../home/presentation/screens/in_app_guide_screen.dart';
+import 'about_scrola_screen.dart';
 import 'edit_profile_screen.dart';
 import 'notifications_settings_screen.dart';
 import 'privacy_controls_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_pro_screen.dart';
+import 'terms_of_service_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool showBack;
@@ -281,16 +282,30 @@ class ProfileScreen extends StatelessWidget {
                           },
                           child: Row(
                             children: [
+                              // Pro Mascot (replacing generic badge)
                               Container(
-                                width: 44,
-                                height: 44,
+                                width: 48,
+                                height: 48,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryAccent,
-                                  borderRadius: BorderRadius.circular(14),
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      AppColors.primaryAccent.withValues(alpha: 0.35),
+                                      AppColors.cardSurface,
+                                    ],
+                                  ),
+                                  border: Border.all(
+                                    color: AppColors.primaryAccent,
+                                    width: 1.8,
+                                  ),
                                 ),
-                                child: const Icon(
-                                  Icons.workspace_premium_rounded,
-                                  color: AppColors.textOnAccent,
+                                child: const Center(
+                                  child: BrainyMascot(
+                                    mood: BrainyMood.happy,
+                                    skin: BrainySkin.golden,
+                                    size: 38,
+                                    animate: false,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -378,6 +393,18 @@ class ProfileScreen extends StatelessWidget {
                               const Divider(
                                   color: AppColors.borderSubtle, height: 1),
                               _MenuRow(
+                                icon: Icons.gavel_rounded,
+                                title: 'Terms of Service',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const TermsOfServiceScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                  color: AppColors.borderSubtle, height: 1),
+                              _MenuRow(
                                 icon: Icons.settings_outlined,
                                 title: 'Settings',
                                 onTap: () => Navigator.of(context).push(
@@ -389,23 +416,12 @@ class ProfileScreen extends StatelessWidget {
                               const Divider(
                                   color: AppColors.borderSubtle, height: 1),
                               _MenuRow(
-                                icon: Icons.explore_outlined,
-                                title: 'How Scrola works (Guide)',
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const InAppGuideScreen(),
-                                  ),
-                                ),
-                              ),
-                              const Divider(
-                                  color: AppColors.borderSubtle, height: 1),
-                              _MenuRow(
                                 icon: Icons.help_outline_rounded,
                                 title: 'Help and feedback',
                                 onTap: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Support: hello@scrola.app'),
+                                      content: Text('Support: yousfulstudio@gmail.com'),
                                     ),
                                   );
                                 },
@@ -415,26 +431,33 @@ class ProfileScreen extends StatelessWidget {
                               _MenuRow(
                                 icon: Icons.info_outline_rounded,
                                 title: 'About Scrola',
-                                trailing: 'v0.2',
-                                onTap: () {
-                                  showDialog<void>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      backgroundColor: AppColors.cardSurface,
-                                      title: const Text('Scrola v0.2'),
-                                      content: const Text(
-                                        'Mindful short-video counter and Brainy companion.',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(ctx).pop(),
-                                          child: const Text('OK'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const AboutScrolaScreen(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Updated version number at down centre
+                        Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Scrola v1.0.0 (Build 3)',
+                                style: AppTypography.caption(
+                                  color: AppColors.secondaryText.withValues(alpha: 0.7),
+                                ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Made with ❤️ by Yousful Studio',
+                                style: AppTypography.caption(
+                                  color: AppColors.mutedText.withValues(alpha: 0.6),
+                                ).copyWith(fontSize: 11),
                               ),
                             ],
                           ),

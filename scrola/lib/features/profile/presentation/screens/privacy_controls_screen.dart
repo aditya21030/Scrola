@@ -11,6 +11,7 @@ import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import '../../../../shared/widgets/scrola_toggle.dart';
 import '../widgets/delete_account_modal.dart';
+import 'terms_of_service_screen.dart';
 
 class PrivacyControlsScreen extends StatefulWidget {
   const PrivacyControlsScreen({super.key});
@@ -21,9 +22,9 @@ class PrivacyControlsScreen extends StatefulWidget {
 
 class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
   bool _isPolicyExpanded = false;
+  bool _isTermsExpanded = false;
 
-  static const String publicPolicyUrl =
-      'https://github.com/aditya21030/Scrola/blob/main/scrola-play-store/PRIVACY_POLICY.md';
+  static const String publicPolicyUrl = 'https://scrola.app/privacy';
 
   void _copyPolicyLink() {
     HapticService.light();
@@ -429,22 +430,116 @@ class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
                               const _PolicyTextSection(
                                 title: '1. What Scrola Collects',
                                 body:
-                                    'Scrola collects only local metrics: daily counts of short-form videos watched, remaining limits, and Brainy companion XP. If you choose to register, your email and username are securely stored in Google Firebase to enable multi-device sync.',
+                                    'Scrola processes data locally on your physical device: daily reel count, remaining limit, focus session timers, and Brainy companion XP and evolutions. If you optionally create a cloud account, only your email and username are encrypted and stored via Google Firebase to enable multi-device sync. Guest users store zero data in the cloud.',
                               ),
                               const _PolicyTextSection(
                                 title: '2. Accessibility Service Usage',
                                 body:
-                                    'In strict compliance with Google Play Developer Policy, Scrola uses Android Accessibility APIs only to inspect the current active package and short-video UI nodes to calculate reel consumption. Accessibility data is never logged, stored, or transmitted over any network.',
+                                    'In strict compliance with Google Play Developer Policy, Scrola uses Android Accessibility APIs strictly to inspect the active foreground package and short-video UI nodes to calculate reel consumption. All processing is ephemeral in volatile RAM and is never recorded, captured, or transmitted over any network.',
                               ),
                               const _PolicyTextSection(
                                 title: '3. Zero Third-Party Advertising',
                                 body:
-                                    'Scrola does not include any ad-tracking SDKs or sell personal data to data brokers. Our revenue comes transparently from optional Scrola Pro subscriptions.',
+                                    'Scrola does not include any third-party behavioral advertising SDKs and never sells, rents, or trades your personal information with data brokers or marketing networks.',
                               ),
                               const _PolicyTextSection(
-                                title: '4. Data Deletion Rights',
+                                title: '4. Payments & Subscriptions',
                                 body:
-                                    'Under GDPR, CCPA, and Google Play Data Safety standards, you may export your data or delete your account at any time with immediate effect. Contact yousfulstudio@gmail.com with subject "Scrola App" for inquiries.',
+                                    'All in-app purchases and subscriptions are handled directly and securely through Google Play In-App Billing. Scrola never sees, processes, or stores your credit card or financial details.',
+                              ),
+                              const _PolicyTextSection(
+                                title: '5. Data Export & Deletion Rights',
+                                body:
+                                    'Under GDPR, CCPA, and Google Play Data Safety policies, you have complete sovereignty over your data. You may export all daily history to CSV or permanently purge your account and cloud records at any time directly in Settings > Delete Account.',
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Section: Terms & Conditions Accordion
+                      Text(
+                        'TERMS & CONDITIONS',
+                        style: AppTypography.label(
+                          color: AppColors.secondaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ScrolaCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                HapticService.subtle();
+                                setState(() =>
+                                    _isTermsExpanded = !_isTermsExpanded);
+                              },
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.gavel_rounded,
+                                    color: AppColors.primaryAccent,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Terms of Service Summary',
+                                      style: AppTypography.subheading()
+                                          .copyWith(fontSize: 15),
+                                    ),
+                                  ),
+                                  Icon(
+                                    _isTermsExpanded
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    color: AppColors.secondaryText,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_isTermsExpanded) ...[
+                              const Divider(
+                                color: AppColors.borderSubtle,
+                                height: 24,
+                              ),
+                              const _PolicyTextSection(
+                                title: '1. Acceptance & Permitted Use',
+                                body:
+                                    'By downloading or using Scrola, you agree to these Terms. Scrola is designed as a personal wellbeing utility to help monitor and limit short-form video consumption.',
+                              ),
+                              const _PolicyTextSection(
+                                title: '2. Subscriptions & Billing',
+                                body:
+                                    'Scrola Pro subscriptions automatically renew through Google Play unless cancelled 24 hours prior to the renewal date. All billing is governed by Google Play Store terms.',
+                              ),
+                              const _PolicyTextSection(
+                                title: '3. Intellectual Property',
+                                body:
+                                    'All code, artwork, and Brainy mascot assets are the exclusive property of Yousful Studio. Reverse engineering or redistribution is strictly prohibited.',
+                              ),
+                              const SizedBox(height: 12),
+                              Center(
+                                child: ScrolaSecondaryButton(
+                                  label: 'View Full Terms of Service',
+                                  leadingIcon: const Icon(
+                                    Icons.open_in_new_rounded,
+                                    size: 16,
+                                    color: AppColors.primaryAccent,
+                                  ),
+                                  onPressed: () {
+                                    HapticService.light();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const TermsOfServiceScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ],
                           ],
@@ -464,12 +559,12 @@ class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Scrola Team · Version 1.0.0 (Build 1)',
+                              'Scrola Team · Version 1.0.0 (Build 3)',
                               style: AppTypography.caption(
                                 color: AppColors.secondaryText.withValues(
-                                  alpha: 0.5,
+                                  alpha: 0.6,
                                 ),
-                              ).copyWith(fontSize: 11),
+                              ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),

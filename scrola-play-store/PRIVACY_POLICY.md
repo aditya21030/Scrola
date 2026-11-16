@@ -73,5 +73,4 @@ Scrola is not directed to individuals under 13. We do not knowingly collect pers
 For privacy questions, compliance requests, or data deletion inquiries:
 - **Email:** yousfulstudio@gmail.com
 - **Subject Line:** Scrola App
-- **Developer / Publisher:** Yousful / Scrola Team
-- **Repository:** https://github.com/aditya21030/Scrola
+- **Developer / Publisher:** Yousful Studio

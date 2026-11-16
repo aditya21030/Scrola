@@ -22,6 +22,7 @@ import '../widgets/delete_account_modal.dart';
 import '../widgets/log_out_modal.dart';
 import 'privacy_controls_screen.dart';
 import 'subscription_pro_screen.dart';
+import 'terms_of_service_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -373,6 +374,19 @@ class SettingsScreen extends StatelessWidget {
                                   MaterialPageRoute(
                                     builder: (_) =>
                                         const PrivacyControlsScreen(),
+                                  ),
+                                ),
+                              ),
+                              const Divider(
+                                color: AppColors.borderSubtle,
+                                height: 1,
+                              ),
+                              _SettingLinkRow(
+                                title: 'Terms of Service',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const TermsOfServiceScreen(),
                                   ),
                                 ),
                               ),
