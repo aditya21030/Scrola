@@ -285,7 +285,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(tracking.isTrackingEnabled, isTrue);
-    expect(find.text('Scrola Active · Tap to Turn Off'), findsOneWidget);
+    expect(find.text('Turn Scrola Off'), findsOneWidget);
     final startCalls = recordedCalls
         .where((c) => c.method == 'startOverlayService')
         .toList();

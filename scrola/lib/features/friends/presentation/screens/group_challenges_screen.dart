@@ -183,9 +183,6 @@ class _GroupChallengesScreenState extends State<GroupChallengesScreen> {
           const SizedBox(height: 12),
 
           // Contributor Members
-          _buildMemberRow('Mira', BrainySkin.aqua, 22, 50),
-          _buildMemberRow('Zoe', BrainySkin.rose, 18, 50),
-          _buildMemberRow('Kai', BrainySkin.golden, 14, 50),
           _buildMemberRow(
             'You',
             _tracking.equippedSkin,
@@ -193,6 +190,13 @@ class _GroupChallengesScreenState extends State<GroupChallengesScreen> {
             _tracking.totalLimit,
             isMe: true,
           ),
+          for (final friend in _social.friends)
+            _buildMemberRow(
+              friend.name,
+              friend.skin,
+              friend.reelsToday,
+              friend.dailyLimit,
+            ),
         ],
       ),
     );

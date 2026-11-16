@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
+import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
 import 'friend_profile_screen.dart';
 
@@ -23,44 +24,7 @@ class _FindFriendsScreenState extends State<FindFriendsScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
 
-  final List<FriendUser> _suggestions = const [
-    FriendUser(
-      id: 's1',
-      name: 'Rohan Sharma',
-      username: 'rohan.s',
-      skin: BrainySkin.cherry,
-      level: 16,
-      streak: 11,
-      reelsToday: 19,
-      dailyLimit: 25,
-      isOnline: true,
-      battleWins: 7,
-    ),
-    FriendUser(
-      id: 's2',
-      name: 'Ananya Verma',
-      username: 'ananya_v',
-      skin: BrainySkin.aqua,
-      level: 24,
-      streak: 30,
-      reelsToday: 14,
-      dailyLimit: 20,
-      isOnline: false,
-      battleWins: 18,
-    ),
-    FriendUser(
-      id: 's3',
-      name: 'Dev Patel',
-      username: 'dev.scrollfree',
-      skin: BrainySkin.honey,
-      level: 8,
-      streak: 4,
-      reelsToday: 26,
-      dailyLimit: 30,
-      isOnline: true,
-      battleWins: 2,
-    ),
-  ];
+  final List<FriendUser> _suggestions = const [];
 
   @override
   void dispose() {
@@ -213,9 +177,45 @@ class _FindFriendsScreenState extends State<FindFriendsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Try searching by full name or username',
+                              _searchQuery.isEmpty
+                                  ? 'Share your invite link above or search by username.'
+                                  : 'Could not find "$_searchQuery" in suggestions.',
+                              textAlign: TextAlign.center,
                               style: AppTypography.caption(color: AppColors.secondaryText),
                             ),
+                            if (_searchQuery.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: 220,
+                                child: ScrolaPrimaryButton(
+                                  label: 'Add "$_searchQuery"',
+                                  leadingIcon: const Icon(
+                                    Icons.person_add_alt_1_rounded,
+                                    size: 18,
+                                    color: AppColors.primaryBackground,
+                                  ),
+                                  onPressed: () async {
+                                    final newFriend = FriendUser(
+                                      id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+                                      name: _searchQuery,
+                                      username: _searchQuery.toLowerCase().replaceAll(' ', '_'),
+                                      skin: BrainySkin.classic,
+                                      level: 1,
+                                      streak: 1,
+                                      reelsToday: 0,
+                                      dailyLimit: 30,
+                                    );
+                                    await _social.addFriend(newFriend);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Added "${newFriend.name}" to friends!')),
+                                      );
+                                      Navigator.of(context).pop();
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       )

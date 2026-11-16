@@ -137,7 +137,7 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
-                          itemCount: _social.friends.length + 1,
+                          itemCount: _social.friends.length + 2,
                           separatorBuilder: (_, index) => const SizedBox(width: 14),
                           itemBuilder: (context, index) {
                             if (index == 0) {
@@ -194,6 +194,50 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                                     ),
                                   ),
                                 ],
+                              );
+                            }
+
+                            if (index == _social.friends.length + 1) {
+                              // Quick Add Friend button
+                              return GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  HapticService.light();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const FindFriendsScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: 58,
+                                      height: 58,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.cardSurface,
+                                        border: Border.all(
+                                          color: AppColors.border,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.add_rounded,
+                                        color: AppColors.primaryAccent,
+                                        size: 26,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Add',
+                                      style: AppTypography.caption(
+                                        color: AppColors.secondaryText,
+                                        weight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               );
                             }
 
@@ -273,34 +317,34 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                       const SizedBox(height: 24),
 
                       // Live Battle Banner Card
-                      if (liveBattle != null) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'LIVE BATTLE',
-                              style: AppTypography.label(color: AppColors.secondaryText),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                HapticService.subtle();
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const ScrollBattlesScreen(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'All battles',
-                                style: AppTypography.caption(
-                                  color: AppColors.accentHighlight,
-                                  weight: FontWeight.w700,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'LIVE BATTLE',
+                            style: AppTypography.label(color: AppColors.secondaryText),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              HapticService.subtle();
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ScrollBattlesScreen(),
                                 ),
+                              );
+                            },
+                            child: Text(
+                              'All battles',
+                              style: AppTypography.caption(
+                                color: AppColors.accentHighlight,
+                                weight: FontWeight.w700,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      if (liveBattle != null)
                         GestureDetector(
                           onTap: () {
                             HapticService.light();
@@ -441,104 +485,263 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Leaderboard Card Preview
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'LEADERBOARD',
-                            style: AppTypography.label(color: AppColors.secondaryText),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              HapticService.subtle();
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const FriendsLeaderboardScreen(),
+                        )
+                      else
+                        ScrolaCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                          radius: 24,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryAccent.withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
                                 ),
-                              );
-                            },
-                            child: Text(
-                              'View all',
-                              style: AppTypography.caption(
-                                color: AppColors.accentHighlight,
-                                weight: FontWeight.w700,
+                                child: const Icon(
+                                  Icons.sports_martial_arts_rounded,
+                                  size: 24,
+                                  color: AppColors.primaryAccent,
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'No active battle',
+                                style: AppTypography.body(weight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Challenge a friend to a 1v1 scroll battle. Fewest reels watched wins +150 XP!',
+                                textAlign: TextAlign.center,
+                                style: AppTypography.caption(color: AppColors.secondaryText),
+                              ),
+                              const SizedBox(height: 14),
+                              ScrolaSecondaryButton(
+                                label: 'Start a Battle',
+                                leadingIcon: const Icon(Icons.flash_on_rounded, size: 16, color: AppColors.primaryAccent),
+                                onPressed: () {
+                                  HapticService.light();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const CreateBattleScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ScrolaCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        radius: 20,
-                        child: Column(
-                          children: [
-                            for (int i = 0; i < _social.friends.take(3).length; i++) ...[
-                              if (i > 0)
-                                const Divider(color: AppColors.border, height: 16),
+                        ),
+                      const SizedBox(height: 24),
+
+                      // Leaderboard Card Preview (Real dynamic data)
+                      Builder(
+                        builder: (context) {
+                          final userLevel = _tracking.currentLevel;
+                          final myEntry = _DashboardLeaderboardEntry(
+                            name: 'You',
+                            skin: _tracking.equippedSkin,
+                            streak: _tracking.streakDays,
+                            level: userLevel,
+                            reelsToday: _tracking.totalReelsToday,
+                            isUnderLimit: _tracking.totalReelsToday <= (_tracking.totalLimit > 0 ? _tracking.totalLimit : 50),
+                            isMe: true,
+                          );
+
+                          final allEntries = <_DashboardLeaderboardEntry>[
+                            myEntry,
+                            for (final f in _social.friends)
+                              _DashboardLeaderboardEntry(
+                                name: f.name,
+                                skin: f.skin,
+                                streak: f.streak,
+                                level: f.level,
+                                reelsToday: f.reelsToday,
+                                isUnderLimit: f.isUnderLimit,
+                                isMe: false,
+                              ),
+                          ];
+
+                          allEntries.sort((a, b) {
+                            final reelComp = a.reelsToday.compareTo(b.reelsToday);
+                            if (reelComp != 0) return reelComp;
+                            final streakComp = b.streak.compareTo(a.streak);
+                            if (streakComp != 0) return streakComp;
+                            return b.level.compareTo(a.level);
+                          });
+
+                          final displayEntries = allEntries.take(3).toList();
+                          final hasFriends = _social.friends.isNotEmpty;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '#${i + 1}',
-                                    style: AppTypography.caption(
-                                      color: i == 0 ? AppColors.accentHighlight : AppColors.secondaryText,
-                                      weight: FontWeight.w800,
-                                    ),
+                                    'LEADERBOARD',
+                                    style: AppTypography.label(color: AppColors.secondaryText),
                                   ),
-                                  const SizedBox(width: 14),
-                                  BrainyMascot(
-                                    mood: BrainyMood.happy,
-                                    skin: _social.friends[i].skin,
-                                    size: 32,
-                                    animate: false,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _social.friends[i].name,
-                                          style: AppTypography.body(weight: FontWeight.w600),
+                                  GestureDetector(
+                                    onTap: () {
+                                      HapticService.subtle();
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => const FriendsLeaderboardScreen(),
                                         ),
-                                        Text(
-                                          '${_social.friends[i].streak}d streak · Lv ${_social.friends[i].level}',
-                                          style: AppTypography.caption(
-                                            color: AppColors.secondaryText,
-                                            size: 11,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: _social.friends[i].isUnderLimit
-                                          ? AppColors.success.withValues(alpha: 0.15)
-                                          : AppColors.error.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
+                                      );
+                                    },
                                     child: Text(
-                                      '${_social.friends[i].reelsToday} reels',
+                                      'View all',
                                       style: AppTypography.caption(
-                                        color: _social.friends[i].isUnderLimit
-                                            ? AppColors.success
-                                            : AppColors.error,
+                                        color: AppColors.accentHighlight,
                                         weight: FontWeight.w700,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 10),
+                              ScrolaCard(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                radius: 20,
+                                child: Column(
+                                  children: [
+                                    for (int i = 0; i < displayEntries.length; i++) ...[
+                                      if (i > 0)
+                                        const Divider(color: AppColors.border, height: 16),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '#${i + 1}',
+                                            style: AppTypography.caption(
+                                              color: i == 0 ? AppColors.accentHighlight : AppColors.secondaryText,
+                                              weight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 14),
+                                          BrainyMascot(
+                                            mood: BrainyMood.happy,
+                                            skin: displayEntries[i].skin,
+                                            size: 32,
+                                            animate: false,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                        displayEntries[i].name,
+                                                        style: AppTypography.body(
+                                                          color: displayEntries[i].isMe
+                                                              ? AppColors.primaryAccent
+                                                              : AppColors.primaryText,
+                                                          weight: FontWeight.w600,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                    if (displayEntries[i].isMe) ...[
+                                                      const SizedBox(width: 4),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.primaryAccent.withValues(alpha: 0.15),
+                                                          borderRadius: BorderRadius.circular(4),
+                                                        ),
+                                                        child: Text(
+                                                          'YOU',
+                                                          style: AppTypography.caption(
+                                                            color: AppColors.primaryAccent,
+                                                            size: 9,
+                                                            weight: FontWeight.w800,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                                Text(
+                                                  '${displayEntries[i].streak}d streak · Lv ${displayEntries[i].level}',
+                                                  style: AppTypography.caption(
+                                                    color: AppColors.secondaryText,
+                                                    size: 11,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: displayEntries[i].isUnderLimit
+                                                  ? AppColors.success.withValues(alpha: 0.15)
+                                                  : AppColors.error.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              '${displayEntries[i].reelsToday} reels',
+                                              style: AppTypography.caption(
+                                                color: displayEntries[i].isUnderLimit
+                                                    ? AppColors.success
+                                                    : AppColors.error,
+                                                weight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                    if (!hasFriends) ...[
+                                      const Divider(color: AppColors.border, height: 20),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.group_add_rounded,
+                                            size: 18,
+                                            color: AppColors.primaryAccent,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Add friends to compare rankings!',
+                                              style: AppTypography.caption(
+                                                color: AppColors.secondaryText,
+                                              ),
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: () {
+                                              HapticService.light();
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => const FindFriendsScreen(),
+                                                ),
+                                              );
+                                            },
+                                            child: Text(
+                                              '+ Add',
+                                              style: AppTypography.caption(
+                                                color: AppColors.accentHighlight,
+                                                weight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
                             ],
-                          ],
-                        ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -674,4 +877,24 @@ class _FriendsDashboardScreenState extends State<FriendsDashboardScreen> {
       ),
     );
   }
+}
+
+class _DashboardLeaderboardEntry {
+  final String name;
+  final BrainySkin skin;
+  final int streak;
+  final int level;
+  final int reelsToday;
+  final bool isUnderLimit;
+  final bool isMe;
+
+  const _DashboardLeaderboardEntry({
+    required this.name,
+    required this.skin,
+    required this.streak,
+    required this.level,
+    required this.reelsToday,
+    required this.isUnderLimit,
+    this.isMe = false,
+  });
 }

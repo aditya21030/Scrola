@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'gamification_engine.dart';
 import 'haptic_service.dart';
 
@@ -85,6 +87,45 @@ class ScrollBattle {
   });
 
   bool get isUserWinning => userReels < opponentReels;
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'opponent': opponent.toMap(),
+        'userReels': userReels,
+        'opponentReels': opponentReels,
+        'targetLimit': targetLimit,
+        'durationLabel': durationLabel,
+        'xpStakes': xpStakes,
+        'status': status.name,
+      };
+
+  factory ScrollBattle.fromMap(Map<String, dynamic> map) {
+    final opponentMap = map['opponent'] as Map<String, dynamic>?;
+    return ScrollBattle(
+      id: map['id'] as String? ?? '',
+      opponent: opponentMap != null
+          ? FriendUser.fromMap(opponentMap)
+          : const FriendUser(
+              id: '',
+              name: 'Friend',
+              username: 'friend',
+              skin: BrainySkin.classic,
+              level: 1,
+              streak: 0,
+              reelsToday: 0,
+              dailyLimit: 30,
+            ),
+      userReels: map['userReels'] as int? ?? 0,
+      opponentReels: map['opponentReels'] as int? ?? 0,
+      targetLimit: map['targetLimit'] as int? ?? 30,
+      durationLabel: map['durationLabel'] as String? ?? '1d left',
+      xpStakes: map['xpStakes'] as int? ?? 150,
+      status: BattleStatus.values.firstWhere(
+        (s) => s.name == map['status'],
+        orElse: () => BattleStatus.active,
+      ),
+    );
+  }
 }
 
 class GroupChallenge {
@@ -116,6 +157,10 @@ class SocialService extends ChangeNotifier {
   factory SocialService() => _instance;
   SocialService._internal();
 
+  static const _friendsKey = 'scrola_social_friends_list';
+  static const _battlesKey = 'scrola_social_battles_list';
+  static const _claimedKey = 'scrola_social_claimed_battles';
+
   bool _isInitialized = false;
 
   List<FriendUser> _friends = [];
@@ -132,14 +177,123 @@ class SocialService extends ChangeNotifier {
   List<GroupChallenge> get challenges => List.unmodifiable(_challenges);
   bool isBattleClaimed(String battleId) => _claimedBattleIds.contains(battleId);
 
-  Future<void> initialize() async {
+  Future<void> initialize({bool loadSampleData = false}) async {
     if (_isInitialized) return;
 
-    _loadSampleData();
+    if (loadSampleData) {
+      _loadSampleData();
+    } else {
+      await _loadSavedData();
+    }
     _isInitialized = true;
     notifyListeners();
   }
 
+  void resetForTest() {
+    _friends = [];
+    _battles = [];
+    _claimedBattleIds.clear();
+    _isInitialized = false;
+  }
+
+  void addBattleForTest(ScrollBattle battle) {
+    _battles.add(battle);
+    notifyListeners();
+  }
+
+  Future<void> _loadSavedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final friendsJson = prefs.getStringList(_friendsKey);
+      if (friendsJson != null && friendsJson.isNotEmpty) {
+        _friends = friendsJson.map((str) {
+          final map = jsonDecode(str) as Map<String, dynamic>;
+          return FriendUser.fromMap(map);
+        }).toList();
+      } else {
+        _friends = [];
+      }
+
+      final battlesJson = prefs.getStringList(_battlesKey);
+      if (battlesJson != null && battlesJson.isNotEmpty) {
+        _battles = battlesJson.map((str) {
+          final map = jsonDecode(str) as Map<String, dynamic>;
+          return ScrollBattle.fromMap(map);
+        }).toList();
+      } else {
+        _battles = [];
+      }
+
+      final claimedList = prefs.getStringList(_claimedKey);
+      if (claimedList != null) {
+        _claimedBattleIds.addAll(claimedList);
+      }
+    } catch (e) {
+      debugPrint('SocialService: Error loading saved friends data: $e');
+      _friends = [];
+      _battles = [];
+    }
+
+    _loadChallenges();
+  }
+
+  Future<void> _saveFriends() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final friendsJson = _friends.map((f) => jsonEncode(f.toMap())).toList();
+      await prefs.setStringList(_friendsKey, friendsJson);
+    } catch (e) {
+      debugPrint('SocialService: Error saving friends: $e');
+    }
+  }
+
+  Future<void> _saveBattles() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final battlesJson = _battles.map((b) => jsonEncode(b.toMap())).toList();
+      await prefs.setStringList(_battlesKey, battlesJson);
+      await prefs.setStringList(_claimedKey, _claimedBattleIds.toList());
+    } catch (e) {
+      debugPrint('SocialService: Error saving battles: $e');
+    }
+  }
+
+  void _loadChallenges() {
+    _challenges = [
+      const GroupChallenge(
+        id: 'c1',
+        title: 'Weekend Social Detox',
+        description: 'Keep total reels under 50 collectively over Saturday and Sunday.',
+        currentReels: 34,
+        targetLimit: 50,
+        daysLeft: 2,
+        participantsCount: 142,
+        isJoined: true,
+      ),
+      const GroupChallenge(
+        id: 'c2',
+        title: 'Deep Focus Month',
+        description: 'Accumulate 100 hours of focus sessions before month end.',
+        currentReels: 68,
+        targetLimit: 100,
+        daysLeft: 16,
+        participantsCount: 380,
+        isJoined: false,
+      ),
+      const GroupChallenge(
+        id: 'c3',
+        title: 'Shorts Strike Zero',
+        description: 'No YouTube Shorts between 9 PM and midnight for 5 consecutive days.',
+        currentReels: 3,
+        targetLimit: 5,
+        daysLeft: 4,
+        participantsCount: 89,
+        isJoined: false,
+      ),
+    ];
+  }
+
+  /// Can be used by tests or developer preview mode
   void _loadSampleData() {
     _friends = [
       const FriendUser(
@@ -178,117 +332,25 @@ class SocialService extends ChangeNotifier {
         isOnline: false,
         battleWins: 3,
       ),
-      const FriendUser(
-        id: 'f4',
-        name: 'Liam',
-        username: 'liam_99',
-        skin: BrainySkin.charcoal,
-        level: 18,
-        streak: 19,
-        reelsToday: 38,
-        dailyLimit: 30,
-        isOnline: false,
-        battleWins: 9,
-      ),
-      const FriendUser(
-        id: 'f5',
-        name: 'Priya',
-        username: 'priya.reads',
-        skin: BrainySkin.mint,
-        level: 31,
-        streak: 45,
-        reelsToday: 8,
-        dailyLimit: 15,
-        isOnline: true,
-        battleWins: 21,
-      ),
     ];
 
-    _battles = [
-      ScrollBattle(
-        id: 'b1',
-        opponent: _friends[0], // Zoe
-        userReels: 18,
-        opponentReels: 24,
-        targetLimit: 30,
-        durationLabel: '1d 14h left',
-        xpStakes: 150,
-        status: BattleStatus.active,
-      ),
-      ScrollBattle(
-        id: 'b2',
-        opponent: _friends[1], // Kai
-        userReels: 32,
-        opponentReels: 28,
-        targetLimit: 35,
-        durationLabel: '4h left',
-        xpStakes: 200,
-        status: BattleStatus.active,
-      ),
-      ScrollBattle(
-        id: 'b3',
-        opponent: _friends[3], // Liam
-        userReels: 22,
-        opponentReels: 38,
-        targetLimit: 30,
-        durationLabel: 'Completed',
-        xpStakes: 100,
-        status: BattleStatus.won,
-      ),
-      ScrollBattle(
-        id: 'b4',
-        opponent: _friends[4], // Priya
-        userReels: 29,
-        opponentReels: 14,
-        targetLimit: 25,
-        durationLabel: 'Completed',
-        xpStakes: 100,
-        status: BattleStatus.lost,
-      ),
-    ];
-
-    _challenges = [
-      const GroupChallenge(
-        id: 'c1',
-        title: 'Weekend Social Detox',
-        description: 'Keep total reels under 50 collectively over Saturday and Sunday.',
-        currentReels: 34,
-        targetLimit: 50,
-        daysLeft: 2,
-        participantsCount: 142,
-        isJoined: true,
-      ),
-      const GroupChallenge(
-        id: 'c2',
-        title: 'Deep Focus November',
-        description: 'Accumulate 100 hours of focus sessions before month end.',
-        currentReels: 68,
-        targetLimit: 100,
-        daysLeft: 16,
-        participantsCount: 380,
-        isJoined: false,
-      ),
-      const GroupChallenge(
-        id: 'c3',
-        title: 'Shorts Strike Zero',
-        description: 'No YouTube Shorts between 9 PM and midnight for 5 consecutive days.',
-        currentReels: 3,
-        targetLimit: 5,
-        daysLeft: 4,
-        participantsCount: 89,
-        isJoined: false,
-      ),
-    ];
+    _battles = [];
+    _loadChallenges();
   }
 
   Future<void> addFriend(FriendUser friend) async {
+    if (_friends.any((f) => f.id == friend.id || f.username == friend.username)) {
+      return;
+    }
     _friends.add(friend);
+    await _saveFriends();
     await HapticService.medium();
     notifyListeners();
   }
 
   Future<void> removeFriend(String friendId) async {
     _friends.removeWhere((f) => f.id == friendId);
+    await _saveFriends();
     notifyListeners();
   }
 
@@ -309,6 +371,7 @@ class SocialService extends ChangeNotifier {
       status: BattleStatus.active,
     );
     _battles.insert(0, battle);
+    await _saveBattles();
     await HapticService.celebratory();
     notifyListeners();
   }
@@ -316,6 +379,7 @@ class SocialService extends ChangeNotifier {
   Future<bool> claimBattleReward(String battleId) async {
     if (_claimedBattleIds.contains(battleId)) return false;
     _claimedBattleIds.add(battleId);
+    await _saveBattles();
     notifyListeners();
     return true;
   }

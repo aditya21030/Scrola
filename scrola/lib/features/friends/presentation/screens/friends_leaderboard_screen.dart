@@ -7,7 +7,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
+import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import 'find_friends_screen.dart';
 
 class FriendsLeaderboardScreen extends StatefulWidget {
   const FriendsLeaderboardScreen({super.key});
@@ -111,6 +113,59 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen> {
                         _buildPodium(top3[0], top3[1], top3[2])
                       else if (top3.isNotEmpty)
                         _buildSimpleHeader(top3),
+
+                      if (friends.isEmpty) ...[
+                        const SizedBox(height: 16),
+                        ScrolaCard(
+                          padding: const EdgeInsets.all(20),
+                          radius: 24,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryAccent.withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.group_add_rounded,
+                                  size: 26,
+                                  color: AppColors.primaryAccent,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No Friends on Leaderboard Yet',
+                                style: AppTypography.heading(size: 17),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Invite friends or search by username to see who stays focused and who scrolls the least!',
+                                textAlign: TextAlign.center,
+                                style: AppTypography.caption(color: AppColors.secondaryText),
+                              ),
+                              const SizedBox(height: 16),
+                              ScrolaSecondaryButton(
+                                label: 'Find & Add Friends',
+                                leadingIcon: const Icon(
+                                  Icons.person_add_alt_1_rounded,
+                                  size: 16,
+                                  color: AppColors.primaryAccent,
+                                ),
+                                onPressed: () {
+                                  HapticService.light();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const FindFriendsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
 
                       const SizedBox(height: 16),
 

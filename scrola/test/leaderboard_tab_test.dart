@@ -157,6 +157,28 @@ void main() {
   });
 
   testWidgets('ScrollBattlesScreen switches between Active and History tabs', (tester) async {
+    SocialService().addBattleForTest(
+      const ScrollBattle(
+        id: 'b_won_history',
+        opponent: FriendUser(
+          id: 'f_test',
+          name: 'TestFriend',
+          username: 'test_friend',
+          skin: BrainySkin.classic,
+          level: 5,
+          streak: 3,
+          reelsToday: 20,
+          dailyLimit: 30,
+        ),
+        userReels: 10,
+        opponentReels: 25,
+        targetLimit: 30,
+        durationLabel: 'Completed',
+        xpStakes: 100,
+        status: BattleStatus.won,
+      ),
+    );
+
     await tester.pumpWidget(
       const MaterialApp(
         home: ScrollBattlesScreen(),

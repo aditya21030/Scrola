@@ -8,6 +8,7 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import 'find_friends_screen.dart';
 
 class CreateBattleScreen extends StatefulWidget {
   final FriendUser? initialFriend;
@@ -20,7 +21,7 @@ class CreateBattleScreen extends StatefulWidget {
 
 class _CreateBattleScreenState extends State<CreateBattleScreen> {
   final SocialService _social = SocialService();
-  late FriendUser _selectedFriend;
+  FriendUser? _selectedFriend;
   int _selectedDurationDays = 1;
   int _targetLimit = 25;
   int _selectedXpStake = 150;
@@ -29,18 +30,7 @@ class _CreateBattleScreenState extends State<CreateBattleScreen> {
   void initState() {
     super.initState();
     _selectedFriend = widget.initialFriend ??
-        (_social.friends.isNotEmpty
-            ? _social.friends.first
-            : const FriendUser(
-                id: 'f1',
-                name: 'Zoe',
-                username: 'zoe.mind',
-                skin: BrainySkin.aqua,
-                level: 14,
-                streak: 12,
-                reelsToday: 16,
-                dailyLimit: 25,
-              ));
+        (_social.friends.isNotEmpty ? _social.friends.first : null);
   }
 
   @override
@@ -89,7 +79,7 @@ class _CreateBattleScreenState extends State<CreateBattleScreen> {
                             separatorBuilder: (_, index) => const SizedBox(width: 12),
                             itemBuilder: (context, index) {
                               final friend = _social.friends[index];
-                              final isSelected = friend.id == _selectedFriend.id;
+                              final isSelected = friend.id == _selectedFriend?.id;
                               return GestureDetector(
                                 onTap: () {
                                   HapticService.subtle();
@@ -285,30 +275,37 @@ class _CreateBattleScreenState extends State<CreateBattleScreen> {
                 ),
               ),
               ScrolaPrimaryButton(
-                label: 'Send Battle Invite',
-                leadingIcon: const Icon(
-                  Icons.send_rounded,
+                label: _social.friends.isEmpty ? 'Find & Add Friends' : 'Send Battle Invite',
+                leadingIcon: Icon(
+                  _social.friends.isEmpty ? Icons.person_add_alt_1_rounded : Icons.send_rounded,
                   color: AppColors.primaryBackground,
                   size: 18,
                 ),
-                onPressed: _social.friends.isEmpty
-                    ? null
-                    : () async {
-                        await _social.createBattle(
-                          opponent: _selectedFriend,
-                          targetLimit: _targetLimit,
-                          durationLabel: '$_selectedDurationDays d left',
-                          xpStakes: _selectedXpStake,
-                        );
-                        if (context.mounted) {
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Battle invitation sent to ${_selectedFriend.name}!'),
-                            ),
-                          );
-                        }
-                      },
+                onPressed: () async {
+                  if (_social.friends.isEmpty) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FindFriendsScreen(),
+                      ),
+                    );
+                    return;
+                  }
+                  if (_selectedFriend == null) return;
+                  await _social.createBattle(
+                    opponent: _selectedFriend!,
+                    targetLimit: _targetLimit,
+                    durationLabel: '$_selectedDurationDays d left',
+                    xpStakes: _selectedXpStake,
+                  );
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Battle invitation sent to ${_selectedFriend!.name}!'),
+                      ),
+                    );
+                  }
+                },
               ),
             ],
           ),
