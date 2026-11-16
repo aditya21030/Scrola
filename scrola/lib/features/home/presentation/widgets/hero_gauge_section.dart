@@ -109,9 +109,8 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Center(
             child: GestureDetector(
               onTap: () {
                 HapticService.subtle();
@@ -129,6 +128,7 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
                 ),
                 child: Text(
                   _speechText(remaining),
+                  textAlign: TextAlign.center,
                   style: AppTypography.caption(color: AppColors.primaryText)
                       .copyWith(fontWeight: FontWeight.w500),
                 ),
@@ -274,127 +274,18 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _ScrolaPowerToggleCard(
-                  permissionsReady: widget.permissionsReady,
-                  isTracking: widget.isTracking,
-                  stickToNotch: widget.stickToNotch,
-                  isOverlayEnabled: widget.isOverlayEnabled,
-                  isOverlayGranted: widget.isOverlayGranted,
-                  isLaunching: widget.isLaunchingToNotch,
-                  onTap: widget.onToggleScrola!,
-                ),
-                if (widget.permissionsReady && widget.onToggleOverlay != null) ...[
-                  const SizedBox(height: 8),
-                  _FloatingMascotQuickChip(
-                    isOverlayEnabled: widget.isOverlayEnabled,
-                    isOverlayGranted: widget.isOverlayGranted,
-                    canUseNotch: widget.canUseNotch,
-                    isTracking: widget.isTracking,
-                    isEnabled: !widget.isLaunchingToNotch,
-                    onTap: widget.onToggleOverlay!,
-                  ),
-                ],
-              ],
+            child: _ScrolaPowerToggleCard(
+              permissionsReady: widget.permissionsReady,
+              isTracking: widget.isTracking,
+              stickToNotch: widget.stickToNotch,
+              isOverlayEnabled: widget.isOverlayEnabled,
+              isOverlayGranted: widget.isOverlayGranted,
+              isLaunching: widget.isLaunchingToNotch,
+              onTap: widget.onToggleScrola!,
             ),
           ),
         ],
       ],
-    );
-  }
-}
-
-class _FloatingMascotQuickChip extends StatelessWidget {
-  final bool isOverlayEnabled;
-  final bool isOverlayGranted;
-  final bool canUseNotch;
-  final bool isTracking;
-  final bool isEnabled;
-  final VoidCallback onTap;
-
-  const _FloatingMascotQuickChip({
-    required this.isOverlayEnabled,
-    required this.isOverlayGranted,
-    this.canUseNotch = true,
-    required this.isTracking,
-    this.isEnabled = true,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool needsPermission = !isOverlayGranted;
-    final bool isProLocked = !canUseNotch && !isOverlayEnabled;
-
-    final String label = needsPermission
-        ? 'Allow display over apps for mascot'
-        : isOverlayEnabled
-            ? (isTracking
-                ? 'Remove floating mascot'
-                : 'Floating mascot enabled · Tap to remove')
-            : isProLocked
-                ? 'Floating notch · Unlock Pro'
-                : 'Floating mascot removed · Tap to restore';
-
-    final Color borderColor = needsPermission
-        ? AppColors.warning.withValues(alpha: 0.45)
-        : isOverlayEnabled
-            ? AppColors.borderSubtle
-            : isProLocked
-                ? AppColors.primaryAccent.withValues(alpha: 0.6)
-                : AppColors.primaryAccent.withValues(alpha: 0.35);
-
-    final Color fgColor = needsPermission
-        ? AppColors.warning
-        : isOverlayEnabled
-            ? AppColors.secondaryText
-            : AppColors.primaryAccent;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: isEnabled
-          ? () {
-              HapticService.subtle();
-              onTap();
-            }
-          : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSolid,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              needsPermission
-                  ? Icons.layers_rounded
-                  : isOverlayEnabled
-                      ? Icons.visibility_off_rounded
-                      : isProLocked
-                          ? Icons.workspace_premium_rounded
-                          : Icons.visibility_rounded,
-              size: 15,
-              color: fgColor,
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.caption(
-                  color: fgColor,
-                ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

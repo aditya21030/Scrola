@@ -317,8 +317,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           userName: tracking.displayName,
                           isTracking: isScrolaOn,
                           permissionsReady: permissionsReady,
-                          onTrackingTap: () =>
-                              _push(context, const TrackingStatusScreen()),
                           onNotificationTap: () =>
                               _push(context, const NotificationsSettingsScreen()),
                         ),

@@ -107,4 +107,44 @@ void main() {
     expect(find.text('Floating Notch Counter'), findsOneWidget);
     expect(find.text('View Scrola Pro Plans'), findsOneWidget);
   });
+
+  testWidgets('HomeScreen has centered resting badge, no header toggle, and only orange card below mascot', (tester) async {
+    final tracking = TrackingService();
+    await tracking.resetForTest();
+    await tracking.initialize();
+    await tracking.checkPermissions();
+
+    const screenWidth = 390.0;
+    tester.view.physicalSize = const Size(screenWidth, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: HomeScreen(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // 1. Resting badge is centered horizontally
+    final restingBadgeFinder = find.text('Scrola is resting. Turn on to launch!');
+    expect(restingBadgeFinder, findsOneWidget);
+    final badgeCenter = tester.getCenter(restingBadgeFinder);
+    expect((badgeCenter.dx - (screenWidth / 2)).abs(), lessThan(1.5),
+        reason: 'Resting badge must be horizontally centered on the screen');
+
+    // 2. Header has greeting and bell, but no Scrola off / Scrola on toggle pill
+    expect(find.text('Scrola off'), findsNothing);
+    expect(find.text('Scrola on'), findsNothing);
+    expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+
+    // 3. Only the orange Turn Scrola On card is present below the mascot
+    expect(find.text('Turn Scrola On'), findsOneWidget);
+    expect(find.textContaining('Sends Brainy into the top notch'), findsOneWidget);
+
+    // 4. Floating mascot chip below the card is removed
+    expect(find.textContaining('Floating mascot enabled'), findsNothing);
+    expect(find.textContaining('Floating mascot removed'), findsNothing);
+    expect(find.textContaining('Allow display over apps for mascot'), findsNothing);
+  });
 }
