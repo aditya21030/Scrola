@@ -8,6 +8,7 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import '../widgets/pro_upgrade_greeting_modal.dart';
 import 'privacy_controls_screen.dart';
 import 'terms_of_service_screen.dart';
 
@@ -77,29 +78,16 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.surfaceSolid,
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded,
-                  color: AppColors.success, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Welcome to Scrola Pro! (${_selectedTier.title} plan active)',
-                  style: AppTypography.caption(color: AppColors.primaryText)
-                      .copyWith(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      // Show celebratory greeting modal upon upgrade
+      await ProUpgradeGreetingModal.show(
+        context,
+        planTitle: '${_selectedTier.title} Plan',
       );
 
+      if (!mounted) return;
+
       // Return back to previous screen
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
