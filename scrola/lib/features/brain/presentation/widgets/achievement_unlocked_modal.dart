@@ -20,23 +20,33 @@ class AchievementUnlockedModal extends StatelessWidget {
     this.onDismiss,
   });
 
+  static bool _isShowing = false;
+
   static Future<void> show(
     BuildContext context, {
     String title = '7 Day Streak',
     String description = 'You stayed under your limit for a full week.',
     int xpReward = 50,
-  }) {
+  }) async {
+    if (_isShowing || !context.mounted) return;
+    _isShowing = true;
     HapticService.medium();
-    return showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.8),
-      builder: (_) => AchievementUnlockedModal(
-        title: title,
-        description: description,
-        xpReward: xpReward,
-      ),
-    );
+    try {
+      await showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.8),
+        builder: (_) => AchievementUnlockedModal(
+          title: title,
+          description: description,
+          xpReward: xpReward,
+        ),
+      );
+    } catch (e) {
+      debugPrint('AchievementUnlockedModal.show error: $e');
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override

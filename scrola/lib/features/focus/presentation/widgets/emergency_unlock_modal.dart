@@ -10,14 +10,25 @@ import '../../../../shared/widgets/scrola_buttons.dart';
 class EmergencyUnlockModal extends StatefulWidget {
   const EmergencyUnlockModal({super.key});
 
-  static Future<bool?> show(BuildContext context) {
+  static bool _isShowing = false;
+
+  static Future<bool?> show(BuildContext context) async {
+    if (_isShowing || !context.mounted) return null;
+    _isShowing = true;
     HapticService.warning();
-    return showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const EmergencyUnlockModal(),
-    );
+    try {
+      return await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const EmergencyUnlockModal(),
+      );
+    } catch (e) {
+      debugPrint('EmergencyUnlockModal.show error: $e');
+      return null;
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override

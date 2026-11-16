@@ -17,22 +17,35 @@ class ProUpgradeGreetingModal extends StatelessWidget {
     this.onDismiss,
   });
 
+  static bool _isShowing = false;
+
   static Future<void> show(
     BuildContext context, {
     required String planTitle,
     VoidCallback? onDismiss,
   }) async {
+    if (_isShowing || !context.mounted) return;
+    _isShowing = true;
     await HapticService.celebratory();
-    if (!context.mounted) return;
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.82),
-      builder: (_) => ProUpgradeGreetingModal(
-        planTitle: planTitle,
-        onDismiss: onDismiss,
-      ),
-    );
+    if (!context.mounted) {
+      _isShowing = false;
+      return;
+    }
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withValues(alpha: 0.82),
+        builder: (_) => ProUpgradeGreetingModal(
+          planTitle: planTitle,
+          onDismiss: onDismiss,
+        ),
+      );
+    } catch (e) {
+      debugPrint('ProUpgradeGreetingModal.show error: $e');
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override

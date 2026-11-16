@@ -18,23 +18,33 @@ class SkinUnlockedModal extends StatelessWidget {
     required this.onEquip,
   });
 
+  static bool _isShowing = false;
+
   static Future<void> show(
     BuildContext context, {
     required BrainySkin skin,
     int level = 5,
     required VoidCallback onEquip,
-  }) {
+  }) async {
+    if (_isShowing || !context.mounted) return;
+    _isShowing = true;
     HapticService.medium();
-    return showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.8),
-      builder: (_) => SkinUnlockedModal(
-        skin: skin,
-        level: level,
-        onEquip: onEquip,
-      ),
-    );
+    try {
+      await showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.8),
+        builder: (_) => SkinUnlockedModal(
+          skin: skin,
+          level: level,
+          onEquip: onEquip,
+        ),
+      );
+    } catch (e) {
+      debugPrint('SkinUnlockedModal.show error: $e');
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override

@@ -12,14 +12,24 @@ import '../screens/login_screen.dart';
 class RegistrationPromptModal extends StatelessWidget {
   const RegistrationPromptModal({super.key});
 
-  static Future<void> show(BuildContext context) {
+  static bool _isShowing = false;
+
+  static Future<void> show(BuildContext context) async {
+    if (_isShowing || !context.mounted) return;
+    _isShowing = true;
     HapticService.subtle();
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const RegistrationPromptModal(),
-    );
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const RegistrationPromptModal(),
+      );
+    } catch (e) {
+      debugPrint('RegistrationPromptModal.show error: $e');
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override

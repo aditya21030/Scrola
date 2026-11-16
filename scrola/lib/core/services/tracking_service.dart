@@ -22,6 +22,7 @@ class TrackingService extends ChangeNotifier {
       StreamController<void>.broadcast();
 
   Stream<void> get onLimitReached => _limitReachedController.stream;
+  bool _limitReachedNotified = false;
 
   bool _isAccessibilityGranted = false;
   bool _isOverlayGranted = false;
@@ -305,6 +306,9 @@ class TrackingService extends ChangeNotifier {
         if (stats['overlayExpanded'] is bool) {
           await _storage!.setOverlayExpanded(stats['overlayExpanded'] as bool);
         }
+        if (nativeTotal < totalLimit) {
+          _limitReachedNotified = false;
+        }
         notifyListeners();
       }
     } catch (e) {
@@ -429,6 +433,9 @@ class TrackingService extends ChangeNotifier {
     );
     if (platformLimitsEnabled != null) {
       await storage.setPlatformLimitsEnabled(platformLimitsEnabled);
+    }
+    if (total != null && total > totalReelsToday) {
+      _limitReachedNotified = false;
     }
     await syncLimitsWithNative();
     notifyListeners();
@@ -813,8 +820,11 @@ class TrackingService extends ChangeNotifier {
       // Design spec Section 6: "Never vibrate while counting reels."
       // Only fire warning/error haptics when hitting 80% or 100% thresholds
       if (totalReelsToday >= totalLimit) {
-        await HapticService.warning();
-        _limitReachedController.add(null);
+        if (!_limitReachedNotified) {
+          _limitReachedNotified = true;
+          await HapticService.warning();
+          _limitReachedController.add(null);
+        }
         if (!storage.isProSubscribed) {
           if (storage.canUseNotch) {
             await storage.consumeFreeNotchSession();
@@ -837,7 +847,10 @@ class TrackingService extends ChangeNotifier {
       FocusModeService().incrementBlockedAttempt();
       await HapticService.error();
       if (event.eventType == 'limit_block_enforced') {
-        _limitReachedController.add(null);
+        if (!_limitReachedNotified) {
+          _limitReachedNotified = true;
+          _limitReachedController.add(null);
+        }
         if (!storage.isProSubscribed) {
           if (storage.canUseNotch) {
             await storage.consumeFreeNotchSession();
@@ -852,6 +865,7 @@ class TrackingService extends ChangeNotifier {
     } else if (event.eventType == 'emergency_unlock_used') {
       final storage = await _ensureStorage();
       await storage.incrementEmergencyUnlocksUsed();
+      _limitReachedNotified = false;
       await HapticService.medium();
       notifyListeners();
     } else if (event.eventType == 'overlay_dismissed') {

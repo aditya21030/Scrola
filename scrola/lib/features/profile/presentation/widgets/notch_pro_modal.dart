@@ -12,14 +12,24 @@ import '../screens/subscription_pro_screen.dart';
 class NotchProModal extends StatelessWidget {
   const NotchProModal({super.key});
 
-  static Future<void> show(BuildContext context) {
+  static bool _isShowing = false;
+
+  static Future<void> show(BuildContext context) async {
+    if (_isShowing || !context.mounted) return;
+    _isShowing = true;
     HapticService.subtle();
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const NotchProModal(),
-    );
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const NotchProModal(),
+      );
+    } catch (e) {
+      debugPrint('NotchProModal.show error: $e');
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override

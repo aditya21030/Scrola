@@ -11,14 +11,24 @@ import 'emergency_unlock_modal.dart';
 class LimitReachedModal extends StatefulWidget {
   const LimitReachedModal({super.key});
 
-  static Future<void> show(BuildContext context) {
+  static bool _isShowing = false;
+
+  static Future<void> show(BuildContext context) async {
+    if (_isShowing || !context.mounted) return;
+    _isShowing = true;
     HapticService.error();
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const LimitReachedModal(),
-    );
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const LimitReachedModal(),
+      );
+    } catch (e) {
+      debugPrint('LimitReachedModal.show error: $e');
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override
@@ -77,6 +87,19 @@ class _LimitReachedModalState extends State<LimitReachedModal>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
             // Top capsule pill matching design
             Center(
               child: AnimatedBuilder(
