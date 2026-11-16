@@ -97,26 +97,26 @@ class _GroupChallengesScreenState extends State<GroupChallengesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'TEAM GOAL · ${challenge.daysLeft} DAYS LEFT',
-                      style: AppTypography.label(color: AppColors.secondaryText),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      challenge.title,
-                      style: AppTypography.heading(size: 20),
-                    ),
-                  ],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TEAM GOAL · ${challenge.daysLeft} DAYS LEFT',
+                    style: AppTypography.label(color: AppColors.secondaryText),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    challenge.title,
+                    style: AppTypography.heading(size: 20),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -139,18 +139,18 @@ class _GroupChallengesScreenState extends State<GroupChallengesScreen> {
           const SizedBox(height: 18),
 
           // Big Progress Numbers
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Text(
                 '${challenge.currentReels}',
                 style: AppTypography.title(
-                  size: 48,
+                  size: 44,
                   color: AppColors.primaryText,
                 ),
               ),
-              const SizedBox(width: 8),
               Text(
                 'of ${challenge.targetLimit} reels together',
                 style: AppTypography.body(

@@ -233,10 +233,15 @@ class _StatRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: AppTypography.body().copyWith(fontWeight: FontWeight.w500),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.body().copyWith(fontWeight: FontWeight.w500),
+            ),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: AppTypography.body(color: valueColor)

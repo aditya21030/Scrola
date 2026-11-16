@@ -121,13 +121,18 @@ class _InsightsDashboardScreenState extends State<InsightsDashboardScreen> {
             ),
           )
         else
-          Text(
-            'Insights',
-            style: AppTypography.title().copyWith(fontSize: 28),
+          Flexible(
+            child: Text(
+              'Insights',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.title().copyWith(fontSize: 26),
+            ),
           ),
+        const SizedBox(width: 8),
         Container(
-          width: 148,
-          padding: const EdgeInsets.all(4),
+          width: 140,
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: const Color(0xFF1A1A1A),
             borderRadius: BorderRadius.circular(22),

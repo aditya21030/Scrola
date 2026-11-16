@@ -307,7 +307,7 @@ void main() {
     );
 
     // Turning off then testing Turn On when overlay permission is missing
-    await tester.tap(find.text('Scrola Active · Tap to Turn Off'));
+    await tester.tap(find.text('Turn Scrola Off'));
     await tester.pump(const Duration(milliseconds: 150));
     expect(tracking.isTrackingEnabled, isFalse);
 
@@ -316,17 +316,18 @@ void main() {
     await tester.pump();
 
     await tester.tap(find.text('Turn Scrola On'));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(tracking.isTrackingEnabled, isTrue);
     expect(
-      find.text('Allow display over apps for mascot'),
+      find.text('Scrola is ON! Allow "Display over other apps" to dock Brainy in the notch.'),
       findsOneWidget,
     );
 
-    await tester.tap(find.text('Allow display over apps for mascot'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('Allow'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Open Overlay Settings'), findsOneWidget);
   });
 
@@ -746,6 +747,7 @@ void main() {
     SharedPreferences.setMockInitialValues({
       'scrola_selected_platforms': ['instagram', 'tiktok'],
       'scrola_xp_total': 320,
+      'scrola_streak_days': 1,
       'scrola_detox_active': true,
     });
     final tracking = TrackingService();

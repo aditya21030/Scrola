@@ -8,6 +8,8 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import 'privacy_controls_screen.dart';
+import 'terms_of_service_screen.dart';
 
 enum ProPlanTier {
   monthly(
@@ -422,45 +424,49 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                         : () => _handleContinue(tracking),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Privacy Policy: All reel tracking data is stored locally on your device.'),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Privacy Policy',
-                          style: AppTypography.caption(color: AppColors.secondaryText)
-                              .copyWith(fontSize: 11, decoration: TextDecoration.underline),
+                  Center(
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            HapticService.subtle();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const PrivacyControlsScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Privacy Policy',
+                            style: AppTypography.caption(color: AppColors.secondaryText)
+                                .copyWith(fontSize: 11, decoration: TextDecoration.underline),
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
+                        Text(
                           '·',
                           style: AppTypography.caption(color: AppColors.mutedText),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Terms of Service: Subscriptions managed via Google Play Store.'),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Terms of Service',
-                          style: AppTypography.caption(color: AppColors.secondaryText)
-                              .copyWith(fontSize: 11, decoration: TextDecoration.underline),
+                        GestureDetector(
+                          onTap: () {
+                            HapticService.subtle();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const TermsOfServiceScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Terms of Service',
+                            style: AppTypography.caption(color: AppColors.secondaryText)
+                                .copyWith(fontSize: 11, decoration: TextDecoration.underline),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Center(

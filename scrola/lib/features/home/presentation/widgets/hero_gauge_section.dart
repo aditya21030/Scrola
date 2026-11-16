@@ -317,7 +317,7 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
         : isLaunching
             ? 'Docking Brainy to Notch...'
             : isTracking
-                ? 'Scrola Active · Tap to Turn Off'
+                ? 'Turn Scrola Off'
                 : 'Turn Scrola On';
 
     final String subtitle = !canTurnOn

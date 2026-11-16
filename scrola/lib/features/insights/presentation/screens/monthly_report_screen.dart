@@ -123,10 +123,15 @@ class MonthlyReportScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Days under your limit',
-                          style: AppTypography.subheading().copyWith(fontSize: 15),
+                        Expanded(
+                          child: Text(
+                            'Days under your limit',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.subheading().copyWith(fontSize: 15),
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           '24 of 30',
                           style: AppTypography.numeric(
@@ -163,36 +168,48 @@ class MonthlyReportScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 12),
-                    Row(
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryAccent,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryAccent,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Under limit (24)',
+                              style: AppTypography.caption(
+                                  color: AppColors.secondaryText),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Under limit (24)',
-                          style: AppTypography.caption(
-                              color: AppColors.secondaryText),
-                        ),
-                        const SizedBox(width: 16),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: AppColors.warning,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Over limit (6)',
-                          style: AppTypography.caption(
-                              color: AppColors.secondaryText),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: AppColors.warning,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Over limit (6)',
+                              style: AppTypography.caption(
+                                  color: AppColors.secondaryText),
+                            ),
+                          ],
                         ),
                       ],
                     ),

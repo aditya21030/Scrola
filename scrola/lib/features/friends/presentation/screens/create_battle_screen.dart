@@ -191,10 +191,15 @@ class _CreateBattleScreenState extends State<CreateBattleScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'Daily Limit per player',
-                                  style: AppTypography.body(color: AppColors.secondaryText),
+                                Expanded(
+                                  child: Text(
+                                    'Daily Limit per player',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.body(color: AppColors.secondaryText),
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 Text(
                                   '$_targetLimit reels',
                                   style: AppTypography.heading(color: AppColors.primaryAccent),
