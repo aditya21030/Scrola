@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../../../core/services/haptic_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
@@ -8,18 +6,6 @@ import '../../../../shared/widgets/scrola_card.dart';
 
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({super.key});
-
-  static const String termsUrl = 'https://scrola.app/terms';
-
-  void _copyTermsLink(BuildContext context) {
-    HapticService.light();
-    Clipboard.setData(const ClipboardData(text: termsUrl));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Terms of Service URL copied to clipboard.'),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,25 +17,8 @@ class TermsOfServiceScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ScrolaAppBar(
+              const ScrolaAppBar(
                 title: 'Terms of Service',
-                trailing: GestureDetector(
-                  onTap: () => _copyTermsLink(context),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.link_rounded,
-                          color: AppColors.primaryAccent, size: 18),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Copy Link',
-                        style: AppTypography.caption(
-                          color: AppColors.primaryAccent,
-                        ).copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                ),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -95,7 +64,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    'Last updated: November 16, 2026 · Version 1.0.0 (Build 4)',
+                                    'Last updated: November 2026',
                                     style: AppTypography.caption(
                                       color: AppColors.secondaryText,
                                     ),
@@ -195,24 +164,13 @@ class TermsOfServiceScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
 
-                      // Bottom center version info
+                      // Bottom center info
                       Center(
-                        child: Column(
-                          children: [
-                            Text(
-                              'Scrola v1.0.0 (Build 4)',
-                              style: AppTypography.caption(
-                                color: AppColors.secondaryText.withValues(alpha: 0.7),
-                              ).copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '© 2026 Yousful Studio · All rights reserved',
-                              style: AppTypography.caption(
-                                color: AppColors.mutedText.withValues(alpha: 0.6),
-                              ).copyWith(fontSize: 11),
-                            ),
-                          ],
+                        child: Text(
+                          '© 2026 Yousful Studio · All rights reserved',
+                          style: AppTypography.caption(
+                            color: AppColors.mutedText.withValues(alpha: 0.6),
+                          ).copyWith(fontSize: 11),
                         ),
                       ),
                     ],

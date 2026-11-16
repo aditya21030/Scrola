@@ -45,16 +45,11 @@ void main() {
     expect(find.text('About Scrola'), findsOneWidget);
     expect(find.text('v0.2'), findsNothing);
 
-    // 5. Updated version number at down centre
-    final versionFinder = find.text('Scrola v1.0.0 (Build 4)');
-    expect(versionFinder, findsOneWidget);
-    final versionCenter = tester.getCenter(versionFinder);
-    expect((versionCenter.dx - 195.0).abs(), lessThan(2.0),
-        reason: 'Version number must be horizontally centered');
-    expect(find.text('Made with ❤️ by Yousful Studio'), findsOneWidget);
+    // 5. Version number removed per user instruction
+    expect(find.text('Scrola v1.0.0 (Build 4)'), findsNothing);
   });
 
-  testWidgets('AboutScrolaScreen renders rich content, mission, and version info', (tester) async {
+  testWidgets('AboutScrolaScreen renders rich content and mission', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: AboutScrolaScreen(),
@@ -66,11 +61,10 @@ void main() {
     expect(find.text('Mindful Short-Video Counter & Focus Guard'), findsOneWidget);
     expect(find.text('Our Mission'), findsOneWidget);
     expect(find.text('How Scrola Works'), findsOneWidget);
-    expect(find.textContaining('Version 1.0.0 (Build 4)'), findsWidgets);
     expect(find.textContaining('Yousful Studio'), findsWidgets);
   });
 
-  testWidgets('TermsOfServiceScreen renders all sections and copy link', (tester) async {
+  testWidgets('TermsOfServiceScreen renders all sections without copy link', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: TermsOfServiceScreen(),
@@ -79,11 +73,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Terms of Service'), findsOneWidget);
+    expect(find.text('Copy Link'), findsNothing);
     expect(find.text('Scrola Terms & Conditions'), findsOneWidget);
     expect(find.text('Acceptance of Terms'), findsOneWidget);
     expect(find.text('Permitted Use & Purpose'), findsOneWidget);
     expect(find.text('Subscriptions & Google Play Billing'), findsOneWidget);
     expect(find.text('Intellectual Property'), findsOneWidget);
-    expect(find.textContaining('Version 1.0.0 (Build 4)'), findsOneWidget);
   });
 }

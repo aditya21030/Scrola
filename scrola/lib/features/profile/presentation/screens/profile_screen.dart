@@ -426,9 +426,10 @@ class ProfileScreen extends StatelessWidget {
                                 icon: Icons.help_outline_rounded,
                                 title: 'Help and feedback',
                                 onTap: () {
+                                  HapticService.light();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Support: yousfulstudio@gmail.com'),
+                                      content: Text('Help & feedback coming soon.'),
                                     ),
                                   );
                                 },
@@ -447,28 +448,7 @@ class ProfileScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-
-                        // Updated version number at down centre
-                        Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Scrola v1.0.0 (Build 4)',
-                                style: AppTypography.caption(
-                                  color: AppColors.secondaryText.withValues(alpha: 0.7),
-                                ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                'Made with ❤️ by Yousful Studio',
-                                style: AppTypography.caption(
-                                  color: AppColors.mutedText.withValues(alpha: 0.6),
-                                ).copyWith(fontSize: 11),
-                              ),
-                            ],
-                          ),
-                        ),
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),

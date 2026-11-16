@@ -94,26 +94,6 @@ class AboutScrolaScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryAccent.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.primaryAccent.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Text(
-                                'Version 1.0.0 (Build 4)',
-                                style: AppTypography.caption(
-                                  color: AppColors.primaryAccent,
-                                ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -239,36 +219,15 @@ class AboutScrolaScreen extends StatelessWidget {
                                 );
                               },
                             ),
-                            const Divider(color: AppColors.borderSubtle, height: 1),
-                            _buildNavRow(
-                              icon: Icons.email_outlined,
-                              title: 'Contact Support',
-                              subtitle: 'yousfulstudio@gmail.com',
-                              onTap: () {
-                                HapticService.subtle();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Support email: yousfulstudio@gmail.com'),
-                                  ),
-                                );
-                              },
-                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Down Center Version & Publisher info
+                      // Down Center Publisher info
                       Center(
                         child: Column(
                           children: [
-                            Text(
-                              'Scrola v1.0.0 (Build 4)',
-                              style: AppTypography.caption(
-                                color: AppColors.secondaryText.withValues(alpha: 0.8),
-                              ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
-                            ),
-                            const SizedBox(height: 3),
                             Text(
                               'Designed & Crafted with ❤️ by Yousful Studio',
                               style: AppTypography.caption(

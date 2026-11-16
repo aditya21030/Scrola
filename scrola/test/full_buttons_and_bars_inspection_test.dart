@@ -468,13 +468,7 @@ void main() {
     await tester.ensureVisible(helpFinder);
     await tester.tap(helpFinder);
     await tester.pump(const Duration(milliseconds: 150));
-    expect(find.text('Support: yousfulstudio@gmail.com'), findsOneWidget);
-
-    // 9. Centered version number and publisher branding at bottom
-    final versionFinder = find.text('Scrola v1.0.0 (Build 4)');
-    await tester.ensureVisible(versionFinder);
-    expect(versionFinder, findsOneWidget);
-    expect(find.text('Made with ❤️ by Yousful Studio'), findsOneWidget);
+    expect(find.text('Help & feedback coming soon.'), findsOneWidget);
   });
 
   testWidgets('Inspection 6: SubscriptionProScreen tier selector, terms/privacy wrap links, and responsiveness', (tester) async {

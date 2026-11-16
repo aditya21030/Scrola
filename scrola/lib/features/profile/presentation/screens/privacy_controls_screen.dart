@@ -545,30 +545,6 @@ class _PrivacyControlsScreenState extends State<PrivacyControlsScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      // Contact & Footer
-                      Center(
-                        child: Column(
-                          children: [
-                            Text(
-                              'Support: yousfulstudio@gmail.com (Subject: Scrola App)',
-                              style: AppTypography.caption(
-                                color: AppColors.mutedText,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Scrola Team · Version 1.0.0 (Build 4)',
-                              style: AppTypography.caption(
-                                color: AppColors.secondaryText.withValues(
-                                  alpha: 0.6,
-                                ),
-                              ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),

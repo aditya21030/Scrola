@@ -18,7 +18,6 @@ import '../../../focus/presentation/screens/blocking_dashboard_screen.dart';
 import '../../../insights/presentation/screens/platform_breakdown_screen.dart';
 import '../../../insights/presentation/screens/reel_limit_setup_screen.dart';
 import '../../../insights/presentation/screens/tracking_status_screen.dart';
-import '../../../onboarding/presentation/screens/onboarding_wizard_screen.dart';
 import '../../../overlay/presentation/screens/floating_overlay_settings_screen.dart';
 import '../widgets/delete_account_modal.dart';
 import '../widgets/log_out_modal.dart';
@@ -251,18 +250,6 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
-                              _SettingLinkRow(
-                                title: 'Replay setup walkthrough',
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const OnboardingWizardScreen(
-                                            isReplay: true),
-                                  ),
-                                ),
-                              ),
-                              const Divider(
-                                  color: AppColors.borderSubtle, height: 1),
                               _SettingLinkRow(
                                 title: 'Export my data',
                                 onTap: () {
