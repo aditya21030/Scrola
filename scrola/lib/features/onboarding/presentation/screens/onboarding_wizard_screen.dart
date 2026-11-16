@@ -348,49 +348,12 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
       body: Column(
         children: [
           // Top Notch Pill Mockup
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 268, minHeight: 48),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111111),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.45),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryAccent.withValues(alpha: 0.22),
-                    blurRadius: 20,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '24 watched',
-                    style: AppTypography.caption(
-                      color: AppColors.primaryText,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const BrainyMascot(
-                    mood: BrainyMood.happy,
-                    size: 28,
-                    animate: false,
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    '16 left',
-                    style: AppTypography.caption(
-                      color: AppColors.primaryAccent,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+          Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: TopNotchPillMockup(
+                showPointers: false,
+                mood: current.mood,
               ),
             ),
           ),
@@ -807,94 +770,11 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
+          const Center(
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Labelled Notch Pill Diagram
-                  Container(
-                    constraints:
-                        const BoxConstraints(minWidth: 276, minHeight: 54),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111111),
-                      borderRadius: BorderRadius.circular(27),
-                      border: Border.all(
-                        color: AppColors.primaryAccent,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryAccent.withValues(alpha: 0.25),
-                          blurRadius: 24,
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '24 watched',
-                          style: AppTypography.body(
-                            color: Colors.white,
-                            weight: FontWeight.w700,
-                            size: 13,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const BrainyMascot(
-                          mood: BrainyMood.happy,
-                          size: 30,
-                          animate: false,
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          '16 left',
-                          style: AppTypography.body(
-                            color: AppColors.primaryAccent,
-                            weight: FontWeight.w700,
-                            size: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Aligned indicator stems directly below each pill region
-                  const SizedBox(
-                    width: 284,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _PillPointerLabel(
-                            label: 'Watched',
-                            color: AppColors.secondaryText,
-                            align: CrossAxisAlignment.center,
-                          ),
-                        ),
-                        Expanded(
-                          child: _PillPointerLabel(
-                            label: 'Brainy (Tap)',
-                            color: AppColors.accentHighlight,
-                            align: CrossAxisAlignment.center,
-                          ),
-                        ),
-                        Expanded(
-                          child: _PillPointerLabel(
-                            label: 'Remaining',
-                            color: AppColors.secondaryText,
-                            align: CrossAxisAlignment.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: TopNotchPillMockup(
+                showPointers: true,
               ),
             ),
           ),
@@ -1474,36 +1354,166 @@ class _OnboardingWizardScreenState extends State<OnboardingWizardScreen> with Wi
   }
 }
 
-class _PillPointerLabel extends StatelessWidget {
+class TopNotchPillMockup extends StatelessWidget {
+  final bool showPointers;
+  final BrainyMood mood;
+
+  const TopNotchPillMockup({
+    super.key,
+    this.showPointers = false,
+    this.mood = BrainyMood.happy,
+  });
+
+  static const double pillWidth = 280.0;
+  static const double pillHeight = 50.0;
+  static const double mascotSlotWidth = 36.0;
+  static const double borderWidth = 1.5;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: pillWidth,
+          height: pillHeight,
+          decoration: BoxDecoration(
+            color: const Color(0xFF111111),
+            borderRadius: BorderRadius.circular(pillHeight / 2),
+            border: Border.all(
+              color: AppColors.primaryAccent,
+              width: borderWidth,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryAccent.withValues(alpha: 0.25),
+                blurRadius: 22,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '24 watched',
+                    maxLines: 1,
+                    style: AppTypography.body(
+                      color: Colors.white,
+                      weight: FontWeight.w700,
+                      size: 13,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: mascotSlotWidth,
+                child: Center(
+                  child: BrainyMascot(
+                    mood: mood,
+                    size: 28,
+                    animate: false,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '16 left',
+                    maxLines: 1,
+                    style: AppTypography.body(
+                      color: AppColors.primaryAccent,
+                      weight: FontWeight.w700,
+                      size: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (showPointers) ...[
+          const SizedBox(height: 8),
+          const SizedBox(
+            width: pillWidth,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: borderWidth),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: PillPointerLabel(
+                        label: 'Watched',
+                        color: AppColors.secondaryText,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: mascotSlotWidth,
+                    child: Center(
+                      child: PillPointerLabel(
+                        label: 'Brainy (Tap)',
+                        color: AppColors.accentHighlight,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: PillPointerLabel(
+                        label: 'Remaining',
+                        color: AppColors.secondaryText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class PillPointerLabel extends StatelessWidget {
   final String label;
   final Color color;
-  final CrossAxisAlignment align;
 
-  const _PillPointerLabel({
+  const PillPointerLabel({
+    super.key,
     required this.label,
     required this.color,
-    this.align = CrossAxisAlignment.center,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: align,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           width: 1.5,
-          height: 14,
-          color: color.withValues(alpha: 0.55),
+          height: 12,
+          color: color.withValues(alpha: 0.65),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.caption(color: color).copyWith(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+        SizedBox(
+          height: 16,
+          child: OverflowBox(
+            minWidth: 0,
+            maxWidth: 120,
+            minHeight: 0,
+            maxHeight: 16,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              softWrap: false,
+              style: AppTypography.caption(color: color).copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ],
