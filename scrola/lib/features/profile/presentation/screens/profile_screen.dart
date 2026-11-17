@@ -183,7 +183,9 @@ class ProfileScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                tracking.displayName,
+                                AuthService().isGuest
+                                    ? 'Guest'
+                                    : tracking.displayName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.center,
@@ -192,7 +194,9 @@ class ProfileScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '@${tracking.username} · joined ${tracking.joinedMonthYear}',
+                                AuthService().isGuest
+                                    ? '@guest · joined ${tracking.joinedMonthYear}'
+                                    : '@${tracking.username} · joined ${tracking.joinedMonthYear}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.center,

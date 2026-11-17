@@ -697,7 +697,7 @@ void main() {
     await tester.tap(find.text('Save changes'));
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Display name cannot be empty'), findsOneWidget);
-    expect(tracking.displayName, 'Alex');
+    expect(tracking.displayName, 'Guest');
 
     // BrainCollectionScreen: empty 'Locked' filter when all skins unlocked shows friendly state
     StorageService.resetForTest();

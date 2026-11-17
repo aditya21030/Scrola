@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
-import '../../../../core/services/tracking_service.dart';
+import '../../../../core/services/storage_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/brainy_mascot.dart';
@@ -67,49 +67,89 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       _error = null;
     });
 
-    final err = await _auth.createAccountWithEmail(
-      email: email,
-      password: pass,
-      displayName: name.isNotEmpty ? name : null,
-      username: username.isNotEmpty ? username : null,
-    );
+    try {
+      final err = await _auth.createAccountWithEmail(
+        email: email,
+        password: pass,
+        displayName: name.isNotEmpty ? name : null,
+        username: username.isNotEmpty ? username : null,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (err != null) {
-      setState(() {
-        _loading = false;
-        _error = err;
-      });
-      await HapticService.error();
-    } else {
-      await HapticService.celebratory();
-      if (mounted) {
+      if (err != null) {
+        setState(() {
+          _error = err;
+        });
+        await HapticService.error();
+      } else {
+        await HapticService.celebratory();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created! Welcome to Scrola.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
         Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = 'Registration error: $e');
+        await HapticService.error();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
       }
     }
   }
 
-  Future<void> _handleSaveLocallyAsGuest() async {
+  Future<void> _handleSaveLocally() async {
     final name = _nameCtrl.text.trim();
     final username =
         _usernameCtrl.text.trim().replaceAll('@', '').replaceAll(' ', '');
     final email = _emailCtrl.text.trim();
-    final tracking = TrackingService();
-    await tracking.updateProfile(
-      displayName: name.isNotEmpty ? name : tracking.displayName,
-      username: username.isNotEmpty ? username : tracking.username,
-      email: email.isNotEmpty ? email : tracking.email,
-    );
+    final pass = _passCtrl.text.isNotEmpty ? _passCtrl.text : 'scrola123';
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final storage = await StorageService.getInstance();
+      await storage.saveLocalAccount(
+        email: email.isNotEmpty ? email : 'user@scrola.local',
+        password: pass,
+        displayName: name.isNotEmpty ? name : 'Scrola User',
+        username: username.isNotEmpty ? username : 'user',
+      );
+      await _auth.initialize();
+      await HapticService.celebratory();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account saved! Welcome to Scrola.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = 'Error saving account: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _handleContinueAsGuest() async {
+    HapticService.light();
     await _auth.signInAsGuest();
-    await HapticService.celebratory();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile saved! Welcome to Scrola.'),
-        backgroundColor: AppColors.success,
-      ),
-    );
     Navigator.of(context).pop(true);
   }
 
@@ -209,7 +249,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                   _error!.contains('locally')) ...[
                                 const SizedBox(height: 12),
                                 GestureDetector(
-                                  onTap: _handleSaveLocallyAsGuest,
+                                  onTap: _handleSaveLocally,
                                   child: Container(
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 11),
@@ -544,10 +584,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
                       Center(
                         child: GestureDetector(
-                          onTap: () {
-                            HapticService.light();
-                            _handleSaveLocallyAsGuest();
-                          },
+                          onTap: _handleContinueAsGuest,
                           child: Text(
                             'Continue as Guest (Skip)',
                             style: AppTypography.caption(

@@ -52,19 +52,34 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
 
-    final err = await _auth.signInWithEmail(email, pass);
-    if (!mounted) return;
+    try {
+      final err = await _auth.signInWithEmail(email, pass);
+      if (!mounted) return;
 
-    if (err != null) {
-      setState(() {
-        _loading = false;
-        _error = err;
-      });
-      await HapticService.error();
-    } else {
-      await HapticService.celebratory();
-      if (mounted) {
+      if (err != null) {
+        setState(() {
+          _error = err;
+        });
+        await HapticService.error();
+      } else {
+        await HapticService.celebratory();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Welcome back to Scrola!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
         Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = 'Login error: $e');
+        await HapticService.error();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
       }
     }
   }

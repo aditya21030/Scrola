@@ -15,7 +15,7 @@ class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
     this.greeting = 'Good evening',
-    this.userName = 'Alex',
+    this.userName = 'Guest',
     this.isTracking = false,
     this.permissionsReady = true,
     this.showStatusPill = false,

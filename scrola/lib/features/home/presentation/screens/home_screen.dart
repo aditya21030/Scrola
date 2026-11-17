@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
@@ -309,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         HomeHeader(
                           greeting: greeting,
-                          userName: tracking.displayName,
+                          userName: AuthService().isGuest ? 'Guest' : tracking.displayName,
                           isTracking: isScrolaOn,
                           permissionsReady: permissionsReady,
                           onNotificationTap: () =>

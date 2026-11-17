@@ -28,10 +28,10 @@ class FirebaseSyncService {
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
       );
 
-      _auth!.authStateChanges().listen((user) async {
+      _auth!.authStateChanges().listen((user) {
         if (user != null && !user.isAnonymous) {
           debugPrint('FirebaseSyncService: User authenticated (${user.uid}), syncing stats...');
-          await pullFromCloud();
+          unawaited(pullFromCloud());
         }
       });
       _isInitialized = true;
@@ -50,11 +50,11 @@ class FirebaseSyncService {
 
     try {
       final docRef = _firestore!.collection('users').doc(user.uid);
-      final docSnap = await docRef.get();
+      final docSnap = await docRef.get().timeout(const Duration(seconds: 4));
 
       if (!docSnap.exists) {
         debugPrint('FirebaseSyncService: Remote user doc not found, pushing local stats to cloud.');
-        await pushToCloud();
+        unawaited(pushToCloud());
         return true;
       }
 
@@ -173,7 +173,9 @@ class FirebaseSyncService {
         'lastSyncedAt': FieldValue.serverTimestamp(),
       };
 
-      await docRef.set(payload, SetOptions(merge: true));
+      await docRef.set(payload, SetOptions(merge: true)).timeout(
+            const Duration(seconds: 4),
+          );
       debugPrint('FirebaseSyncService: User stats pushed to Firestore successfully (Level ${storage.currentLevel}, ${storage.xpTotal} XP, ${storage.streakDays} streak).');
       return true;
     } catch (e) {
@@ -198,7 +200,11 @@ class FirebaseSyncService {
     final user = _auth?.currentUser;
     if (_firestore == null || user == null) return false;
     try {
-      await _firestore!.collection('users').doc(user.uid).delete();
+      await _firestore!
+          .collection('users')
+          .doc(user.uid)
+          .delete()
+          .timeout(const Duration(seconds: 4));
       debugPrint('FirebaseSyncService: Successfully deleted user data doc from Firestore.');
       return true;
     } catch (e) {

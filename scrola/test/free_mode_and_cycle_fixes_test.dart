@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scrola/core/services/storage_service.dart';
-import 'package:scrola/core/services/tracking_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

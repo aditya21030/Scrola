@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/firebase_sync_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/storage_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -31,9 +34,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: _tracking.displayName);
-    _usernameCtrl = TextEditingController(text: _tracking.username);
-    _emailCtrl = TextEditingController(text: _tracking.email);
+    final isGuest = AuthService().isGuest;
+    _nameCtrl =
+        TextEditingController(text: isGuest ? '' : _tracking.displayName);
+    _usernameCtrl =
+        TextEditingController(text: isGuest ? '' : _tracking.username);
+    _emailCtrl = TextEditingController(text: isGuest ? '' : _tracking.email);
     final currentSkin = _tracking.equippedSkin;
     final reqLevel = GamificationEngine.unlockLevelForSkin(currentSkin);
     _selectedSkin =
@@ -88,7 +94,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         username: username,
         email: email,
       );
-      await FirebaseSyncService().pushToCloud();
+      final storage = await StorageService.getInstance();
+      if (storage.isLocalAccountActive) {
+        await storage.updateLocalAccountProfile(
+          displayName: name,
+          username: username,
+          email: email,
+        );
+      }
+      unawaited(FirebaseSyncService()
+          .pushToCloud()
+          .timeout(const Duration(seconds: 4), onTimeout: () => false));
       final skinReq = GamificationEngine.unlockLevelForSkin(_selectedSkin);
       if (_tracking.currentLevel >= skinReq &&
           _selectedSkin != _tracking.equippedSkin) {

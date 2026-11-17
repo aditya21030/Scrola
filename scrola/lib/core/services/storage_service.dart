@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_sync_service.dart';
 import 'haptic_service.dart';
 import 'gamification_engine.dart';
+import 'local_auth_user.dart';
 
 class StorageService {
   static StorageService? _instance;
@@ -44,6 +45,17 @@ class StorageService {
     final nightUserSet = _prefs?.getBool('scrola_night_block_user_set') ?? false;
     if (!nightUserSet && (_prefs?.getBool(_keyNightBlock) ?? false)) {
       _prefs?.setBool(_keyNightBlock, false);
+    }
+
+    // Clean up legacy mockup defaults
+    if (_prefs?.getString(_keyDisplayName) == 'Alex') {
+      _prefs?.remove(_keyDisplayName);
+    }
+    if (_prefs?.getString(_keyUsername) == 'alex') {
+      _prefs?.remove(_keyUsername);
+    }
+    if (_prefs?.getString(_keyEmail) == 'alex@scrola.app') {
+      _prefs?.remove(_keyEmail);
     }
   }
 
@@ -138,6 +150,14 @@ class StorageService {
   static const String _keyFreeNotchSessionsUsed = 'scrola_free_notch_sessions_used';
   static const String _keyBonusNotchSessions = 'scrola_bonus_notch_sessions';
   static const String _keyAnonymousDiagnostics = 'scrola_anonymous_diagnostics';
+
+  // Local account authentication keys (fallback when offline or Firebase is unconfigured)
+  static const String _keyLocalAccountActive = 'scrola_local_account_active';
+  static const String _keyLocalAccountUid = 'scrola_local_account_uid';
+  static const String _keyLocalAccountEmail = 'scrola_local_account_email';
+  static const String _keyLocalAccountPasswordHash = 'scrola_local_account_hash';
+  static const String _keyLocalAccountDisplayName = 'scrola_local_account_name';
+  static const String _keyLocalAccountUsername = 'scrola_local_account_username';
 
   static const String _keyNotifWarnNearLimit = 'scrola_notif_warn_near_limit';
   static const String _keyNotifThresholds = 'scrola_notif_thresholds';
@@ -411,6 +431,12 @@ class StorageService {
     await _prefs?.remove(_keyStreakDays);
     await _prefs?.remove(_keyEquippedSkin);
     await _prefs?.remove(_keyDailyHistory);
+    await _prefs?.remove(_keyLocalAccountActive);
+    await _prefs?.remove(_keyLocalAccountUid);
+    await _prefs?.remove(_keyLocalAccountEmail);
+    await _prefs?.remove(_keyLocalAccountPasswordHash);
+    await _prefs?.remove(_keyLocalAccountDisplayName);
+    await _prefs?.remove(_keyLocalAccountUsername);
     await resetDailyStats();
   }
 
@@ -772,9 +798,9 @@ class StorageService {
   }
 
   // Profile & Subscription
-  String get displayName => _prefs?.getString(_keyDisplayName) ?? 'Alex';
-  String get username => _prefs?.getString(_keyUsername) ?? 'alex';
-  String get email => _prefs?.getString(_keyEmail) ?? 'alex@scrola.app';
+  String get displayName => _prefs?.getString(_keyDisplayName) ?? 'Guest';
+  String get username => _prefs?.getString(_keyUsername) ?? 'guest';
+  String get email => _prefs?.getString(_keyEmail) ?? '';
   String get joinedDateIso =>
       _prefs?.getString(_keyJoinedDate) ?? _getTodayString();
 
@@ -852,6 +878,87 @@ class StorageService {
     if (username != null) await _prefs?.setString(_keyUsername, username);
     if (email != null) await _prefs?.setString(_keyEmail, email);
     FirebaseSyncService().schedulePush();
+  }
+
+  // Local account authentication helpers
+  static String _hashPassword(String password) {
+    final bytes = utf8.encode('scrola_salt_${password}_safe');
+    return base64Encode(bytes);
+  }
+
+  bool get isLocalAccountActive =>
+      _prefs?.getBool(_keyLocalAccountActive) ?? false;
+
+  String get localAccountEmail =>
+      _prefs?.getString(_keyLocalAccountEmail) ?? '';
+
+  LocalAuthUser? getLocalAccountUser() {
+    if (!isLocalAccountActive) return null;
+    final email = _prefs?.getString(_keyLocalAccountEmail) ?? '';
+    final name = _prefs?.getString(_keyLocalAccountDisplayName) ?? 'Guest';
+    final username = _prefs?.getString(_keyLocalAccountUsername) ?? 'guest';
+    final uid = _prefs?.getString(_keyLocalAccountUid) ?? 'local_user';
+    if (email.isEmpty) return null;
+    return LocalAuthUser(
+      uid: uid,
+      email: email,
+      displayName: name,
+      username: username,
+    );
+  }
+
+  Future<void> saveLocalAccount({
+    required String email,
+    required String password,
+    required String displayName,
+    required String username,
+  }) async {
+    final uid = 'local_${DateTime.now().millisecondsSinceEpoch}';
+    final passHash = _hashPassword(password);
+    await _prefs?.setBool(_keyLocalAccountActive, true);
+    await _prefs?.setString(_keyLocalAccountUid, uid);
+    await _prefs?.setString(_keyLocalAccountEmail, email.trim().toLowerCase());
+    await _prefs?.setString(_keyLocalAccountPasswordHash, passHash);
+    await _prefs?.setString(_keyLocalAccountDisplayName, displayName);
+    await _prefs?.setString(_keyLocalAccountUsername, username);
+    await setProfile(
+      displayName: displayName,
+      username: username,
+      email: email,
+    );
+  }
+
+  Future<void> updateLocalAccountProfile({
+    String? displayName,
+    String? username,
+    String? email,
+  }) async {
+    if (displayName != null) {
+      await _prefs?.setString(_keyLocalAccountDisplayName, displayName);
+    }
+    if (username != null) {
+      await _prefs?.setString(_keyLocalAccountUsername, username);
+    }
+    if (email != null) {
+      await _prefs?.setString(_keyLocalAccountEmail, email.trim().toLowerCase());
+    }
+  }
+
+  bool verifyLocalPassword(String email, String password) {
+    final savedEmail = _prefs?.getString(_keyLocalAccountEmail) ?? '';
+    if (savedEmail.trim().toLowerCase() != email.trim().toLowerCase()) {
+      return false;
+    }
+    final savedHash = _prefs?.getString(_keyLocalAccountPasswordHash) ?? '';
+    return savedHash == _hashPassword(password);
+  }
+
+  Future<void> setLocalAccountActive(bool active) async {
+    await _prefs?.setBool(_keyLocalAccountActive, active);
+  }
+
+  Future<void> clearLocalAccountSession() async {
+    await _prefs?.setBool(_keyLocalAccountActive, false);
   }
 
   bool get anonymousDiagnosticsEnabled =>

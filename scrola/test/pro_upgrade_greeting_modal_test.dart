@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scrola/core/services/storage_service.dart';
-import 'package:scrola/core/services/tracking_service.dart';
 import 'package:scrola/features/profile/presentation/widgets/pro_upgrade_greeting_modal.dart';
 
 void main() {

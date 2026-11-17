@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'auth_service.dart';
 import 'focus_mode_service.dart';
 import 'gamification_engine.dart';
 import 'haptic_service.dart';
 import 'scrola_native_bridge.dart';
 import '../../shared/widgets/platform_icon.dart';
-import 'firebase_sync_service.dart';
 import 'storage_service.dart';
 
 class TrackingService extends ChangeNotifier {
@@ -36,9 +36,22 @@ class TrackingService extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
 
   // Profile & Subscription
-  String get displayName => _storage?.displayName ?? 'Alex';
-  String get username => _storage?.username ?? 'alex';
-  String get email => _storage?.email ?? 'alex@scrola.app';
+  String get displayName {
+    if (AuthService().isGuest) return 'Guest';
+    final name = _storage?.displayName ?? 'Guest';
+    return name.isNotEmpty ? name : 'Guest';
+  }
+
+  String get username {
+    if (AuthService().isGuest) return 'guest';
+    final uname = _storage?.username ?? 'guest';
+    return uname.isNotEmpty ? uname : 'guest';
+  }
+
+  String get email {
+    if (AuthService().isGuest) return '';
+    return _storage?.email ?? '';
+  }
   String get joinedMonthYear => _storage?.joinedMonthYear ?? 'Nov 2026';
   bool get isProSubscribed => _storage?.isProSubscribed ?? false;
   String get proPlan => _storage?.proPlan ?? 'yearly';
@@ -727,7 +740,6 @@ class TrackingService extends ChangeNotifier {
       username: username,
       email: email,
     );
-    await FirebaseSyncService().pushToCloud();
     notifyListeners();
   }
 
