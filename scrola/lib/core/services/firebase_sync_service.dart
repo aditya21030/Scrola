@@ -212,4 +212,48 @@ class FirebaseSyncService {
       return false;
     }
   }
+
+  /// Check whether a username is already taken in Cloud Firestore or local accounts
+  Future<bool> isUsernameTaken(String username) async {
+    final clean = username.trim().toLowerCase().replaceAll('@', '');
+    if (clean.length < 3) return false;
+
+    // 1. Check local storage
+    try {
+      final storage = await StorageService.getInstance();
+      if (storage.isUsernameTakenLocally(clean)) {
+        return true;
+      }
+    } catch (_) {}
+
+    // 2. Check Cloud Firestore
+    if (_firestore == null) {
+      try {
+        _firestore = FirebaseFirestore.instance;
+      } catch (_) {}
+    }
+
+    if (_firestore != null) {
+      try {
+        final querySnap = await _firestore!
+            .collection('users')
+            .where('username', isEqualTo: clean)
+            .limit(1)
+            .get()
+            .timeout(const Duration(seconds: 3));
+
+        if (querySnap.docs.isNotEmpty) {
+          final user = _auth?.currentUser;
+          if (user != null && querySnap.docs.first.id == user.uid) {
+            return false;
+          }
+          return true;
+        }
+      } catch (e) {
+        debugPrint('FirebaseSyncService.isUsernameTaken check warning: $e');
+      }
+    }
+
+    return false;
+  }
 }

@@ -71,6 +71,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
     if (username.isEmpty) {
       usernameErr = 'Username cannot be empty';
+    } else if (username.length < 3) {
+      usernameErr = 'Username must have at least 3 letters';
+    } else if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(username)) {
+      usernameErr = 'Letters, numbers, dots and underscores only';
     }
     if (email.isEmpty ||
         !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {

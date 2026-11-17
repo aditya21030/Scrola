@@ -163,6 +163,11 @@ class AuthService extends ChangeNotifier {
     return 'No account found with this email. Please check your credentials or create a new account.';
   }
 
+  /// Check whether a username is already taken
+  Future<bool> isUsernameTaken(String username) async {
+    return FirebaseSyncService().isUsernameTaken(username);
+  }
+
   /// Register / Create account with email, password, and optional displayName & username
   Future<String?> createAccountWithEmail({
     required String email,
@@ -175,8 +180,21 @@ class AuthService extends ChangeNotifier {
         ? displayName.trim()
         : cleanEmail.split('@').first;
     final cleanUsername = (username != null && username.trim().isNotEmpty)
-        ? username.trim().replaceAll('@', '').replaceAll(' ', '')
-        : cleanEmail.split('@').first;
+        ? username.trim().replaceAll('@', '').replaceAll(' ', '').toLowerCase()
+        : cleanEmail.split('@').first.toLowerCase();
+
+    if (cleanUsername.length < 3) {
+      return 'Username must have at least 3 letters.';
+    }
+
+    if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(cleanUsername)) {
+      return 'Username can only contain letters, numbers, dots and underscores.';
+    }
+
+    final taken = await isUsernameTaken(cleanUsername);
+    if (taken) {
+      return 'Username @$cleanUsername is already taken. Please choose another.';
+    }
 
     // 1. Try Firebase Auth first with timeout
     if (_auth != null) {

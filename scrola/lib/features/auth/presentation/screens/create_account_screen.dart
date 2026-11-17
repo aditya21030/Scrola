@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/gamification_engine.dart';
@@ -10,6 +11,15 @@ import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../profile/presentation/screens/privacy_controls_screen.dart';
 import 'login_screen.dart';
+
+enum UsernameStatus {
+  idle,
+  checking,
+  available,
+  taken,
+  tooShort,
+  invalid,
+}
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -25,13 +35,31 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passCtrl = TextEditingController();
 
+  Timer? _debounceTimer;
+  UsernameStatus _usernameStatus = UsernameStatus.idle;
+  String? _usernameFeedback;
+  List<String> _suggestions = const [];
+  bool _userEditedUsernameManually = false;
+
   bool _obscurePassword = true;
   bool _agreedToTerms = true;
   bool _loading = false;
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    _nameCtrl.addListener(_onNameOrEmailChanged);
+    _emailCtrl.addListener(_onNameOrEmailChanged);
+    _usernameCtrl.addListener(_onUsernameChanged);
+  }
+
+  @override
   void dispose() {
+    _debounceTimer?.cancel();
+    _nameCtrl.removeListener(_onNameOrEmailChanged);
+    _emailCtrl.removeListener(_onNameOrEmailChanged);
+    _usernameCtrl.removeListener(_onUsernameChanged);
     _nameCtrl.dispose();
     _usernameCtrl.dispose();
     _emailCtrl.dispose();
@@ -39,12 +67,159 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     super.dispose();
   }
 
+  void _onNameOrEmailChanged() {
+    final name = _nameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+
+    String base = '';
+    if (name.isNotEmpty) {
+      base = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    } else if (email.isNotEmpty && email.contains('@')) {
+      base = email.split('@').first.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    }
+
+    if (base.isEmpty) {
+      if (_suggestions.isNotEmpty) {
+        setState(() => _suggestions = const []);
+      }
+      return;
+    }
+
+    final year = DateTime.now().year.toString().substring(2);
+    final candidates = [
+      if (base.length >= 3) base,
+      if (base.length < 3) '${base}01',
+      '${base}_$year',
+      '$base.scrolls',
+      if (base.length >= 3) '${base}01' else '${base}_app',
+    ];
+
+    final unique = candidates.toSet().where((s) => s.length >= 3).take(4).toList();
+
+    setState(() {
+      _suggestions = unique;
+      if (!_userEditedUsernameManually && _usernameCtrl.text.isEmpty && unique.isNotEmpty) {
+        _usernameCtrl.text = unique.first;
+        _checkUsernameAvailability(unique.first);
+      }
+    });
+  }
+
+  void _onUsernameChanged() {
+    final text = _usernameCtrl.text.trim();
+    final clean = text.replaceAll('@', '').replaceAll(' ', '').toLowerCase();
+
+    _debounceTimer?.cancel();
+
+    if (clean.isEmpty) {
+      setState(() {
+        _usernameStatus = UsernameStatus.idle;
+        _usernameFeedback = null;
+      });
+      return;
+    }
+
+    if (clean.length < 3) {
+      setState(() {
+        _usernameStatus = UsernameStatus.tooShort;
+        _usernameFeedback = 'Username must have at least 3 letters';
+      });
+      return;
+    }
+
+    if (clean.length > 20) {
+      setState(() {
+        _usernameStatus = UsernameStatus.invalid;
+        _usernameFeedback = 'Username cannot exceed 20 characters';
+      });
+      return;
+    }
+
+    if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(clean)) {
+      setState(() {
+        _usernameStatus = UsernameStatus.invalid;
+        _usernameFeedback = 'Letters, numbers, dots and underscores only';
+      });
+      return;
+    }
+
+    setState(() {
+      _usernameStatus = UsernameStatus.checking;
+      _usernameFeedback = 'Checking availability...';
+    });
+
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _checkUsernameAvailability(clean);
+    });
+  }
+
+  Future<void> _checkUsernameAvailability(String username) async {
+    final clean = username.trim().toLowerCase().replaceAll('@', '').replaceAll(' ', '');
+    if (clean.length < 3) return;
+
+    try {
+      final isTaken = await _auth.isUsernameTaken(clean);
+      if (!mounted) return;
+      final current = _usernameCtrl.text.trim().toLowerCase().replaceAll('@', '').replaceAll(' ', '');
+      if (current != clean) return;
+
+      setState(() {
+        if (isTaken) {
+          _usernameStatus = UsernameStatus.taken;
+          _usernameFeedback = '@$clean is already taken';
+        } else {
+          _usernameStatus = UsernameStatus.available;
+          _usernameFeedback = '@$clean is available';
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _usernameStatus = UsernameStatus.available;
+        _usernameFeedback = '@$clean is available';
+      });
+    }
+  }
+
+  void _selectSuggestion(String sug) {
+    HapticService.subtle();
+    _userEditedUsernameManually = true;
+    _usernameCtrl.text = sug;
+    _checkUsernameAvailability(sug);
+  }
+
   Future<void> _handleRegister() async {
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text;
     final name = _nameCtrl.text.trim();
     final username =
-        _usernameCtrl.text.trim().replaceAll('@', '').replaceAll(' ', '');
+        _usernameCtrl.text.trim().replaceAll('@', '').replaceAll(' ', '').toLowerCase();
+
+    if (username.isEmpty) {
+      setState(() => _error = 'Please enter a username');
+      await HapticService.warning();
+      return;
+    }
+    if (username.length < 3) {
+      setState(() => _error = 'Username must have at least 3 letters');
+      await HapticService.warning();
+      return;
+    }
+    if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(username)) {
+      setState(() => _error = 'Letters, numbers, dots and underscores only');
+      await HapticService.warning();
+      return;
+    }
+    if (_usernameStatus == UsernameStatus.taken) {
+      setState(() => _error = 'Username @$username is already taken. Please choose another.');
+      await HapticService.warning();
+      return;
+    }
+    if (_usernameStatus == UsernameStatus.checking) {
+      setState(() => _error = 'Checking username availability, please wait...');
+      await HapticService.warning();
+      return;
+    }
 
     if (email.isEmpty) {
       setState(() => _error = 'Please enter an email address');
@@ -72,7 +247,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         email: email,
         password: pass,
         displayName: name.isNotEmpty ? name : null,
-        username: username.isNotEmpty ? username : null,
+        username: username,
       );
 
       if (!mounted) return;
@@ -108,9 +283,30 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   Future<void> _handleSaveLocally() async {
     final name = _nameCtrl.text.trim();
     final username =
-        _usernameCtrl.text.trim().replaceAll('@', '').replaceAll(' ', '');
+        _usernameCtrl.text.trim().replaceAll('@', '').replaceAll(' ', '').toLowerCase();
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text.isNotEmpty ? _passCtrl.text : 'scrola123';
+
+    if (username.isEmpty) {
+      setState(() => _error = 'Please enter a username');
+      await HapticService.warning();
+      return;
+    }
+    if (username.length < 3) {
+      setState(() => _error = 'Username must have at least 3 letters');
+      await HapticService.warning();
+      return;
+    }
+    if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(username)) {
+      setState(() => _error = 'Letters, numbers, dots and underscores only');
+      await HapticService.warning();
+      return;
+    }
+    if (_usernameStatus == UsernameStatus.taken) {
+      setState(() => _error = 'Username @$username is already taken. Please choose another.');
+      await HapticService.warning();
+      return;
+    }
 
     setState(() {
       _loading = true;
@@ -120,10 +316,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     try {
       final storage = await StorageService.getInstance();
       await storage.saveLocalAccount(
-        email: email.isNotEmpty ? email : 'user@scrola.local',
+        email: email.isNotEmpty ? email : '$username@scrola.local',
         password: pass,
         displayName: name.isNotEmpty ? name : 'Scrola User',
-        username: username.isNotEmpty ? username : 'user',
+        username: username,
       );
       await _auth.initialize();
       await HapticService.celebratory();
@@ -317,7 +513,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                             isDense: true,
-                            hintText: 'Alex Scrolls',
+                            hintText: 'e.g. Alex Scrolls',
                             hintStyle: TextStyle(color: AppColors.secondaryText),
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -326,11 +522,79 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       const SizedBox(height: 14),
 
                       // Username input
-                      Text(
-                        'USERNAME',
-                        style: AppTypography.label(
-                          color: AppColors.secondaryText,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'USERNAME',
+                            style: AppTypography.label(
+                              color: AppColors.secondaryText,
+                            ),
+                          ),
+                          if (_usernameStatus == UsernameStatus.available)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 14,
+                                  color: AppColors.success,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Available',
+                                  style: AppTypography.caption(
+                                    color: AppColors.success,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else if (_usernameStatus == UsernameStatus.taken)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.cancel_rounded,
+                                  size: 14,
+                                  color: AppColors.error,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Taken',
+                                  style: AppTypography.caption(
+                                    color: AppColors.error,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else if (_usernameStatus == UsernameStatus.checking)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.5,
+                                    color: AppColors.primaryAccent,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'Checking...',
+                                  style: AppTypography.caption(
+                                    color: AppColors.primaryAccent,
+                                  ).copyWith(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 6),
                       Container(
@@ -338,7 +602,21 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.cardSurface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(
+                            color: _usernameStatus == UsernameStatus.available
+                                ? AppColors.success
+                                : (_usernameStatus == UsernameStatus.taken ||
+                                        _usernameStatus == UsernameStatus.tooShort ||
+                                        _usernameStatus == UsernameStatus.invalid)
+                                    ? AppColors.error
+                                    : _usernameStatus == UsernameStatus.checking
+                                        ? AppColors.primaryAccent
+                                        : AppColors.border,
+                            width: (_usernameStatus == UsernameStatus.available ||
+                                    _usernameStatus == UsernameStatus.taken)
+                                ? 1.5
+                                : 1.0,
+                          ),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         alignment: Alignment.center,
@@ -347,14 +625,17 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             Text(
                               '@',
                               style: AppTypography.body(
-                                color: AppColors.secondaryText,
+                                color: _usernameStatus == UsernameStatus.available
+                                    ? AppColors.success
+                                    : AppColors.secondaryText,
                               ).copyWith(fontWeight: FontWeight.w700),
                             ),
-                            const SizedBox(width: 2),
+                            const SizedBox(width: 4),
                             Expanded(
                               child: TextField(
                                 controller: _usernameCtrl,
                                 textInputAction: TextInputAction.next,
+                                onChanged: (_) => _userEditedUsernameManually = true,
                                 style: AppTypography.body(
                                   color: AppColors.primaryText,
                                 ).copyWith(fontWeight: FontWeight.w600),
@@ -362,16 +643,131 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 decoration: const InputDecoration(
                                   border: InputBorder.none,
                                   isDense: true,
-                                  hintText: 'alex',
+                                  hintText: 'your_username',
                                   hintStyle:
                                       TextStyle(color: AppColors.secondaryText),
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),
                             ),
+                            if (_usernameStatus == UsernameStatus.checking)
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryAccent,
+                                ),
+                              )
+                            else if (_usernameStatus == UsernameStatus.available)
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.success,
+                                size: 20,
+                              )
+                            else if (_usernameStatus == UsernameStatus.taken ||
+                                _usernameStatus == UsernameStatus.tooShort ||
+                                _usernameStatus == UsernameStatus.invalid)
+                              const Icon(
+                                Icons.cancel_rounded,
+                                color: AppColors.error,
+                                size: 20,
+                              ),
                           ],
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      // Feedback / requirements line
+                      if (_usernameFeedback != null)
+                        Text(
+                          _usernameFeedback!,
+                          style: AppTypography.caption(
+                            color: _usernameStatus == UsernameStatus.available
+                                ? AppColors.success
+                                : _usernameStatus == UsernameStatus.checking
+                                    ? AppColors.secondaryText
+                                    : AppColors.error,
+                          ).copyWith(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      else
+                        Text(
+                          'At least 3 letters (letters, numbers, dots and underscores)',
+                          style: AppTypography.caption(
+                            color: AppColors.secondaryText,
+                          ).copyWith(fontSize: 11.5),
+                        ),
+
+                      // Smart suggestions chips
+                      if (_suggestions.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 13,
+                              color: AppColors.primaryAccent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Suggested for you:',
+                              style: AppTypography.caption(
+                                color: AppColors.secondaryText,
+                              ).copyWith(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: _suggestions.map((sug) {
+                            final isCurrent =
+                                _usernameCtrl.text.trim().toLowerCase() ==
+                                    sug.toLowerCase();
+                            return GestureDetector(
+                              onTap: () => _selectSuggestion(sug),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isCurrent
+                                      ? AppColors.primaryAccent
+                                          .withValues(alpha: 0.22)
+                                      : AppColors.cardSurface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isCurrent
+                                        ? AppColors.primaryAccent
+                                        : AppColors.border,
+                                  ),
+                                ),
+                                child: Text(
+                                  '@$sug',
+                                  style: AppTypography.caption(
+                                    color: isCurrent
+                                        ? AppColors.primaryAccent
+                                        : AppColors.primaryText,
+                                  ).copyWith(
+                                    fontWeight: isCurrent
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                       const SizedBox(height: 14),
 
                       // Email input

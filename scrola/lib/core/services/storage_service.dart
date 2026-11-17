@@ -12,10 +12,34 @@ class StorageService {
 
   StorageService._();
 
+  static final Set<String> _takenUsernamesForTesting = {};
+
   @visibleForTesting
   static void resetForTest() {
     _instance = null;
     _prefs = null;
+    _takenUsernamesForTesting.clear();
+  }
+
+  @visibleForTesting
+  static void registerTakenUsernameForTesting(String username) {
+    _takenUsernamesForTesting.add(username.trim().toLowerCase());
+  }
+
+  @visibleForTesting
+  static void clearTakenUsernamesForTesting() {
+    _takenUsernamesForTesting.clear();
+  }
+
+  bool isUsernameTakenLocally(String username) {
+    final clean = username.trim().toLowerCase().replaceAll('@', '');
+    if (_takenUsernamesForTesting.contains(clean)) return true;
+    final localUser = getLocalAccountUser();
+    if (localUser != null &&
+        localUser.username.trim().toLowerCase() == clean) {
+      return true;
+    }
+    return false;
   }
 
   static Future<StorageService> getInstance() async {
