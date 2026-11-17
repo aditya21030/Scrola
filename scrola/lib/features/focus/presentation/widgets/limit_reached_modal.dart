@@ -12,14 +12,22 @@ class LimitReachedModal extends StatefulWidget {
   const LimitReachedModal({super.key});
 
   static bool _isShowing = false;
+  static DateTime? _lastShownAt;
 
   static Future<void> show(BuildContext context) async {
+    final now = DateTime.now();
     if (_isShowing || !context.mounted) return;
+    if (_lastShownAt != null &&
+        now.difference(_lastShownAt!) < const Duration(milliseconds: 1000)) {
+      return;
+    }
     _isShowing = true;
+    _lastShownAt = now;
     HapticService.error();
     try {
       await showModalBottomSheet<void>(
         context: context,
+        useRootNavigator: true,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (_) => const LimitReachedModal(),

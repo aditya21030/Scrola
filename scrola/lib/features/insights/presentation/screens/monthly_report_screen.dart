@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/monetization_analytics_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -248,7 +249,62 @@ class MonthlyReportScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              if (!TrackingService().isProSubscribed) ...[
+                ScrolaCard(
+                  padding: const EdgeInsets.all(16),
+                  backgroundColor: AppColors.primaryAccent.withValues(alpha: 0.08),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryAccent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'PRO',
+                              style: AppTypography.caption(color: AppColors.textOnAccent)
+                                  .copyWith(fontWeight: FontWeight.w800, fontSize: 10),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Detailed monthly trends & CSV exports',
+                              style: AppTypography.body()
+                                  .copyWith(fontWeight: FontWeight.w700, fontSize: 13.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Unlock unlimited tracking history, automatic monthly trend exports, and zero ads with Scrola Pro.',
+                        style: AppTypography.caption(color: AppColors.secondaryText),
+                      ),
+                      const SizedBox(height: 12),
+                      ScrolaSecondaryButton(
+                        label: 'Upgrade to Pro (from ₹49/mo)',
+                        onPressed: () {
+                          MonetizationAnalyticsService().logProFeatureTapped(
+                            featureId: 'monthly_report_banner',
+                          );
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const SubscriptionProScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
               ScrolaPrimaryButton(
                 label: 'Export CSV & full data',
                 leadingIcon: const Icon(
@@ -258,13 +314,41 @@ class MonthlyReportScreen extends StatelessWidget {
                 ),
                 onPressed: () {
                   HapticService.medium();
+                  final tracking = TrackingService();
+                  if (!tracking.isProSubscribed) {
+                    MonetizationAnalyticsService().logProFeatureTapped(
+                      featureId: 'monthly_report_csv_export',
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: AppColors.surfaceSolid,
+                        content: Text(
+                          'CSV export is a Scrola Pro feature.',
+                          style: AppTypography.caption(color: AppColors.primaryText),
+                        ),
+                        action: SnackBarAction(
+                          label: 'Upgrade',
+                          textColor: AppColors.primaryAccent,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SubscriptionProScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                    return;
+                  }
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       behavior: SnackBarBehavior.floating,
                       content: Text('Monthly data & CSV copied to clipboard!'),
                     ),
                   );
-                  final csv = TrackingService().buildCsvExport();
+                  final csv = tracking.buildCsvExport();
                   Clipboard.setData(ClipboardData(text: csv)).catchError((_) {});
                 },
               ),
@@ -273,6 +357,9 @@ class MonthlyReportScreen extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () {
                     HapticService.light();
+                    MonetizationAnalyticsService().logProFeatureTapped(
+                      featureId: 'monthly_report_manage_pro',
+                    );
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const SubscriptionProScreen(),

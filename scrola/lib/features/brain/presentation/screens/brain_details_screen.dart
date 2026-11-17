@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/monetization_analytics_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -8,6 +9,7 @@ import '../../../../shared/widgets/brainy_mascot.dart';
 import '../../../../shared/widgets/scrola_app_bar.dart';
 import '../../../../shared/widgets/scrola_buttons.dart';
 import '../../../../shared/widgets/scrola_card.dart';
+import '../../../profile/presentation/screens/subscription_pro_screen.dart';
 
 class BrainDetailsScreen extends StatefulWidget {
   final BrainySkin initialSkin;
@@ -51,7 +53,7 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
       body: ListenableBuilder(
         listenable: _tracking,
         builder: (context, _) {
-          final isOwned = _tracking.currentLevel >= reqLevel;
+          final isOwned = _tracking.currentLevel >= reqLevel || _tracking.isProSubscribed;
           final isEquipped = _tracking.equippedSkin == widget.initialSkin;
 
           return SafeArea(
@@ -246,10 +248,21 @@ class _BrainDetailsScreenState extends State<BrainDetailsScreen> {
                         ? 'Equipped'
                         : isOwned
                             ? 'Equip $skinName'
-                            : 'Unlock at Level $reqLevel',
-                    onPressed: !isOwned || isEquipped
+                            : 'Unlock with Pro or reach Level $reqLevel',
+                    onPressed: isEquipped
                         ? null
                         : () async {
+                            if (!isOwned) {
+                              MonetizationAnalyticsService().logProFeatureTapped(
+                                featureId: 'skin_${widget.initialSkin.name}',
+                              );
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SubscriptionProScreen(),
+                                ),
+                              );
+                              return;
+                            }
                             await HapticService.celebratory();
                             await _tracking.equipSkin(widget.initialSkin);
                             if (context.mounted) {

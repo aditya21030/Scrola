@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/focus_mode_service.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/monetization_analytics_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -383,8 +384,16 @@ class _FloatingOverlaySettingsScreenState
                                   const SizedBox(width: 12),
                                   ScrolaToggle(
                                     value: _tracking.overlayReactToPace,
-                                    onChanged: (v) => _tracking
-                                        .updateOverlayConfig(reactToPace: v),
+                                    onChanged: (v) {
+                                      if (v && !_tracking.isProSubscribed) {
+                                        MonetizationAnalyticsService().logProFeatureTapped(
+                                          featureId: 'overlay_react_to_pace',
+                                        );
+                                        NotchProModal.show(context);
+                                        return;
+                                      }
+                                      _tracking.updateOverlayConfig(reactToPace: v);
+                                    },
                                   ),
                                 ],
                               ),
@@ -425,8 +434,16 @@ class _FloatingOverlaySettingsScreenState
                           items: const ['Small', 'Medium', 'Large'],
                           selectedItem: _tracking.overlaySize,
                           labelBuilder: (s) => s,
-                          onChanged: (s) =>
-                              _tracking.updateOverlayConfig(size: s),
+                          onChanged: (s) {
+                            if (s != 'Medium' && !_tracking.isProSubscribed) {
+                              MonetizationAnalyticsService().logProFeatureTapped(
+                                featureId: 'overlay_size_$s',
+                              );
+                              NotchProModal.show(context);
+                              return;
+                            }
+                            _tracking.updateOverlayConfig(size: s);
+                          },
                         ),
                         const SizedBox(height: 20),
                         Text(

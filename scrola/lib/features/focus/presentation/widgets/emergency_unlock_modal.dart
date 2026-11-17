@@ -11,14 +11,22 @@ class EmergencyUnlockModal extends StatefulWidget {
   const EmergencyUnlockModal({super.key});
 
   static bool _isShowing = false;
+  static DateTime? _lastShownAt;
 
   static Future<bool?> show(BuildContext context) async {
+    final now = DateTime.now();
     if (_isShowing || !context.mounted) return null;
+    if (_lastShownAt != null &&
+        now.difference(_lastShownAt!) < const Duration(milliseconds: 1000)) {
+      return null;
+    }
     _isShowing = true;
+    _lastShownAt = now;
     HapticService.warning();
     try {
       return await showModalBottomSheet<bool>(
         context: context,
+        useRootNavigator: true,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (_) => const EmergencyUnlockModal(),

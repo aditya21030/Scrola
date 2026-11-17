@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/monetization_analytics_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -34,8 +35,8 @@ enum ProPlanTier {
     title: 'Lifetime',
     price: '₹999',
     period: 'once',
-    subtitle: 'Pay once · Keep forever',
-    badge: 'BEST VALUE',
+    subtitle: 'Launch Offer · Regular ₹1,499 · Pay once, keep forever',
+    badge: 'LAUNCH OFFER · SAVE ₹500',
   );
 
   final String id;
@@ -66,15 +67,27 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
   ProPlanTier _selectedTier = ProPlanTier.yearly;
   bool _isProcessing = false;
 
+  @override
+  void initState() {
+    super.initState();
+    MonetizationAnalyticsService().logPaywallViewed(
+      featureId: 'subscription_pro_screen',
+      planId: _selectedTier.id,
+    );
+  }
+
   Future<void> _handleContinue(TrackingService tracking) async {
     setState(() => _isProcessing = true);
     HapticService.medium();
+    MonetizationAnalyticsService().logPurchaseStarted(planId: _selectedTier.id);
 
     try {
       await tracking.updateProSubscription(
         subscribed: true,
         plan: _selectedTier.id,
       );
+
+      MonetizationAnalyticsService().logPurchaseCompleted(planId: _selectedTier.id);
 
       if (!mounted) return;
 
@@ -116,6 +129,7 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                     trailing: GestureDetector(
                       onTap: () {
                         HapticService.light();
+                        MonetizationAnalyticsService().logPurchaseRestored();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(

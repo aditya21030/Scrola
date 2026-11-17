@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/monetization_analytics_service.dart';
 import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -36,6 +37,7 @@ class NotchProModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final tracking = TrackingService();
     final bool hasRemainingTrial = tracking.canUseNotch;
+    MonetizationAnalyticsService().logPaywallViewed(featureId: 'notch_pro_modal');
 
     return Container(
       decoration: const BoxDecoration(
@@ -175,7 +177,7 @@ class NotchProModal extends StatelessWidget {
                     label: 'Lifetime',
                     price: '₹999',
                     unit: 'once',
-                    badge: 'BEST VALUE',
+                    badge: 'LAUNCH OFFER',
                     isHighlight: false,
                   ),
                 ),
@@ -207,6 +209,9 @@ class NotchProModal extends StatelessWidget {
             label: 'View Scrola Pro Plans',
             useMediumHaptic: true,
             onPressed: () {
+              MonetizationAnalyticsService().logProFeatureTapped(
+                featureId: 'notch_pro_modal_view_plans',
+              );
               Navigator.of(context).pop();
               Navigator.of(context).push(
                 MaterialPageRoute(

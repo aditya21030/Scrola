@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'haptic_service.dart';
+import 'monetization_analytics_service.dart';
 import 'tracking_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -186,6 +187,10 @@ class AdService {
       },
     );
 
+    MonetizationAnalyticsService().logAdImpression(
+      placementId: 'interstitial',
+      adUnitId: interstitialAdUnitId,
+    );
     _interstitialAd!.show();
     return completer.future;
   }
@@ -275,6 +280,10 @@ class AdService {
       return true;
     }
 
+    MonetizationAnalyticsService().logAdImpression(
+      placementId: placement.name,
+      adUnitId: rewardedAdUnitId,
+    );
     _rewardedAd!.show(
       onUserEarnedReward: (ad, reward) {
         rewardEarned = true;
