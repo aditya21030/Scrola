@@ -184,7 +184,15 @@ class NotchProModal extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'Supports all UPI apps (GPay, PhonePe, Paytm) · Lifetime is 1-time',
+              textAlign: TextAlign.center,
+              style: AppTypography.caption(color: AppColors.mutedText).copyWith(fontSize: 10.5),
+            ),
+          ),
+          const SizedBox(height: 12),
 
           // Rewarded Ad Option: Watch short video for 1 free notch session
           ScrolaSecondaryButton(

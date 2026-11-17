@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/services/gamification_engine.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -70,6 +71,9 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
 
   String _speechText(int remaining) {
     if (!widget.permissionsReady) return 'Grant permission to count reels.';
+    if (!widget.canUseNotch && !TrackingService().isProSubscribed && !widget.isTracking) {
+      return 'Notch session resting. Watch video or Go Pro to launch!';
+    }
     if (!widget.isTracking) return 'Scrola is resting. Turn on to launch!';
     if (remaining <= 0) return 'Limit hit. Brainy needs rest.';
     if (remaining <= (widget.totalLimit * 0.25).round()) {
@@ -280,6 +284,7 @@ class _HeroGaugeSectionState extends State<HeroGaugeSection>
               stickToNotch: widget.stickToNotch,
               isOverlayEnabled: widget.isOverlayEnabled,
               isOverlayGranted: widget.isOverlayGranted,
+              canUseNotch: widget.canUseNotch,
               isLaunching: widget.isLaunchingToNotch,
               onTap: widget.onToggleScrola!,
             ),
@@ -296,6 +301,7 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
   final bool stickToNotch;
   final bool isOverlayEnabled;
   final bool isOverlayGranted;
+  final bool canUseNotch;
   final bool isLaunching;
   final VoidCallback onTap;
 
@@ -305,6 +311,7 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
     required this.stickToNotch,
     required this.isOverlayEnabled,
     required this.isOverlayGranted,
+    required this.canUseNotch,
     required this.isLaunching,
     required this.onTap,
   });
@@ -320,9 +327,12 @@ class _ScrolaPowerToggleCard extends StatelessWidget {
                 ? 'Turn Scrola Off'
                 : 'Turn Scrola On';
 
+    final bool isPro = TrackingService().isProSubscribed;
     final String subtitle = !canTurnOn
         ? 'Required so Brainy can count & guard feeds'
-        : isTracking
+        : (!canUseNotch && !isPro && !isTracking)
+            ? 'Daily free notch session used · Watch video or Go Pro to launch'
+            : isTracking
             ? (!isOverlayEnabled
                 ? 'Counting quietly (floating mascot removed)'
                 : !isOverlayGranted

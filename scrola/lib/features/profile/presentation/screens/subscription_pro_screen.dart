@@ -415,6 +415,33 @@ class _SubscriptionProScreenState extends State<SubscriptionProScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSolid,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.borderSubtle),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.verified_user_rounded,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Google Play Secure Checkout · All UPI Apps (GPay, PhonePe, Paytm, Cards) accepted. Lifetime plan is 1-time without recurring mandates.',
+                            style: AppTypography.caption(color: AppColors.secondaryText)
+                                .copyWith(fontSize: 10.5, height: 1.3),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   ScrolaPrimaryButton(
                     label: _isProcessing
                         ? 'Activating...'

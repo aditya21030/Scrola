@@ -221,27 +221,32 @@ class _TrackingStatusScreenState extends State<TrackingStatusScreen>
                         const SizedBox(height: 10),
                         _StatusCheckRow(
                           title: 'Battery optimisation',
-                          subtitle:
-                              'Set Android Battery to Unrestricted to prevent pauses',
-                          isOk: true,
-                          actionLabel: 'How to',
+                          subtitle: _tracking.isBatteryOptimizationIgnored
+                              ? 'Unrestricted (services will not be paused)'
+                              : 'Allow Unrestricted to prevent Android from killing tracking',
+                          isOk: _tracking.isBatteryOptimizationIgnored,
+                          actionLabel: _tracking.isBatteryOptimizationIgnored ? 'Allowed' : 'Allow',
                           onTap: () {
-                            showDialog<void>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                backgroundColor: AppColors.cardSurface,
-                                title: const Text('Battery optimisation'),
-                                content: const Text(
-                                  'If tracking pauses after idle time, open Android Settings > Apps > Scrola > Battery and choose Unrestricted.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(ctx).pop(),
-                                    child: const Text('Got it'),
+                            if (!_tracking.isBatteryOptimizationIgnored) {
+                              _tracking.requestIgnoreBatteryOptimization();
+                            } else {
+                              showDialog<void>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  backgroundColor: AppColors.cardSurface,
+                                  title: const Text('Battery optimisation'),
+                                  content: const Text(
+                                    'Scrola is set to Unrestricted battery. Android will not kill tracking or the notch counter in the background.',
                                   ),
-                                ],
-                              ),
-                            );
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(ctx).pop(),
+                                      child: const Text('Got it'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           },
                         ),
                       ],

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scrola/core/services/ad_service.dart';
 import 'package:scrola/core/services/monetization_analytics_service.dart';
-import 'package:scrola/core/services/tracking_service.dart';
 import 'package:scrola/features/profile/presentation/screens/subscription_pro_screen.dart';
 import 'package:scrola/features/profile/presentation/widgets/notch_pro_modal.dart';
 import 'package:shared_preferences/shared_preferences.dart';

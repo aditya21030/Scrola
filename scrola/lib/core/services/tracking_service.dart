@@ -27,12 +27,14 @@ class TrackingService extends ChangeNotifier {
   bool _isAccessibilityGranted = false;
   bool _isOverlayGranted = false;
   bool _isNotificationGranted = true;
+  bool _isBatteryOptimizationIgnored = true;
   bool _isInitialized = false;
   String _lastPlatform = 'instagram';
 
   bool get isAccessibilityGranted => _isAccessibilityGranted;
   bool get isOverlayGranted => _isOverlayGranted;
   bool get isNotificationGranted => _isNotificationGranted;
+  bool get isBatteryOptimizationIgnored => _isBatteryOptimizationIgnored;
   bool get isInitialized => _isInitialized;
 
   // Profile & Subscription
@@ -333,7 +335,13 @@ class TrackingService extends ChangeNotifier {
     _isAccessibilityGranted = await ScrolaNativeBridge.isAccessibilityServiceEnabled();
     _isOverlayGranted = await ScrolaNativeBridge.isOverlayPermissionGranted();
     _isNotificationGranted = await ScrolaNativeBridge.isNotificationPermissionGranted();
+    _isBatteryOptimizationIgnored = await ScrolaNativeBridge.isBatteryOptimizationIgnored();
     notifyListeners();
+  }
+
+  Future<void> requestIgnoreBatteryOptimization() async {
+    await ScrolaNativeBridge.requestIgnoreBatteryOptimization();
+    await checkPermissions();
   }
 
   /// Refreshes native permissions and, when needed on Android 11-16 where AppOps

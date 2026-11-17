@@ -197,6 +197,16 @@ class ScrolaNativeBridge {
     })) ?? false;
   }
 
+  /// Check if Android Battery Optimization is disabled for Scrola (Unrestricted)
+  static Future<bool> isBatteryOptimizationIgnored() async {
+    return (await _invoke<bool>('isBatteryOptimizationIgnored')) ?? true;
+  }
+
+  /// Request user to exempt Scrola from battery optimization so services are never killed
+  static Future<void> requestIgnoreBatteryOptimization() async {
+    await _invoke<void>('requestIgnoreBatteryOptimization');
+  }
+
   /// Grant emergency 5-minute unlock in native DataManager
   static Future<bool> grantEmergencyUnlock([int minutes = 5]) async {
     return (await _invoke<bool>('grantEmergencyUnlock', {'minutes': minutes})) ?? false;
